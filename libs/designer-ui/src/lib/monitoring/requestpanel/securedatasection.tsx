@@ -1,4 +1,4 @@
-import { getBrandColorRgbA } from '../../card/utils';
+import { getBrandColorWithOpacity } from '../../card/utils';
 import Constants from '../../constants';
 import { useIntl } from 'react-intl';
 
@@ -13,12 +13,13 @@ export const SecureDataSection: React.FC<SecureDataSectionProps> = ({ brandColor
   const Resources = {
     SANITIZED_TEXT: intl.formatMessage({
       defaultMessage: 'Content not shown due to security configuration.',
+      id: 'USVffu',
       description: 'Message text to inform the customer that the data is secure',
     }),
   };
 
   const borderStyle = {
-    borderColor: getBrandColorRgbA(brandColor, 0.7),
+    borderColor: getBrandColorWithOpacity(brandColor, 0.7),
   };
 
   return (

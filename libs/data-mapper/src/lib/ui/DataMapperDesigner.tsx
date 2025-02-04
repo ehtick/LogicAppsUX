@@ -16,9 +16,10 @@ import { SidePane, SidePanelTabValue } from '../components/sidePane/SidePane';
 import { TestMapPanel } from '../components/testMapPanel/TestMapPanel';
 import { WarningModal } from '../components/warningModal/WarningModal';
 import { generateDataMapXslt } from '../core/queries/datamap';
-import { redoDataMapOperation, saveDataMap, showNotification, undoDataMapOperation } from '../core/state/DataMapSlice';
+import { saveDataMap, showNotification } from '../core/state/DataMapSlice';
 import type { AppDispatch, RootState } from '../core/state/Store';
 import { convertToMapDefinition } from '../mapDefinitions';
+import { generateMapMetadataV1 } from '../mapDefinitions/MapMetadataSerializer';
 import { LogCategory, LogService } from '../utils/Logging.Utils';
 import { collectErrorsForMapChecker } from '../utils/MapChecker.Utils';
 import './ReactFlowStyleOverrides.css';
@@ -30,6 +31,7 @@ import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useDispatch, useSelector } from 'react-redux';
 import { ReactFlowProvider, useKeyPress } from 'reactflow';
+import { ActionCreators } from 'redux-undo';
 
 const centerViewId = 'centerView';
 
@@ -91,11 +93,12 @@ const useStyles = makeStyles({
 });
 
 export interface DataMapperDesignerProps {
-  saveMapDefinitionCall: (dataMapDefinition: string) => void;
+  saveMapDefinitionCall: (dataMapDefinition: string, mapMetadata: string) => void;
   saveXsltCall: (dataMapXslt: string) => void;
   saveDraftStateCall?: (dataMapDefinition: string) => void;
   addSchemaFromFile?: (selectedSchemaFile: SchemaFile) => void;
   readCurrentSchemaOptions?: () => void;
+  readCurrentCustomXsltPathOptions?: () => void;
   setIsMapStateDirty?: (isMapStateDirty: boolean) => void;
   setFunctionDisplayExpanded: (isFunctionDisplaySimple: boolean) => void;
   useExpandedFunctionCards: boolean;
@@ -107,6 +110,7 @@ export const DataMapperDesigner = ({
   saveDraftStateCall,
   addSchemaFromFile,
   readCurrentSchemaOptions,
+  readCurrentCustomXsltPathOptions,
   setIsMapStateDirty,
   setFunctionDisplayExpanded,
   useExpandedFunctionCards,
@@ -115,14 +119,15 @@ export const DataMapperDesigner = ({
   useStaticStyles();
   const styles = useStyles();
 
-  const isMapStateDirty = useSelector((state: RootState) => state.dataMap.isDirty);
-  const sourceSchema = useSelector((state: RootState) => state.dataMap.curDataMapOperation.sourceSchema);
-  const targetSchema = useSelector((state: RootState) => state.dataMap.curDataMapOperation.targetSchema);
-  const flattenedTargetSchema = useSelector((state: RootState) => state.dataMap.curDataMapOperation.flattenedTargetSchema);
-  const currentTargetSchemaNode = useSelector((state: RootState) => state.dataMap.curDataMapOperation.currentTargetSchemaNode);
-  const targetSchemaSortArray = useSelector((state: RootState) => state.dataMap.curDataMapOperation.targetSchemaOrdering);
-  const currentConnections = useSelector((state: RootState) => state.dataMap.curDataMapOperation.dataMapConnections);
-  const selectedItemKey = useSelector((state: RootState) => state.dataMap.curDataMapOperation.selectedItemKey);
+  const isMapStateDirty = useSelector((state: RootState) => state.dataMap.present.isDirty);
+  const sourceSchema = useSelector((state: RootState) => state.dataMap.present.curDataMapOperation.sourceSchema);
+  const targetSchema = useSelector((state: RootState) => state.dataMap.present.curDataMapOperation.targetSchema);
+  const flattenedTargetSchema = useSelector((state: RootState) => state.dataMap.present.curDataMapOperation.flattenedTargetSchema);
+  const currentTargetSchemaNode = useSelector((state: RootState) => state.dataMap.present.curDataMapOperation.currentTargetSchemaNode);
+  const targetSchemaSortArray = useSelector((state: RootState) => state.dataMap.present.curDataMapOperation.targetSchemaOrdering);
+  const currentConnections = useSelector((state: RootState) => state.dataMap.present.curDataMapOperation.dataMapConnections);
+  const functions = useSelector((state: RootState) => state.dataMap.present.curDataMapOperation.functionNodes);
+  const selectedItemKey = useSelector((state: RootState) => state.dataMap.present.curDataMapOperation.selectedItemKey);
 
   const { centerViewHeight, centerViewWidth } = useCenterViewSize();
   const [isPropPaneExpanded, setIsPropPaneExpanded] = useState(!!selectedItemKey);
@@ -131,9 +136,10 @@ export const DataMapperDesigner = ({
   const [codeViewExpandedWidth, setCodeViewExpandedWidth] = useState(minCodeViewWidth);
   const [isTestMapPanelOpen, setIsTestMapPanelOpen] = useState(false);
   const [isSidePaneExpanded, setIsSidePaneExpanded] = useState(false);
-  const [sidePaneTab, setSidePaneTab] = useState(SidePanelTabValue.OutputTree);
-  const [showMapOverview, setShowMapOverview] = useState(false);
+  const [sidePaneTab, setSidePaneTab] = useState<SidePanelTabValue>(SidePanelTabValue.OutputTree);
   const [showGlobalView, setShowGlobalView] = useState(false);
+
+  useEffect(() => readCurrentCustomXsltPathOptions && readCurrentCustomXsltPathOptions(), [readCurrentCustomXsltPathOptions]);
 
   const dataMapDefinition = useMemo<string>(() => {
     if (sourceSchema && targetSchema) {
@@ -184,7 +190,9 @@ export const DataMapperDesigner = ({
       );
     }
 
-    saveMapDefinitionCall(dataMapDefinition);
+    const mapMetadata = JSON.stringify(generateMapMetadataV1(functions, currentConnections));
+
+    saveMapDefinitionCall(dataMapDefinition, mapMetadata);
 
     dispatch(
       saveDataMap({
@@ -192,7 +200,16 @@ export const DataMapperDesigner = ({
         targetSchemaExtended: targetSchema,
       })
     );
-  }, [currentConnections, flattenedTargetSchema, dataMapDefinition, dispatch, saveMapDefinitionCall, sourceSchema, targetSchema]);
+  }, [
+    currentConnections,
+    flattenedTargetSchema,
+    functions,
+    saveMapDefinitionCall,
+    dataMapDefinition,
+    dispatch,
+    sourceSchema,
+    targetSchema,
+  ]);
 
   const onGenerateClick = useCallback(() => {
     const errors = collectErrorsForMapChecker(currentConnections, flattenedTargetSchema);
@@ -245,11 +262,11 @@ export const DataMapperDesigner = ({
   }, [ctrlSPressed, onSaveClick]);
 
   const onUndoClick = () => {
-    dispatch(undoDataMapOperation());
+    dispatch(ActionCreators.undo());
   };
 
   const onRedoClick = () => {
-    dispatch(redoDataMapOperation());
+    dispatch(ActionCreators.redo());
   };
 
   const setTestMapPanelOpen = (toOpen: boolean) => {
@@ -283,15 +300,14 @@ export const DataMapperDesigner = ({
 
   const getCanvasAreaHeight = () => {
     // PropPane isn't shown when in the other views, so canvas can use full height
-    if (showMapOverview || showGlobalView) {
+    if (showGlobalView) {
       return centerViewHeight - 8;
     }
 
     if (isPropPaneExpanded) {
       return centerViewHeight - getExpandedPropPaneTotalHeight();
-    } else {
-      return centerViewHeight - getCollapsedPropPaneTotalHeight();
     }
+    return centerViewHeight - getCollapsedPropPaneTotalHeight();
   };
 
   const openMapChecker = () => {
@@ -301,97 +317,97 @@ export const DataMapperDesigner = ({
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className={styles.dataMapperShell}>
-        <EditorCommandBar
-          onSaveClick={onSaveClick}
-          onUndoClick={onUndoClick}
-          onRedoClick={onRedoClick}
-          onTestClick={() => setTestMapPanelOpen(true)}
-          showMapOverview={showMapOverview}
-          setShowMapOverview={setShowMapOverview}
-          showGlobalView={showGlobalView}
-          setShowGlobalView={setShowGlobalView}
-          onGenerateClick={onGenerateClick}
-        />
+      <ReactFlowProvider>
+        <div className={styles.dataMapperShell}>
+          <EditorCommandBar
+            onSaveClick={onSaveClick}
+            onUndoClick={onUndoClick}
+            onRedoClick={onRedoClick}
+            onTestClick={() => setTestMapPanelOpen(true)}
+            showGlobalView={showGlobalView}
+            setShowGlobalView={setShowGlobalView}
+            onGenerateClick={onGenerateClick}
+          />
 
-        <div id="editorView" style={{ display: 'flex', flex: '1 1 1px' }}>
-          <div id="centerViewWithBreadcrumb" style={{ display: 'flex', flexDirection: 'column', flex: '1 1 1px' }}>
-            <EditorBreadcrumb isCodeViewOpen={isCodeViewOpen} setIsCodeViewOpen={setCodeViewOpen} />
+          <div id="editorView" style={{ display: 'flex', flex: '1 1 1px' }}>
+            <div id="centerViewWithBreadcrumb" style={{ display: 'flex', flexDirection: 'column', flex: '1 1 1px' }}>
+              <EditorBreadcrumb isCodeViewOpen={isCodeViewOpen} setIsCodeViewOpen={setCodeViewOpen} />
 
-            <div id={centerViewId} style={{ minHeight: 400, flex: '1 1 1px' }}>
-              <div
-                style={{
-                  height: getCanvasAreaHeight(),
-                  marginBottom: getCanvasAreaAndPropPaneMargin(),
-                  boxSizing: 'border-box',
-                }}
-              >
-                <Stack horizontal style={{ height: '100%' }}>
-                  <div
-                    className={styles.canvasWrapper}
-                    style={{
-                      width: isCodeViewOpen ? '75%' : '100%',
-                      backgroundColor: tokens.colorNeutralBackground4,
-                    }}
-                  >
-                    {!currentTargetSchemaNode || showMapOverview ? (
-                      <MapOverview />
-                    ) : showGlobalView ? (
-                      <GlobalView />
-                    ) : (
-                      <ReactFlowProvider>
-                        <ReactFlowWrapper
-                          canvasBlockHeight={getCanvasAreaHeight()}
-                          canvasBlockWidth={centerViewWidth}
-                          useExpandedFunctionCards={useExpandedFunctionCards}
-                          openMapChecker={openMapChecker}
-                        />
-                      </ReactFlowProvider>
-                    )}
-                  </div>
+              <div id={centerViewId} style={{ minHeight: 400, flex: '1 1 1px' }}>
+                <div
+                  style={{
+                    height: getCanvasAreaHeight(),
+                    marginBottom: getCanvasAreaAndPropPaneMargin(),
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  <Stack horizontal style={{ height: '100%' }}>
+                    <div
+                      className={styles.canvasWrapper}
+                      style={{
+                        width: isCodeViewOpen ? '75%' : '100%',
+                        backgroundColor: tokens.colorNeutralBackground4,
+                      }}
+                    >
+                      {currentTargetSchemaNode ? (
+                        showGlobalView ? (
+                          <GlobalView />
+                        ) : (
+                          <ReactFlowWrapper
+                            canvasBlockHeight={getCanvasAreaHeight()}
+                            canvasBlockWidth={centerViewWidth}
+                            useExpandedFunctionCards={useExpandedFunctionCards}
+                            openMapChecker={openMapChecker}
+                          />
+                        )
+                      ) : (
+                        <MapOverview />
+                      )}
+                    </div>
 
-                  <CodeView
-                    dataMapDefinition={dataMapDefinition}
-                    isCodeViewOpen={isCodeViewOpen}
-                    setIsCodeViewOpen={setCodeViewOpen}
-                    canvasAreaHeight={getCanvasAreaHeight()}
-                    centerViewWidth={centerViewWidth}
-                    contentWidth={codeViewExpandedWidth}
-                    setContentWidth={setCodeViewExpandedWidth}
+                    <CodeView
+                      dataMapDefinition={dataMapDefinition}
+                      isCodeViewOpen={isCodeViewOpen}
+                      setIsCodeViewOpen={setCodeViewOpen}
+                      canvasAreaHeight={getCanvasAreaHeight()}
+                      centerViewWidth={centerViewWidth}
+                      contentWidth={codeViewExpandedWidth}
+                      setContentWidth={setCodeViewExpandedWidth}
+                    />
+                  </Stack>
+                </div>
+
+                {!showGlobalView && (
+                  <PropertiesPane
+                    selectedItemKey={selectedItemKey ?? ''}
+                    isExpanded={isPropPaneExpanded}
+                    setIsExpanded={setIsPropPaneExpanded}
+                    centerViewHeight={centerViewHeight}
+                    contentHeight={propPaneExpandedHeight}
+                    setContentHeight={setPropPaneExpandedHeight}
                   />
-                </Stack>
+                )}
               </div>
-
-              {!(showMapOverview || showGlobalView) && (
-                <PropertiesPane
-                  selectedItemKey={selectedItemKey ?? ''}
-                  isExpanded={isPropPaneExpanded}
-                  setIsExpanded={setIsPropPaneExpanded}
-                  centerViewHeight={centerViewHeight}
-                  contentHeight={propPaneExpandedHeight}
-                  setContentHeight={setPropPaneExpandedHeight}
-                />
-              )}
             </div>
+
+            <SidePane
+              isExpanded={isSidePaneExpanded}
+              setIsExpanded={setIsSidePaneExpanded}
+              sidePaneTab={sidePaneTab}
+              setSidePaneTab={setSidePaneTab}
+            />
           </div>
 
-          <SidePane
-            isExpanded={isSidePaneExpanded}
-            setIsExpanded={setIsSidePaneExpanded}
-            sidePaneTab={sidePaneTab}
-            setSidePaneTab={setSidePaneTab}
+          <WarningModal />
+          <ConfigPanel
+            onSubmitSchemaFileSelection={onSubmitSchemaFileSelection}
+            readCurrentSchemaOptions={readCurrentSchemaOptions}
+            setFunctionDisplayExpanded={setFunctionDisplayExpanded}
+            useExpandedFunctionCards={useExpandedFunctionCards}
           />
+          <TestMapPanel mapDefinition={dataMapDefinition} isOpen={isTestMapPanelOpen} onClose={() => setTestMapPanelOpen(false)} />
         </div>
-
-        <WarningModal />
-        <ConfigPanel
-          onSubmitSchemaFileSelection={onSubmitSchemaFileSelection}
-          readCurrentSchemaOptions={readCurrentSchemaOptions}
-          setFunctionDisplayExpanded={setFunctionDisplayExpanded}
-          useExpandedFunctionCards={useExpandedFunctionCards}
-        />
-        <TestMapPanel isOpen={isTestMapPanelOpen} onClose={() => setTestMapPanelOpen(false)} />
-      </div>
+      </ReactFlowProvider>
     </DndProvider>
   );
 };

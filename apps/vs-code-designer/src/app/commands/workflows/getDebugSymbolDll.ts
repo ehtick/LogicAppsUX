@@ -2,16 +2,17 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { debugSymbolDll } from '../../../constants';
+import { debugSymbolDll, extensionBundleId } from '../../../constants';
 import { ext } from '../../../extensionVariables';
 import { localize } from '../../../localize';
+import { getFunctionsCommand } from '../../utils/funcCoreTools/funcVersion';
 import * as cp from 'child_process';
 import * as fse from 'fs-extra';
 import * as path from 'path';
 
 export async function getDebugSymbolDll(): Promise<string> {
   const bundleFolderRoot = await getExtensionBundleFolder();
-  const bundleFolder = path.join(bundleFolderRoot, 'Microsoft.Azure.Functions.ExtensionBundle.Workflows');
+  const bundleFolder = path.join(bundleFolderRoot, extensionBundleId);
   let bundleVersionNumber = '0.0.0';
 
   const bundleFolders = await fse.readdir(bundleFolder);
@@ -34,7 +35,7 @@ export async function getDebugSymbolDll(): Promise<string> {
  * @returns {string} Extension bundle folder path.
  */
 async function getExtensionBundleFolder(): Promise<string> {
-  const command = 'func GetExtensionBundlePath';
+  const command = `${getFunctionsCommand()} GetExtensionBundlePath`;
   const outputChannel = ext.outputChannel;
 
   if (outputChannel) {
@@ -91,7 +92,8 @@ function getMaxVersion(version1, version2): string {
     if (arr1[i] > arr2[i]) {
       maxVersion = version1;
       break;
-    } else if (arr2[i] > arr1[i]) {
+    }
+    if (arr2[i] > arr1[i]) {
       maxVersion = version2;
       break;
     }

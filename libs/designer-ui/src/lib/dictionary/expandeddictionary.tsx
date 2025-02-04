@@ -1,17 +1,19 @@
 import type { DictionaryEditorItemProps } from '.';
-import type { ChangeState } from '..';
-import type { GetTokenPickerHandler } from '../editor/base';
+import type { ChangeState, TokenPickerButtonEditorProps, ValueSegment } from '..';
+import type { GetTokenPickerHandler, loadParameterValueFromStringHandler } from '../editor/base';
+import { isEmptySegments } from '../editor/base/utils/parsesegments';
 import { StringEditor } from '../editor/string';
 import { DictionaryDeleteButton } from './expandeddictionarydelete';
-import { isEmpty } from './util/helper';
-import { guid } from '@microsoft/utils-logic-apps';
+import { guid } from '@microsoft/logic-apps-shared';
 import { useRef } from 'react';
 import { useIntl } from 'react-intl';
 
-export enum ExpandedDictionaryEditorType {
-  KEY = 'key',
-  VALUE = 'value',
-}
+export const ExpandedDictionaryEditorType = {
+  KEY: 'key',
+  VALUE: 'value',
+} as const;
+export type ExpandedDictionaryEditorType = (typeof ExpandedDictionaryEditorType)[keyof typeof ExpandedDictionaryEditorType];
+
 export interface ExpandedDictionaryProps {
   items: DictionaryEditorItemProps[];
   readonly?: boolean;
@@ -20,18 +22,22 @@ export interface ExpandedDictionaryProps {
   valueTitle?: string;
   valueType?: string;
   setItems: (items: DictionaryEditorItemProps[]) => void;
+  tokenPickerButtonProps?: TokenPickerButtonEditorProps;
   getTokenPicker: GetTokenPickerHandler;
+  tokenMapping?: Record<string, ValueSegment>;
+  loadParameterValueFromString?: loadParameterValueFromStringHandler;
+  label?: string;
 }
 
 export const ExpandedDictionary = ({
   items,
-  readonly,
   keyTitle,
   keyType,
   valueTitle,
   valueType,
-  getTokenPicker,
   setItems,
+  label,
+  ...props
 }: ExpandedDictionaryProps): JSX.Element => {
   const intl = useIntl();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -39,12 +45,31 @@ export const ExpandedDictionary = ({
 
   const keyPlaceholder = intl.formatMessage({
     defaultMessage: 'Enter key',
+    id: 'pC2nr2',
     description: 'Placeholder text for Key',
   });
   const valuePlaceholder = intl.formatMessage({
     defaultMessage: 'Enter value',
+    id: 'zCsGWP',
     description: 'Placeholder text for Value',
   });
+
+  const itemKeyLabel = intl.formatMessage(
+    {
+      defaultMessage: '{label} key item',
+      id: '5+zBXE',
+      description: 'Label for Key',
+    },
+    { label }
+  );
+  const itemValueLabel = intl.formatMessage(
+    {
+      defaultMessage: '{label} value item',
+      id: 'cKNvk6',
+      description: 'Label for Value',
+    },
+    { label }
+  );
 
   const addItem = (index: number) => {
     if (index === items.length - 1 && !isEmpty(items[index])) {
@@ -74,14 +99,14 @@ export const ExpandedDictionary = ({
       {items.map((item, index) => {
         return (
           <div key={item.id} className="msla-dictionary-editor-item">
-            <div className="msla-dictionary-item-cell" aria-label={`dict-item-${index}`} ref={(el) => (editorRef.current[index] = el)}>
+            <div className="msla-dictionary-item-cell" ref={(el) => (editorRef.current[index] = el)}>
               <StringEditor
+                {...props}
+                ariaLabel={`${itemKeyLabel} ${index}`}
                 className="msla-dictionary-editor-container-expanded"
                 placeholder={keyPlaceholder}
                 initialValue={item.key ?? []}
-                readonly={readonly}
-                BasePlugins={{ tokens: true, clearEditor: true, autoFocus: false }}
-                getTokenPicker={getTokenPicker}
+                basePlugins={{ tokens: true, clearEditor: true, autoFocus: false }}
                 onFocus={() => addItem(index)}
                 valueType={keyType}
                 editorBlur={(newState: ChangeState) => handleBlur(newState, index, ExpandedDictionaryEditorType.KEY)}
@@ -89,21 +114,25 @@ export const ExpandedDictionary = ({
             </div>
             <div className="msla-dictionary-item-cell" ref={(el) => (editorRef.current[index] = el)}>
               <StringEditor
+                {...props}
+                ariaLabel={`${itemValueLabel} ${index}`}
                 className="msla-dictionary-editor-container-expanded"
                 placeholder={valuePlaceholder}
                 initialValue={item.value ?? []}
-                readonly={readonly}
-                BasePlugins={{ tokens: true, autoFocus: false }}
-                getTokenPicker={getTokenPicker}
+                basePlugins={{ tokens: true, autoFocus: false }}
                 onFocus={() => addItem(index)}
                 valueType={valueType}
                 editorBlur={(newState: ChangeState) => handleBlur(newState, index, ExpandedDictionaryEditorType.VALUE)}
               />
             </div>
-            <DictionaryDeleteButton items={items} index={index} setItems={setItems} />
+            <DictionaryDeleteButton items={items} index={index} setItems={setItems} disabled={props.readonly} />
           </div>
         );
       })}
     </div>
   );
+};
+
+export const isEmpty = (item: DictionaryEditorItemProps) => {
+  return isEmptySegments(item.key) && isEmptySegments(item.value);
 };

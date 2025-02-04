@@ -1,26 +1,26 @@
 import constants from '../../../constants';
-import { isApple } from '../../../helper';
-import fontColorSvg from '../icons/font-color.svg';
-import link from '../icons/link.svg';
-import paintBucketSvg from '../icons/paint-bucket.svg';
-import bold from '../icons/type-bold.svg';
-import italic from '../icons/type-italic.svg';
-import underline from '../icons/type-underline.svg';
+import fontColorSvgDark from '../icons/dark/font-color.svg';
+import paintBucketSvgDark from '../icons/dark/paint-bucket.svg';
+import fontColorSvgLight from '../icons/light/font-color.svg';
+import paintBucketSvgLight from '../icons/light/paint-bucket.svg';
+import { FormatBoldButton } from './buttons/FormatBoldButton';
+import { FormatItalicButton } from './buttons/FormatItalicButton';
+import { FormatLinkButton } from './buttons/FormatLinkButton';
+import { FormatUnderlineButton } from './buttons/FormatUnderlineButton';
 import { DropdownColorPicker } from './DropdownColorPicker';
 import { getSelectedNode, sanitizeUrl } from './helper/functions';
 import { useTheme } from '@fluentui/react';
 import { $isLinkNode, TOGGLE_LINK_COMMAND } from '@lexical/link';
-import { $patchStyleText, $getSelectionStyleValueForProperty } from '@lexical/selection';
+import { $getSelectionStyleValueForProperty, $patchStyleText } from '@lexical/selection';
 import { mergeRegister } from '@lexical/utils';
 import type { LexicalEditor } from 'lexical';
 import {
-  COMMAND_PRIORITY_NORMAL,
-  KEY_MODIFIER_COMMAND,
-  COMMAND_PRIORITY_CRITICAL,
-  SELECTION_CHANGE_COMMAND,
   $getSelection,
   $isRangeSelection,
-  FORMAT_TEXT_COMMAND,
+  COMMAND_PRIORITY_CRITICAL,
+  COMMAND_PRIORITY_NORMAL,
+  KEY_MODIFIER_COMMAND,
+  SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -133,136 +133,43 @@ export const Format = ({ activeEditor, readonly }: FormatProps) => {
     [applyStyleText]
   );
 
-  const insertLink = useCallback(() => {
-    if (!isLink) {
-      activeEditor.dispatchCommand(TOGGLE_LINK_COMMAND, sanitizeUrl('https://'));
-    } else {
-      activeEditor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
-    }
-  }, [activeEditor, isLink]);
-
-  const boldTitleMac = intl.formatMessage({
-    defaultMessage: 'Bold (⌘B)',
-    description: 'Command for bold text for Mac users',
+  const backgroundColorTitle = intl.formatMessage({
+    defaultMessage: 'Background color',
+    id: '4E69aV',
+    description: 'label to set background color',
   });
-  const boldTitleMacAriaLabel = intl.formatMessage({
-    defaultMessage: 'Format text as bold. Shortcut: ⌘B',
-    description: 'label to make bold text for Mac users',
-  });
-  const boldTitleNonMac = intl.formatMessage({
-    defaultMessage: 'Bold (Ctrl+B)',
-    description: 'Command for bold text for non-mac users',
-  });
-  const boldTitleNonMacAriaLabel = intl.formatMessage({
-    defaultMessage: 'Format text as bold. Shortcut: Ctrl+B',
-    description: 'label to make bold text for nonMac users',
-  });
-
-  const italicTitleMac = intl.formatMessage({
-    defaultMessage: 'Italic (⌘I)',
-    description: 'Command for italic text for Mac users',
-  });
-  const italicTitleMacAriaLabel = intl.formatMessage({
-    defaultMessage: 'Format text as italic. Shortcut: ⌘I',
-    description: 'label to make italic text for Mac users',
-  });
-  const italicTitleNonMac = intl.formatMessage({
-    defaultMessage: 'Italic (Ctrl+I)',
-    description: 'Command for italic text for non-mac users',
-  });
-  const italicTitleNonMacAriaLabel = intl.formatMessage({
-    defaultMessage: 'Format text as italic. Shortcut: Ctrl+I',
-    description: 'label to make italic text for nonMac users',
-  });
-
-  const underlineTitleMac = intl.formatMessage({
-    defaultMessage: 'Underline (⌘U)',
-    description: 'Command for underline text for Mac users',
-  });
-  const underlineTitleMacAriaLabel = intl.formatMessage({
-    defaultMessage: 'Format text as underline. Shortcut: ⌘U',
-    description: 'label to make underline text for Mac users',
-  });
-  const underlineTitleNonMac = intl.formatMessage({
-    defaultMessage: 'Underline (Ctrl+U)',
-    description: 'Command for underline text for non-mac users',
-  });
-  const underlineTitleNonMacAriaLabel = intl.formatMessage({
-    defaultMessage: 'Format text as underline. Shortcut: Ctrl+U',
-    description: 'label to make underline text for nonMac users',
-  });
-  const insertLinkLabel = intl.formatMessage({
-    defaultMessage: 'Insert Link',
-    description: 'label to insert link',
+  const textColorTitle = intl.formatMessage({
+    defaultMessage: 'Text color',
+    id: 'j4OKkU',
+    description: 'label to set text color',
   });
 
   return (
     <>
-      <button
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={() => {
-          activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
-        }}
-        className={'toolbar-item spaced ' + (isBold ? 'active' : '')}
-        title={isApple() ? boldTitleMac : boldTitleNonMac}
-        aria-label={isApple() ? boldTitleMacAriaLabel : boldTitleNonMacAriaLabel}
-        disabled={readonly}
-      >
-        <img className={'format'} src={bold} alt={'bold icon'} />
-      </button>
-      <button
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={() => {
-          activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic');
-        }}
-        className={'toolbar-item spaced ' + (isItalic ? 'active' : '')}
-        title={isApple() ? italicTitleMac : italicTitleNonMac}
-        aria-label={isApple() ? italicTitleMacAriaLabel : italicTitleNonMacAriaLabel}
-        disabled={readonly}
-      >
-        <img className={'format'} src={italic} alt={'italic icon'} />
-      </button>
-      <button
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={() => {
-          activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline');
-        }}
-        className={'toolbar-item spaced ' + (isUnderline ? 'active' : '')}
-        title={isApple() ? underlineTitleMac : underlineTitleNonMac}
-        aria-label={isApple() ? underlineTitleMacAriaLabel : underlineTitleNonMacAriaLabel}
-        disabled={readonly}
-      >
-        <img className={'format'} src={underline} alt={'underline icon'} />
-      </button>
-      <button
-        disabled={readonly}
-        onClick={insertLink}
-        className={'toolbar-item spaced ' + (isLink ? 'active' : '')}
-        aria-label={insertLinkLabel}
-        title={insertLinkLabel}
-      >
-        <img className={'format'} src={link} alt={'link icon'} />
-      </button>
+      <FormatBoldButton activeEditor={activeEditor} isToggledOn={isBold} readonly={readonly} />
+      <FormatItalicButton activeEditor={activeEditor} isToggledOn={isItalic} readonly={readonly} />
+      <FormatUnderlineButton activeEditor={activeEditor} isToggledOn={isUnderline} readonly={readonly} />
       <DropdownColorPicker
         editor={activeEditor}
         disabled={readonly}
         buttonClassName="toolbar-item color-picker"
         buttonAriaLabel="Formatting text color"
-        buttonIconSrc={fontColorSvg}
+        buttonIconSrc={isInverted ? fontColorSvgDark : fontColorSvgLight}
         color={fontColor}
         onChange={onFontColorSelect}
-        title="text color"
+        title={textColorTitle}
       />
       <DropdownColorPicker
         editor={activeEditor}
         disabled={readonly}
         buttonClassName="toolbar-item color-picker"
         buttonAriaLabel="Formatting background color"
-        buttonIconSrc={paintBucketSvg}
+        buttonIconSrc={isInverted ? paintBucketSvgDark : paintBucketSvgLight}
         color={bgColor}
         onChange={onBgColorSelect}
-        title="background color"
+        title={backgroundColorTitle}
       />
+      <FormatLinkButton activeEditor={activeEditor} isToggledOn={isLink} readonly={readonly} />
     </>
   );
 };

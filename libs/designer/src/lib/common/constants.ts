@@ -39,6 +39,9 @@ const SWAGGER = {
     URI: 'uri',
     UUID: 'uuid',
   },
+  COLLECTION_FORMAT: {
+    CSV: 'csv',
+  },
   EXTENSION: {
     CAPABILITIES: 'x-ms-capabilities',
   },
@@ -57,6 +60,10 @@ export default {
   API_TIER: {
     PREMIUM: 'PREMIUM',
     STANDARD: 'STANDARD',
+  },
+  SKU: {
+    STANDARD: 'standard',
+    CONSUMPTION: 'consumption',
   },
   ACTION_PALETTE_KEY: 'actionpalettekey',
   ARM_RESOURCE: {
@@ -169,6 +176,7 @@ export default {
   DEFAULT_FREQUENCY_VALUE: 'Second',
   DEFAULT_INTERVAL_VALUE: 15,
   DEFAULT_KEY_PREFIX: '$',
+  DEFAULT_MAX_STATE_HISTORY_SIZE: 0,
   DEFAULT_SCHEMA: SCHEMA.GA_20160601,
   EDITOR: {
     ARRAY: 'array',
@@ -180,6 +188,7 @@ export default {
     DICTIONARY: 'dictionary',
     DROPDOWN: 'dropdown',
     FILEPICKER: 'filepicker',
+    FLOATINGACTIONMENU: 'floatingactionmenu',
     SCHEMA: 'schema',
     STRING: 'string',
     TABLE: 'table',
@@ -187,6 +196,15 @@ export default {
     HTML: 'html',
     RECURRENCE: 'recurrence',
   },
+  EDITOR_OPTIONS: {
+    LANGUAGE: {
+      CSHARP: 'csharp',
+      JAVASCRIPT: 'javascript',
+      JSON: 'json',
+      POWERSHELL: 'powershell',
+    },
+  },
+  DEFAULT_CUSTOM_CODE_INPUT: 'CodeFile',
   EVENT_AUTH_COMPLETED: 'MSLA_AUTH_COMPLETED',
   ERROR_MESSAGES: {
     FAILED_TO_FETCH: 'Failed to fetch',
@@ -199,7 +217,7 @@ export default {
     FILE: 'file',
     FOLDER: 'folder',
   },
-  FOREACH_CURRENT_ITEM_KEY: 'builtin.$.currentItem',
+  FOREACH_CURRENT_ITEM_KEY: 'builtin.$',
   FOREACH_CURRENT_ITEM_EXPRESSION_NAME: 'items',
   FREQUENCY: {
     MONTH: 'month',
@@ -216,6 +234,7 @@ export default {
   GATEWAY_CHECKBOX_KEY: '__GATEWAY_CHECKBOX',
   GATEWAY_DEFAULT_REFRESH_INTERVAL_IN_MILLISECONDS: 15000,
   HTTP_WEBHOOK_LIST_CALLBACK_URL_NAME: 'listCallbackUrl()',
+  HTTP_WEBHOOK_LIST_CALLBACK_URL_KEY: 'system.$.function.listCallbackUrl()',
   HTTP_WEBHOOK_PARAMETER_KEYS: {
     SUBSCRIBE_AUTHENTICATION: 'subscribe_authentication',
     SUBSCRIBE_BODY: 'subscribe_body',
@@ -324,6 +343,7 @@ export default {
       ELSE: 'else',
       SWITCH_CASE: 'switchcase',
       SWITCH_DEFAULT: 'switchdefault',
+      PLACEHOLDER_TRIGGER: 'builtin:newWorkflowTrigger',
       // Action and trigger types.
       API_CONNECTION_WEBHOOK: 'apiconnectionwebhook',
       API_CONNECTION: 'apiconnection',
@@ -388,6 +408,7 @@ export default {
       SECURITY_CENTER_ALERT: 'securitycenteralert',
       SUBTRACTFROMTIME: 'subtractfromtime',
       TEAMS: 'teams',
+      TEAMSWEBHOOK: 'teamswebhook',
       VIRTUALAGENT: 'virtualagent',
       XML_TO_JSON: 'xmltojson',
       XML_TO_TEXT: 'xmltotext',
@@ -436,31 +457,31 @@ export default {
   },
   PANEL_TAB_NAMES: {
     ABOUT: 'ABOUT',
-    AUTH_CONNECTION: 'AUTH_CONNECTION',
     CODE_VIEW: 'CODE_VIEW',
-    CONNECTION_SELECTOR: 'CONNECTION_SELECTOR',
-    CONNECTION_CREATE: 'CONNECTION_CREATE',
-    CONNECTION_CREATE_ASSISTED: 'CREATE_CONNECTION_ASSISTED',
-    CONNECTION_CREATE_PARAMETER_SET: 'CREATE_PARAMETER_SET_CONNECTION',
-    EXPRESSION_TRACE: 'EXPRESSION_TRACE',
     FUNCTION_CREATE: 'FUNCTION_CREATE',
-    LOADING: 'LOADING',
     MONITORING: 'MONITORING',
     OPERATION_SELECTOR: 'OPERATION_SELECTOR',
     PARAMETERS: 'PARAMETERS',
-    QUERY_PARAMETERS: 'QUERY_PARAMETERS',
-    RECOMMENDATION: 'RECOMMENDATION',
     REQUEST_HISTORY: 'REQUEST_HISTORY',
     RETRY_HISTORY: 'RETRY_HISTORY',
     RUN_AFTER: 'RUN_AFTER',
     SCRATCH: 'SCRATCH',
     SETTINGS: 'SETTINGS',
-    SETTINGS_2: 'SETTINGS_2',
-    STATE_VIEWER: 'STATE_VIEWER',
     STATIC_RESULT: 'STATIC_RESULT',
     SWAGGER_ENDPOINT: 'SWAGGER_ENDPOINT',
-    WORKFLOW_PARAMETERS: 'WORKFLOW_PARAMETERS',
     TESTING: 'TESTING',
+  },
+  TEMPLATE_PANEL_TAB_NAMES: {
+    OVERVIEW: 'OVERVIEW',
+    WORKFLOW_VIEW: 'WORKFLOW_VIEW',
+    CONNECTIONS: 'CONNECTIONS',
+    PARAMETERS: 'PARAMETERS',
+    BASIC: 'BASIC',
+    REVIEW_AND_CREATE: 'REVIEW_AND_CREATE',
+  },
+  ERRORS_PANEL_TAB_NAMES: {
+    ERRORS: 'ERRORS',
+    WARNINGS: 'WARNINGS',
   },
   PROFILE_KEY_TYPE: {
     DESIGNER: 'designer:',
@@ -491,6 +512,24 @@ export default {
   DEFAULT_RECURRENCE: {
     interval: 3,
     frequency: 'Minute',
+  },
+  RECURRENCE_OPTIONS: {
+    FREE: {
+      interval: 1,
+      frequency: 'Hour',
+    },
+    STANDARD: {
+      interval: 1,
+      frequency: 'Minute',
+    },
+    PREMIUM: {
+      interval: 15,
+      frequency: 'Second',
+    },
+    CONSUMPTION: {
+      interval: 3,
+      frequency: 'Minute',
+    },
   },
   RECURRENCE_FREQUENCY_VALUES: ['Month', 'Week', 'Day', 'Hour', 'Minute', 'Second'],
   RECURRENCE_TITLE_JOIN_SEPARATOR: ',',
@@ -809,6 +848,7 @@ export default {
       CONCURRENCY: 'concurrency',
       REPETITIONS: 'repetitions',
       RUNS: 'runs',
+      MAXIMUM_WAITING_RUNS: 'maximumWaitingRuns',
       STATIC_RESULT: 'staticResult',
       SECURE_DATA: 'secureData',
       UPLOAD_CHUNK_SIZE: 'uploadChunkSizeInMB',
@@ -818,17 +858,16 @@ export default {
       INPUTS: 'inputs',
       OUTPUTS: 'outputs',
     },
+    SPLITON: {
+      AUTOLOAD: '@autoload()',
+    },
   },
-  SETTINGSECTIONS: {
-    RUNAFTER: 'runafter',
-    NETWORKING: 'networking',
-    DATAHANDLING: 'datahandling',
-    SECURITY: 'security',
-    TRACKING: 'tracking',
-    GENERAL: 'general',
+  MAXIMUM_WAITING_RUNS: {
+    CONSUMPTION: { min: 10, max: 200 },
+    DEFAULT: { min: 10, max: 100 },
   },
   SWAGGER,
-  SYSTEM_ASSIGNED_MANAGED_IDENTITY: 'System-assigned managed identity',
+  SYSTEM_ASSIGNED_MANAGED_IDENTITY: 'SystemAssigned_Managed_Identity',
   TIP_LOGGING_KEYS: {
     ACTION_RECOMMENDATION: 'ACTION_RECOMMENDATION',
     AUTO_CASTING_TOKEN_FOR_PARAMETER: 'AUTO_CASTING_TOKEN_FOR_PARAMETER',
@@ -851,6 +890,7 @@ export default {
   TRIGGER_BODY_OUTPUT: 'triggerBody()',
   TRIGGER_QUERIES_OUTPUT: `triggerOutputs()['queries']`,
   TRIGGER_HEADERS_OUTPUT: `triggerOutputs()['headers']`,
+  TRIGGER_STATUS_CODE_OUTPUT: `triggerOutputs()['statusCode']`,
   TRIGGER_OUTPUTS_OUTPUT: 'triggerOutputs()',
   UIDEFINITION_TYPES: {
     BOOLEAN: 'bool',
@@ -899,6 +939,7 @@ export default {
     SELECT_APPSERVICE_ACTION: 'appservice',
     SELECT_APPSERVICE_TRIGGER: 'appservicetrigger',
     SELECT_FUNCTION_ACTION: 'azurefunction',
+    SELECT_SWAGGER_FUNCTION_ACTION: 'azureswaggerfunction',
     SELECT_BATCH_WORKFLOW_ACTION: 'sendtobatch',
     SELECT_BATCH_WORKFLOW_TRIGGER: 'sendtobatchtrigger',
     SELECT_MANUAL_WORKFLOW_ACTION: 'invokeworkflow',

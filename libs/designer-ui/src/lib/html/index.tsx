@@ -1,10 +1,21 @@
+import { notEqual } from '../editor/base/utils/helper';
 import type { ValueSegment } from '../editor';
 import type { BaseEditorProps } from '../editor/base';
-import { BaseEditor } from '../editor/base';
-import { Change } from './plugins/toolbar/helper/Change';
+import { EditorWrapper } from '../editor/base/EditorWrapper';
+import { convertSegmentsToString } from '../editor/base/utils/parsesegments';
+import { HTMLChangePlugin } from './plugins/toolbar/helper/HTMLChangePlugin';
+import { isHtmlStringValueSafeForLexical } from './plugins/toolbar/helper/util';
 import { useState } from 'react';
 
-export const HTMLEditor = ({ placeholder, readonly, initialValue, getTokenPicker, onChange }: BaseEditorProps): JSX.Element => {
+const isValueSafeForLexical = (value: ValueSegment[]) => {
+  const blankNodeMap = new Map<string, ValueSegment>();
+  const initialValueString = convertSegmentsToString(value, blankNodeMap);
+  return isHtmlStringValueSafeForLexical(initialValueString, blankNodeMap);
+};
+
+export const HTMLEditor = ({ initialValue, onChange, ...baseEditorProps }: BaseEditorProps): JSX.Element => {
+  const [isValuePlaintext, setIsValuePlaintext] = useState(() => !isValueSafeForLexical(initialValue));
+  const [isSwitchFromPlaintextBlocked, setIsSwitchFromPlaintextBlocked] = useState(() => isValuePlaintext);
   const [value, setValue] = useState<ValueSegment[]>(initialValue);
 
   const onValueChange = (newValue: ValueSegment[]): void => {
@@ -12,20 +23,39 @@ export const HTMLEditor = ({ placeholder, readonly, initialValue, getTokenPicker
   };
 
   const handleBlur = () => {
-    onChange?.({ value: value });
+    if (notEqual(value, initialValue)) {
+      onChange?.({ value: value });
+    }
+  };
+
+  const handleSetIsValuePlaintext = (newIsPlaintext: boolean) => {
+    setIsValuePlaintext(newIsPlaintext);
+    setIsSwitchFromPlaintextBlocked(!isValueSafeForLexical(value));
   };
 
   return (
-    <BaseEditor
+    <EditorWrapper
+      {...baseEditorProps}
       className="msla-html-editor"
-      readonly={readonly}
-      placeholder={placeholder}
-      BasePlugins={{ tokens: true, clearEditor: true, toolbar: true }}
       initialValue={initialValue}
-      getTokenPicker={getTokenPicker}
+      basePlugins={{
+        clearEditor: true,
+        htmlEditor: isValuePlaintext ? 'raw-html' : 'rich-html',
+        ...baseEditorProps.basePlugins,
+      }}
+      tokenPickerButtonProps={{
+        ...baseEditorProps.tokenPickerButtonProps,
+        newlineVerticalOffset: 20,
+      }}
+      isSwitchFromPlaintextBlocked={isSwitchFromPlaintextBlocked}
       onBlur={handleBlur}
+      setIsValuePlaintext={handleSetIsValuePlaintext}
     >
-      <Change setValue={onValueChange} />
-    </BaseEditor>
+      <HTMLChangePlugin
+        isValuePlaintext={isValuePlaintext}
+        setIsSwitchFromPlaintextBlocked={setIsSwitchFromPlaintextBlocked}
+        setValue={onValueChange}
+      />
+    </EditorWrapper>
   );
 };

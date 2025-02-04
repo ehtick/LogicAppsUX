@@ -12,12 +12,8 @@ import type { WebviewPanel } from 'vscode';
 import * as vscode from 'vscode';
 
 export abstract class OpenMonitoringViewBase extends OpenDesignerBase {
-  protected panel: WebviewPanel;
-  protected panelGroupKey: ext.webViewKey;
   protected runId: string;
-  protected baseUrl: string;
   protected runName: string;
-  protected workflowName: string;
   protected workflowFilePath: string;
   protected localSettings: Record<string, string>;
 
@@ -49,12 +45,5 @@ export abstract class OpenMonitoringViewBase extends OpenDesignerBase {
 
   protected getExistingPanel(): WebviewPanel | undefined {
     return tryGetWebviewPanel(this.panelGroupKey, this.panelName);
-  }
-
-  protected getPanelOptions(): vscode.WebviewOptions & vscode.WebviewPanelOptions {
-    return {
-      enableScripts: true,
-      retainContextWhenHidden: true,
-    };
   }
 }

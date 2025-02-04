@@ -1,21 +1,17 @@
 import Constants from '../../constants';
 import { registerWorkflowLanguageProviders } from '../../workflow/languageservice/workflowlanguageservice';
 import { useTheme } from '@fluentui/react';
+import { EditorLanguage } from '@microsoft/logic-apps-shared';
 import Editor, { loader } from '@monaco-editor/react';
+import * as monaco from 'monaco-editor';
 import type { IScrollEvent, editor } from 'monaco-editor';
 import type { MutableRefObject } from 'react';
-import { useState, useEffect, forwardRef, useRef } from 'react';
+import { useState, useEffect, forwardRef, useRef, useCallback } from 'react';
+
+loader.config({ monaco });
 
 export interface EditorContentChangedEventArgs extends editor.IModelContentChangedEvent {
   value?: string;
-}
-// TODO: Add more languages
-export enum EditorLanguage {
-  javascript = 'javascript',
-  json = 'json',
-  xml = 'xml',
-  templateExpressionLanguage = 'TemplateExpressionLanguage',
-  yaml = 'yaml',
 }
 
 export interface MonacoProps extends MonacoOptions {
@@ -59,6 +55,7 @@ export interface MonacoOptions {
   lineHeight?: number;
   minimapEnabled?: boolean;
   scrollBeyondLastLine?: boolean;
+  hideUTFExpressions?: boolean;
   wordWrap?: 'off' | 'on' | 'wordWrapColumn' | 'bounded';
   wordWrapColumn?: number;
   contextMenu?: boolean;
@@ -81,6 +78,7 @@ export const MonacoEditor = forwardRef<editor.IStandaloneCodeEditor, MonacoProps
       minimapEnabled = false,
       value,
       scrollBeyondLastLine = false,
+      hideUTFExpressions,
       height,
       width,
       lineNumbersMinChars,
@@ -105,6 +103,7 @@ export const MonacoEditor = forwardRef<editor.IStandaloneCodeEditor, MonacoProps
       onMouseDown,
       openTokenPicker,
       label,
+      wordWrap = 'on',
       ...options
     },
     ref
@@ -113,13 +112,13 @@ export const MonacoEditor = forwardRef<editor.IStandaloneCodeEditor, MonacoProps
     const [canRender, setCanRender] = useState(false);
     const currentRef = useRef<editor.IStandaloneCodeEditor>();
 
-    const initTemplateLanguage = async () => {
+    const initTemplateLanguage = useCallback(async () => {
       const { languages, editor } = await loader.init();
       if (!languages.getLanguages().some((lang: any) => lang.id === Constants.LANGUAGE_NAMES.WORKFLOW)) {
-        registerWorkflowLanguageProviders(languages, editor);
+        registerWorkflowLanguageProviders(languages, editor, hideUTFExpressions);
       }
       setCanRender(true);
-    };
+    }, [hideUTFExpressions]);
 
     useEffect(() => {
       if (language === EditorLanguage.templateExpressionLanguage) {
@@ -127,7 +126,7 @@ export const MonacoEditor = forwardRef<editor.IStandaloneCodeEditor, MonacoProps
       } else {
         setCanRender(true);
       }
-    }, [language]);
+    }, [initTemplateLanguage, language]);
 
     const handleContextMenu = (e: editor.IEditorMouseEvent) => {
       onContextMenu?.(e);
@@ -207,8 +206,8 @@ export const MonacoEditor = forwardRef<editor.IStandaloneCodeEditor, MonacoProps
     const openTokenPickerAction: editor.IActionDescriptor = {
       id: 'open-tokenpicker',
       label: 'Open TokenPicker',
-      keybindings: [512 | 85],
-      run: function (): void | Promise<void> {
+      keybindings: [monaco.KeyMod.Alt | monaco.KeyCode.Slash],
+      run: (): void | Promise<void> => {
         openTokenPicker?.();
       },
     };
@@ -249,7 +248,7 @@ export const MonacoEditor = forwardRef<editor.IStandaloneCodeEditor, MonacoProps
     };
 
     return (
-      <div className="msla-monaco-container" style={options.monacoContainerStyle}>
+      <div className="msla-monaco-container" style={options.monacoContainerStyle} data-automation-id={`monaco-editor-${label}`}>
         {canRender ? (
           <Editor
             keepCurrentModel={true}
@@ -264,6 +263,8 @@ export const MonacoEditor = forwardRef<editor.IStandaloneCodeEditor, MonacoProps
               unicodeHighlight: { invisibleCharacters: false, nonBasicASCII: false, ambiguousCharacters: false },
               renderWhitespace: 'none',
               ariaLabel: label,
+              wordWrap,
+              language,
               ...options,
             }}
             value={value}

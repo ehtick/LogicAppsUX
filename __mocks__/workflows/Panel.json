@@ -34,7 +34,7 @@
       "Parse_JSON": {
         "type": "ParseJson",
         "inputs": {
-          "content": "@triggerBody()?['string']",
+          "content": "@{triggerBody()?['string']}@{variables('ArrayVariable')}@{parameters('EILCO Admin Nominations-OCSA List (cr773_EILCOAdminNominations_OCSA_L2)')}",
           "schema": {
             "type": "array",
             "items": {
@@ -61,11 +61,27 @@
       "Filter_array": {
         "type": "Query",
         "inputs": {
-          "from": "@body('Parse_JSON')",
-          "where": "@notcontains(length(split(item(), '|')?[0]),length(split(item(), '|')?[0]))"
+          "from": "@{body('Parse_JSON')}test",
+          "where": "@not(contains(length(split(item(), '|')?[0]),length(split(item(), '|')?[0])))"
         },
         "runAfter": {
           "Parse_JSON": ["SUCCEEDED"]
+        }
+      },
+      "HTTP": {
+        "type": "Http",
+        "inputs": {
+          "uri": "http://test.com",
+          "method": "GET",
+          "body": "@variables('ArrayVariable')"
+        },
+        "runAfter": {
+          "Filter_array": ["SUCCEEDED"]
+        },
+        "runtimeConfiguration": {
+          "contentTransfer": {
+            "transferMode": "Chunked"
+          }
         }
       }
     },
@@ -104,5 +120,10 @@
     }
   },
   "connectionReferences": {},
-  "parameters": {}
+  "parameters": {
+    "EILCO Admin Nominations-OCSA List (cr773_EILCOAdminNominations_OCSA_L2)": {
+      "type": "String",
+      "value": "test"
+    }
+  }
 }

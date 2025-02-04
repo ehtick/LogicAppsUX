@@ -18,21 +18,23 @@ const titleTextFieldStyle: Partial<ITextFieldStyles> = {
   },
 };
 
-export type TitleChangeHandler = (newValue: string) => { valid: boolean; oldValue?: string };
+export type TitleChangeHandler = (originalValue: string, newValue: string) => { valid: boolean; oldValue?: string };
 export interface PanelHeaderTitleProps {
   readOnlyMode?: boolean;
   renameTitleDisabled?: boolean;
   titleValue?: string;
   titleId?: string;
-  onChange: TitleChangeHandler;
+  onChange: (newId: string) => ReturnType<TitleChangeHandler>;
+  handleTitleUpdate: (newId: string) => void;
 }
 
 export const PanelHeaderTitle = ({
   titleValue,
-  onChange,
   titleId,
   readOnlyMode,
   renameTitleDisabled,
+  onChange,
+  handleTitleUpdate,
 }: PanelHeaderTitleProps): JSX.Element => {
   const intl = useIntl();
 
@@ -44,16 +46,17 @@ export const PanelHeaderTitle = ({
 
   const onTitleChange = (_: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, newValue?: string): void => {
     const result = onChange(newValue || '');
-    if (!result.valid) {
+    if (result.valid) {
+      setErrorMessage('');
+    } else {
       setErrorMessage(
         intl.formatMessage({
-          defaultMessage: 'The name already exists or is invalid, please update it before proceeding.',
+          defaultMessage: 'The name already exists or is invalid. Update the name before you continue.',
+          id: '0xLWzG',
           description: 'Text for invalid operation title name',
         })
       );
       setValidValue(result.oldValue);
-    } else {
-      setErrorMessage('');
     }
 
     setNewTitleValue(newValue || '');
@@ -64,12 +67,16 @@ export const PanelHeaderTitle = ({
       onChange(validValue || '');
       setNewTitleValue(validValue);
       setErrorMessage('');
+      handleTitleUpdate(validValue || '');
+    } else {
+      handleTitleUpdate(newTitleValue ?? '');
     }
   };
 
   const readOnly = readOnlyMode || renameTitleDisabled;
   const panelHeaderCardTitle = intl.formatMessage({
-    defaultMessage: 'Card Title',
+    defaultMessage: 'Card title',
+    id: 's5AOpV',
     description: 'Label for the title for panel header card',
   });
 

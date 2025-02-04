@@ -1,29 +1,50 @@
-import { getStatusString } from '../../utils';
+import { Tooltip } from '@fluentui/react-components';
+import { getDurationStringFromTimes, getStatusString } from '../../utils';
 import { StatusIcon } from './statusicon';
-import { css, TooltipHost } from '@fluentui/react';
+import { css } from '@fluentui/react';
+import { replaceWhiteSpaceWithUnderscore } from '@microsoft/logic-apps-shared';
 
 export interface StatusPillProps {
+  id: string;
   duration?: string;
-  durationAnnounced?: string;
+  startTime?: string;
+  endTime?: string;
   hasRetries?: boolean;
-  id?: string;
-  status: string;
+  status?: string;
+  resubmittedResults?: boolean;
 }
 
-export const StatusPill: React.FC<StatusPillProps> = ({ duration, durationAnnounced, hasRetries = false, id, status }) => {
+export const StatusPill: React.FC<StatusPillProps> = ({
+  id,
+  duration = '0s',
+  startTime,
+  endTime,
+  hasRetries = false,
+  resubmittedResults = false,
+  status,
+}) => {
   const statusString = getStatusString(status, hasRetries);
-  const durationString = [durationAnnounced, statusString].join('. ');
-  const statusOnly = !duration || duration === '--';
-  const label = statusOnly ? statusString : durationString;
+  let tooltipLabel = statusString;
+  const statusOnly = !duration || duration === '--' || !startTime || !endTime;
+  if (!statusOnly) {
+    const fullDurationString = getDurationStringFromTimes(startTime, endTime, false);
+    tooltipLabel = [fullDurationString, statusString].join('. ');
+  }
 
   return (
-    <div id={id} aria-label={label} role="status" className={css('msla-pill', statusOnly && 'status-only')}>
-      <TooltipHost content={label}>
+    <div
+      id={id}
+      data-automation-id={`msla-pill-${replaceWhiteSpaceWithUnderscore(id)}`}
+      aria-label={tooltipLabel}
+      role="status"
+      className={css('msla-pill', statusOnly && 'status-only')}
+    >
+      <Tooltip content={tooltipLabel} relationship="description" withArrow>
         <div className="msla-pill--inner">
           {!statusOnly && <span aria-hidden={true}>{duration}</span>}
-          <StatusIcon hasRetries={hasRetries} status={status} />
+          <StatusIcon hasRetries={hasRetries} status={status} iconOpacity={resubmittedResults ? '50%' : '100%'} />
         </div>
-      </TooltipHost>
+      </Tooltip>
     </div>
   );
 };

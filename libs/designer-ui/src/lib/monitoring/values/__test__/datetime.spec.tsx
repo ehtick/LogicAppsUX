@@ -4,7 +4,7 @@ import * as ReactShallowRenderer from 'react-test-renderer/shallow';
 import { getTestIntl } from '../../../__test__/intl-test-helper';
 import { DateTimeValue } from '../datetime';
 import type { ValueProps } from '../types';
-
+import { describe, vi, beforeEach, afterEach, beforeAll, afterAll, it, test, expect } from 'vitest';
 describe('ui/monitoring/values/datetime', () => {
   let props: ValueProps, renderer: ReactShallowRenderer.ShallowRenderer;
 
@@ -20,7 +20,7 @@ describe('ui/monitoring/values/datetime', () => {
     renderer.unmount();
   });
 
-  it('should render', () => {
+  it('should render with local time', () => {
     const options: FormatDateOptions = {
       day: 'numeric',
       hour: 'numeric',
@@ -28,7 +28,6 @@ describe('ui/monitoring/values/datetime', () => {
       minute: 'numeric',
       month: 'numeric',
       second: 'numeric',
-      timeZone: 'UTC',
       year: 'numeric',
     };
 
@@ -38,7 +37,7 @@ describe('ui/monitoring/values/datetime', () => {
     expect(value.props.displayName).toBe(props.displayName);
 
     const intl = getTestIntl();
-    const expected = intl.formatDate(props.value, options);
+    const expected = intl.formatDate(props.value, options) + ' (Local time)';
     expect(value.props.value).toBe(expected);
   });
 });

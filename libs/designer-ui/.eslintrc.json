@@ -1,16 +1,7 @@
 {
-  "extends": ["plugin:@nrwl/nx/react", "../../.eslintrc.json"],
-  "ignorePatterns": ["!**/*"],
-  "rules": {
-    "react/jsx-no-literals": [2]
-  },
+  "extends": ["../../.eslintrc.json"],
+  "ignorePatterns": ["!**/*", "**/node_modules/**", "**/build/**", "**/__test__/**", "**/__tests__/**"],
   "overrides": [
-    {
-      "files": ["*.test.ts", "*.test.tsx", "*.spec.tsx", "*.spec.ts"],
-      "rules": {
-        "react/jsx-no-literals": "off"
-      }
-    },
     {
       "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
       "rules": {}

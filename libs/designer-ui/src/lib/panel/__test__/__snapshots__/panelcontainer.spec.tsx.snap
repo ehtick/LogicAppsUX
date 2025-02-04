@@ -1,50 +1,33 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`ui/workflowparameters/workflowparameter should construct. 1`] = `
-<StyledPanelBase
-  aria-label="panel"
+exports[`ui/panel/panelContainer > should construct 1`] = `
+<Drawer
+  aria-label="Operation details panel"
   className="msla-panel-container"
-  customWidth="630px"
-  focusTrapZoneProps={
-    Object {
-      "disabled": false,
+  modalType="non-modal"
+  mountNode={
+    {
+      "className": "msla-panel-host-container",
+      "element": undefined,
     }
   }
-  hasCloseButton={false}
-  headerClassName="msla-panel-header"
-  headerText="test title"
-  isBlocking={false}
-  isOpen={true}
-  onRenderHeader={[Function]}
-  styles={
-    Object {
-      "content": Object {
-        "padding": "1rem 2rem",
-      },
-      "main": Object {
-        "overflow": "hidden",
-      },
-      "scrollableContent": Object {
-        "height": "100%",
-      },
+  open={true}
+  position="end"
+  style={
+    {
+      "height": "100%",
+      "maxWidth": "100%",
+      "position": "relative",
+      "width": "630px",
     }
   }
-  type={7}
 >
   <React.Fragment>
     <div
-      className="msla-panel-page"
+      className="msla-panel-container-nested msla-panel-container-nested-right"
     >
-      <PanelPivot
-        isCollapsed={false}
-        onTabChange={[Function]}
-        tabs={Object {}}
-        trackEvent={[MockFunction]}
-      />
-      <PanelContent
-        tabs={Object {}}
-      />
+      <React.Fragment />
     </div>
   </React.Fragment>
-</StyledPanelBase>
+</Drawer>
 `;

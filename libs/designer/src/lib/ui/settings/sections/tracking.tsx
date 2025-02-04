@@ -1,7 +1,8 @@
 import type { SectionProps, TextChangeHandler } from '..';
-import constants from '../../../common/constants';
+import { SettingSectionName } from '..';
 import type { SettingsSectionProps } from '../settingsection';
-import { SettingsSection, SettingLabel } from '../settingsection';
+import { SettingsSection } from '../settingsection';
+import { getSettingLabel } from '@microsoft/designer-ui';
 import { useCallback } from 'react';
 import { useIntl } from 'react-intl';
 
@@ -13,37 +14,40 @@ export interface TrackingSectionProps extends SectionProps {
 }
 
 export const Tracking = ({
+  nodeId,
   readOnly,
-  correlation,
   expanded,
-  onHeaderClick,
+  correlation,
   trackedProperties,
+  validationErrors,
+  onHeaderClick,
   onClientTrackingIdChange,
   onTrackedPropertiesDictionaryValueChanged,
   onTrackedPropertiesStringValueChange,
-  validationErrors,
 }: TrackingSectionProps): JSX.Element | null => {
   const intl = useIntl();
 
   const trackedPropertiesTitle = intl.formatMessage({
-    defaultMessage: 'Tracked Properties',
+    defaultMessage: 'Tracked properties',
+    id: 'Pk4cb+',
     description: 'title for tracked properties setting',
   });
 
   const clientIdTrackingTitle = intl.formatMessage({
-    defaultMessage: 'Custom Tracking Id',
+    defaultMessage: 'Custom tracking ID',
+    id: 'M6GI6z',
     description: 'title for client tracking id setting',
   });
   const clientTrackingTootltipText = intl.formatMessage({
-    defaultMessage: 'Set the tracking id for the run. For split-on this tracking id is for the initiating request.',
+    defaultMessage: 'Set the tracking ID for the run. For split-on this tracking ID is for the initiating request',
+    id: '9uv02q',
     description: 'description for client tracking id setting',
   });
   const trackingTitle = intl.formatMessage({
     defaultMessage: 'Tracking',
+    id: '0KMjv6',
     description: 'title for tracking component',
   });
-
-  const trackedPropertiesLabel = <SettingLabel labelText={trackedPropertiesTitle} isChild={false} />;
 
   const onTrackedPropertiesChangeCallback = useCallback(
     (newVal: Record<string, string>) => onTrackedPropertiesDictionaryValueChanged(newVal),
@@ -60,14 +64,11 @@ export const Tracking = ({
     [onClientTrackingIdChange]
   );
 
-  const clientTrackingIdLabel = (
-    <SettingLabel labelText={clientIdTrackingTitle} infoTooltipText={clientTrackingTootltipText} isChild={false} />
-  );
-
   const trackingSectionProps: SettingsSectionProps = {
     id: 'tracking',
+    nodeId,
     title: trackingTitle,
-    sectionName: constants.SETTINGSECTIONS.TRACKING,
+    sectionName: SettingSectionName.TRACKING,
     expanded,
     isReadOnly: readOnly,
     onHeaderClick,
@@ -78,7 +79,7 @@ export const Tracking = ({
           readOnly,
           value: (correlation?.value?.clientTrackingId ?? '') as any,
           onValueChange: onClientTrackingIdChangeCallback as any,
-          customLabel: () => clientTrackingIdLabel,
+          customLabel: getSettingLabel(clientIdTrackingTitle, clientTrackingTootltipText),
           ariaLabel: clientIdTrackingTitle,
         },
         visible: correlation?.isSupported,
@@ -90,7 +91,7 @@ export const Tracking = ({
           values: trackedProperties?.value,
           onDictionaryChange: onTrackedPropertiesChangeCallback as any,
           onTextFieldChange: onTrackedPropertiesStringValueChanged as any,
-          customLabel: () => trackedPropertiesLabel,
+          customLabel: getSettingLabel(trackedPropertiesTitle),
           ariaLabel: trackedPropertiesTitle,
         },
         visible: trackedProperties?.isSupported,

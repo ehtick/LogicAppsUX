@@ -4,7 +4,7 @@ import EditorTheme from '../themes/editorTheme';
 import { AutoLinkNode, LinkNode } from '@lexical/link';
 import { ListItemNode, ListNode } from '@lexical/list';
 import { HeadingNode } from '@lexical/rich-text';
-import { TextNode } from 'lexical';
+import { LineBreakNode, TextNode } from 'lexical';
 
 const onError = (error: Error) => {
   console.error(error);
@@ -24,7 +24,8 @@ export const htmlNodes = [
   ListItemNode,
   HeadingNode,
   ExtentedTextNode,
-  { replace: TextNode, with: (node: TextNode) => new ExtentedTextNode(node.__text, node.__key) },
+  LineBreakNode,
+  { replace: TextNode, with: (node: TextNode) => new ExtentedTextNode(node.__text) },
 ];
 
 export const defaultNodes = [AutoLinkNode, LinkNode, TokenNode];

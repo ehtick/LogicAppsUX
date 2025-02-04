@@ -1,20 +1,22 @@
 import { QueryKeys } from '../../../run-service';
 import type { IValidationData } from '../../../run-service';
 import { ApiService } from '../../../run-service/export';
+import { updateValidationState } from '../../../state/WorkflowSlice';
 import type { AppDispatch, RootState } from '../../../state/store';
-import { updateValidationState } from '../../../state/vscodeSlice';
-import type { InitializedVscodeState } from '../../../state/vscodeSlice';
+import { VSCodeContext } from '../../../webviewCommunication';
 import { ReviewList } from '../../components/reviewList/reviewList';
 import { getOverallValidationStatus, parseValidationData } from './helper';
-import { MessageBar, MessageBarType, Text } from '@fluentui/react';
-import { useMemo } from 'react';
+import { MessageBar, MessageBarType } from '@fluentui/react';
+import { useContext, useMemo } from 'react';
 import { useIntl } from 'react-intl';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useDispatch, useSelector } from 'react-redux';
+import { LargeText, XLargeText } from '@microsoft/designer-ui';
 
 export const Validation: React.FC = () => {
-  const vscodeState = useSelector((state: RootState) => state.vscode);
-  const { baseUrl, accessToken, exportData, cloudHost } = vscodeState as InitializedVscodeState;
+  const vscode = useContext(VSCodeContext);
+  const workflowState = useSelector((state: RootState) => state.workflow);
+  const { baseUrl, accessToken, exportData, cloudHost } = workflowState;
   const { selectedWorkflows, location, selectedSubscription, selectedAdvanceOptions } = exportData;
 
   const dispatch: AppDispatch = useDispatch();
@@ -23,15 +25,17 @@ export const Validation: React.FC = () => {
   const intlText = {
     WORKFLOW_GROUP_DISPLAY_NAME: intl.formatMessage({
       defaultMessage: 'Workflow',
+      id: '42jhB0',
       description: 'Review export status title',
     }),
     REVIEW_TITLE: intl.formatMessage({
       defaultMessage: 'Review export status',
+      id: 'Z1yTm5',
       description: 'Review export status title',
     }),
     REVIEW_DESCRIPTION: intl.formatMessage({
-      defaultMessage:
-        "This section shows the export status for elements in your selected logic apps. For example, some parameters types aren't supported, and some connections might not successfully export. For guidance to resolve these issues, review the following steps.",
+      defaultMessage: `This section shows the export status for elements in your selected logic apps. For example, some parameters types aren't supported, and some connections might not successfully export. For guidance to resolve these issues, review the following steps.`,
+      id: 'bv6P+5',
       description: 'Review export description',
     }),
   };
@@ -41,8 +45,9 @@ export const Validation: React.FC = () => {
       baseUrl,
       accessToken,
       cloudHost,
+      vscodeContext: vscode,
     });
-  }, [accessToken, baseUrl, cloudHost]);
+  }, [accessToken, baseUrl, cloudHost, vscode]);
 
   const validateWorkflows = () => {
     return apiService.validateWorkflows(selectedWorkflows, selectedSubscription, location, selectedAdvanceOptions);
@@ -80,12 +85,8 @@ export const Validation: React.FC = () => {
 
   return (
     <div className="msla-export-validation">
-      <Text variant="xLarge" block>
-        {intlText.REVIEW_TITLE}
-      </Text>
-      <Text variant="large" block>
-        {intlText.REVIEW_DESCRIPTION}
-      </Text>
+      <XLargeText text={intlText.REVIEW_TITLE} style={{ display: 'block' }} />
+      <LargeText text={intlText.REVIEW_DESCRIPTION} style={{ display: 'block' }} />
       <div className="msla-export-validation-list">
         {isError ? validationError : null}
         <ReviewList isValidationLoading={isValidationLoading} validationItems={validationItems} validationGroups={validationGroups} />

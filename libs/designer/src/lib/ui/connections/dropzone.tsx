@@ -1,88 +1,144 @@
-import { expandDiscoveryPanel } from '../../core/state/panel/panelSlice';
-import { useAllGraphParents, useGetAllAncestors, useNodeDisplayName, useNodeGraphId } from '../../core/state/workflow/workflowSelectors';
-import { AllowDropTarget } from './dynamicsvgs/allowdroptarget';
-import { BlockDropTarget } from './dynamicsvgs/blockdroptarget';
-import AddBranchIcon from './edgeContextMenuSvgs/addBranchIcon.svg';
-import AddNodeIcon from './edgeContextMenuSvgs/addNodeIcon.svg';
-import { ActionButton, Callout, DirectionalHint, FocusZone } from '@fluentui/react';
-import { useBoolean } from '@fluentui/react-hooks';
+/* eslint-disable react/display-name */
+import { memo, useCallback, useMemo, useRef } from 'react';
+import { useDispatch } from 'react-redux';
+import { useDrop } from 'react-dnd';
+import { useHotkeys } from 'react-hotkeys-hook';
+import { useIntl } from 'react-intl';
 import { css } from '@fluentui/utilities';
 import { ActionButtonV2 } from '@microsoft/designer-ui';
-import { guid } from '@microsoft/utils-logic-apps';
-import { useCallback } from 'react';
-import { useDrop } from 'react-dnd';
-import { useIntl } from 'react-intl';
-import { useDispatch } from 'react-redux';
+import {
+  containsIdTag,
+  normalizeAutomationId,
+  removeIdTag,
+  replaceWhiteSpaceWithUnderscore,
+  LogEntryLevel,
+  LoggerService,
+} from '@microsoft/logic-apps-shared';
+
+import { useNodesTokenDependencies } from '../../core/state/operation/operationSelector';
+import type { AppDispatch } from '../../core';
+import { pasteOperation, pasteScopeOperation } from '../../core/actions/bjsworkflow/copypaste';
+import { useUpstreamNodes } from '../../core/state/tokens/tokenSelectors';
+import {
+  useAllGraphParents,
+  useGetAllOperationNodesWithin,
+  useNodeDisplayName,
+  useNodeMetadata,
+} from '../../core/state/workflow/workflowSelectors';
+import { AllowDropTarget } from './dynamicsvgs/allowdroptarget';
+import { BlockDropTarget } from './dynamicsvgs/blockdroptarget';
+import { retrieveClipboardData } from '../../core/utils/clipboard';
+import { setEdgeContextMenuData } from '../../core/state/designerView/designerViewSlice';
+import { canDropItem } from './helpers';
+import { useIsDraggingNode } from '../../core/hooks/useIsDraggingNode';
+import { useIsDarkMode } from '../../core/state/designerOptions/designerOptionsSelectors';
 
 export interface DropZoneProps {
   graphId: string;
   parentId?: string;
   childId?: string;
   isLeaf?: boolean;
+  tabIndex?: number;
 }
 
-export const DropZone: React.FC<DropZoneProps> = ({ graphId, parentId, childId, isLeaf = false }) => {
+export const DropZone: React.FC<DropZoneProps> = memo(({ graphId, parentId, childId, isLeaf = false, tabIndex = 0 }) => {
   const intl = useIntl();
-  const dispatch = useDispatch();
-  const [showCallout, { toggle: toggleIsCalloutVisible }] = useBoolean(false);
+  const dispatch = useDispatch<AppDispatch>();
+  const isDarkMode = useIsDarkMode();
 
-  const newActionText = intl.formatMessage({
-    defaultMessage: 'Add an action',
-    description: 'Text for button to add a new action',
-  });
+  const nodeMetadata = useNodeMetadata(removeIdTag(parentId ?? ''));
+  // For subgraph nodes, we want to use the id of the scope node as the parentId to get the dependancies
+  const newParentId = useMemo(() => {
+    if (nodeMetadata?.subgraphType) {
+      return nodeMetadata.parentNodeId;
+    }
+    return parentId;
+  }, [nodeMetadata, parentId]);
 
-  const newBranchText = intl.formatMessage({
-    defaultMessage: 'Add a parallel branch',
-    description: 'Text for button to add a parallel branch',
-  });
+  const upstreamNodesOfChild = useUpstreamNodes(removeIdTag(childId ?? newParentId ?? ''), graphId, childId);
+  const immediateAncestor = useGetAllOperationNodesWithin(parentId && !containsIdTag(parentId) ? parentId : '');
+  const upstreamNodes = useMemo(() => new Set([...upstreamNodesOfChild, ...immediateAncestor]), [immediateAncestor, upstreamNodesOfChild]);
+  const upstreamNodesDependencies = useNodesTokenDependencies(upstreamNodes);
+  const upstreamScopeArr = useAllGraphParents(graphId);
+  const upstreamScopes = useMemo(() => new Set(upstreamScopeArr), [upstreamScopeArr]);
 
-  const openAddNodePanel = useCallback(() => {
-    const newId = guid();
+  const handlePasteClicked = useCallback(async () => {
     const relationshipIds = { graphId, childId, parentId };
-    dispatch(expandDiscoveryPanel({ nodeId: newId, relationshipIds }));
-  }, [dispatch, graphId, childId, parentId]);
+    const copiedNode = await retrieveClipboardData();
+    if (copiedNode) {
+      if (copiedNode?.isScopeNode) {
+        dispatch(
+          pasteScopeOperation({
+            relationshipIds,
+            nodeId: copiedNode.nodeId,
+            serializedValue: copiedNode.serializedOperation,
+            allConnectionData: copiedNode.allConnectionData,
+            staticResults: copiedNode.staticResults,
+            upstreamNodeIds: upstreamNodesOfChild,
+          })
+        );
+      } else {
+        dispatch(
+          pasteOperation({
+            relationshipIds,
+            nodeId: copiedNode.nodeId,
+            nodeData: copiedNode.nodeData,
+            nodeTokenData: copiedNode.nodeTokenData,
+            operationInfo: copiedNode.nodeOperationInfo,
+            connectionData: copiedNode.nodeConnectionData,
+            comment: copiedNode.nodeComment,
+          })
+        );
+      }
+      LoggerService().log({
+        area: 'DropZone:handlePasteClicked',
+        level: LogEntryLevel.Verbose,
+        message: 'New node added via paste.',
+      });
+    }
+  }, [graphId, childId, parentId, dispatch, upstreamNodesOfChild]);
 
-  const addParallelBranch = useCallback(() => {
-    const newId = guid();
-    const relationshipIds = { graphId, childId: undefined, parentId };
-    dispatch(expandDiscoveryPanel({ nodeId: newId, relationshipIds, isParallelBranch: true }));
-  }, [dispatch, graphId, parentId]);
+  const hotkeyRef = useHotkeys(
+    ['meta+v', 'ctrl+v'],
+    async () => {
+      const copiedNode = await retrieveClipboardData();
+      const pasteEnabled = !!copiedNode;
+      if (pasteEnabled) {
+        handlePasteClicked();
+      }
+    },
+    { preventDefault: true }
+  );
 
-  const graphParents = useAllGraphParents(graphId);
-  const allAncestors = useGetAllAncestors(childId ?? '');
-  const parentGID = useNodeGraphId(parentId ?? '');
-  const childGID = useNodeGraphId(childId ?? '');
-  const [{ isOver, canDrop }, drop] = useDrop(
+  const isDragging = useIsDraggingNode();
+
+  const [{ canDrop }, drop] = useDrop(
     () => ({
       accept: 'BOX',
       drop: () => ({ graphId, parentId, childId }),
-      canDrop: (item: { id: string; dependencies?: string[]; graphId?: string }) => {
-        if (item.graphId !== parentGID && item.graphId !== childGID) {
-          return false;
-        }
-        for (const dec of item.dependencies ?? []) {
-          if (!allAncestors.has(dec)) {
-            return false;
-          }
-        }
-        if (graphParents.includes(item.id)) return false;
-        return item.id !== childId && item.id !== parentId;
-      },
+      canDrop: (item: {
+        id: string;
+        dependencies?: string[];
+        loopSources?: string[];
+        graphId?: string;
+        isScope?: boolean;
+      }) => canDropItem(item, upstreamNodes, upstreamNodesDependencies, upstreamScopes, childId, parentId),
       collect: (monitor) => ({
-        isOver: monitor.isOver(),
         canDrop: monitor.canDrop(),
       }),
     }),
-    [graphId, parentId, childId]
+    [graphId, parentId, childId, upstreamNodes, upstreamNodesDependencies]
   );
 
-  const parentName = useNodeDisplayName(parentId);
+  const parentName = useNodeDisplayName(removeIdTag(parentId ?? ''));
   const childName = useNodeDisplayName(childId);
+  const parentSubgraphName = useNodeDisplayName(parentId && containsIdTag(parentId) ? removeIdTag(parentId) : '');
 
   const tooltipText = childId
     ? intl.formatMessage(
         {
           defaultMessage: 'Insert a new step between {parentName} and {childName}',
+          id: 'CypYLs',
           description: 'Tooltip for the button to add a new step (action or branch)',
         },
         {
@@ -90,78 +146,88 @@ export const DropZone: React.FC<DropZoneProps> = ({ graphId, parentId, childId, 
           childName,
         }
       )
-    : intl.formatMessage(
-        {
-          defaultMessage: 'Insert a new step after {parentName}',
-          description: 'Tooltip for the button to add a new step (action or branch)',
-        },
-        {
-          parentName,
-        }
+    : parentSubgraphName
+      ? intl.formatMessage(
+          {
+            defaultMessage: 'Insert a new step in {parentSubgraphName}',
+            id: 'RjvpD+',
+            description: 'Tooltip for the button to add a new step under subgraph',
+          },
+          {
+            parentSubgraphName,
+          }
+        )
+      : intl.formatMessage(
+          {
+            defaultMessage: 'Insert a new step after {parentName}',
+            id: '2r30S9',
+            description: 'Tooltip for the button to add a new step (action or branch)',
+          },
+          {
+            parentName,
+          }
+        );
+
+  const actionButtonClick = useCallback(
+    async (e: React.MouseEvent<HTMLButtonElement>) => {
+      const rect = buttonRef.current?.getBoundingClientRect();
+      e.preventDefault();
+      dispatch(
+        setEdgeContextMenuData({
+          graphId,
+          parentId,
+          childId,
+          isLeaf,
+          location: {
+            x: (rect?.left ?? 0) + (rect?.width ?? 0),
+            y: (rect?.top ?? 0) + (rect?.height ?? 0) / 2,
+          },
+        })
       );
+    },
+    [dispatch, graphId, parentId, childId, isLeaf]
+  );
 
-  const actionButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    toggleIsCalloutVisible();
-  };
+  const buttonId = normalizeAutomationId(
+    `msla-edge-button-${replaceWhiteSpaceWithUnderscore(parentName)}-${replaceWhiteSpaceWithUnderscore(childName) || 'undefined'}`
+  );
 
-  const buttonId = `msla-edge-button-${parentId}-${childId}`.replace(/\W/g, '-');
+  const automationId = useCallback(
+    (buttonName: string) =>
+      normalizeAutomationId(
+        `msla-${buttonName}-button-${replaceWhiteSpaceWithUnderscore(parentName)}-${
+          replaceWhiteSpaceWithUnderscore(childName) || 'undefined'
+        }`
+      ),
+    [parentName, childName]
+  );
 
-  const showParallelBranchButton = !isLeaf && parentId;
+  const buttonRef = useRef<HTMLDivElement>(null);
 
   return (
     <div
-      ref={drop}
-      className={css('msla-drop-zone-viewmanager2', isOver && canDrop && 'canDrop', isOver && !canDrop && 'cannotDrop')}
-      style={{ display: 'grid', placeItems: 'center', width: '100%', height: '100%' }}
+      ref={(node) => {
+        drop(node);
+        hotkeyRef.current = node;
+      }}
+      className={css('msla-drop-zone-viewmanager', isDragging && (canDrop ? 'canDrop' : 'cannotDrop'))}
     >
-      {isOver && (
-        <div style={{ height: '24px', display: 'grid', placeItems: 'center' }}>
-          {canDrop ? <AllowDropTarget fill="#0078D4" /> : <BlockDropTarget fill="#797775" />}
+      {isDragging && (
+        <div style={{ display: 'grid', placeItems: 'center' }}>
+          {canDrop ? <AllowDropTarget fill="#0078D4" /> : <BlockDropTarget fill={isDarkMode ? '#252423' : '#edebe9'} />}
         </div>
       )}
-      {!isOver && (
-        <>
+      {!isDragging && (
+        <div ref={buttonRef}>
           <ActionButtonV2
             id={buttonId}
+            dataAutomationId={automationId('plus')}
+            tabIndex={tabIndex}
             title={tooltipText}
             onClick={actionButtonClick}
-            dataAutomationId={`msla-plus-button-${parentId}-${childId}`.replace(/\W/g, '-')}
           />
-          {showCallout && (
-            <Callout
-              role="dialog"
-              gapSpace={0}
-              target={`#${buttonId}`}
-              onDismiss={toggleIsCalloutVisible}
-              onMouseLeave={toggleIsCalloutVisible}
-              directionalHint={DirectionalHint.bottomCenter}
-              setInitialFocus
-            >
-              <FocusZone>
-                <div className="msla-add-context-menu">
-                  <ActionButton
-                    iconProps={{ imageProps: { src: AddNodeIcon } }}
-                    onClick={openAddNodePanel}
-                    data-automation-id={`msla-add-action-${parentId}-${childId}`.replace(/\W/g, '-')}
-                  >
-                    {newActionText}
-                  </ActionButton>
-                  {showParallelBranchButton ? (
-                    <ActionButton
-                      iconProps={{ imageProps: { src: AddBranchIcon } }}
-                      onClick={addParallelBranch}
-                      data-automation-id={`msla-add-parallel-branch-${parentId}-${childId}`.replace(/\W/g, '-')}
-                    >
-                      {newBranchText}
-                    </ActionButton>
-                  ) : null}
-                </div>
-              </FocusZone>
-            </Callout>
-          )}
-        </>
+        </div>
       )}
     </div>
   );
-};
+});

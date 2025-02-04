@@ -1,13 +1,14 @@
 import type { ElkExtendedEdge } from 'elkjs/lib/elk-api';
-import React, { useMemo } from 'react';
-import { getSmoothStepPath } from 'reactflow';
-import type { EdgeProps } from 'reactflow';
+import type React from 'react';
+import { useMemo } from 'react';
+import { getSmoothStepPath, type EdgeProps } from '@xyflow/react';
 
 export interface LogicAppsEdgeProps {
   id: string;
-  parent: string;
-  child: string;
+  source: string;
+  target: string;
   elkEdge?: ElkExtendedEdge;
+  style?: React.CSSProperties;
 }
 
 export const OnlyEdge: React.FC<EdgeProps<LogicAppsEdgeProps>> = ({
@@ -31,5 +32,5 @@ export const OnlyEdge: React.FC<EdgeProps<LogicAppsEdgeProps>> = ({
     });
   }, [sourcePosition, sourceX, sourceY, targetPosition, targetX, targetY]);
 
-  return <path id={id} style={style} className="react-flow__edge-path" d={d} />;
+  return <path id={id} style={style} className="react-flow__edge-path" d={d as any} />;
 };

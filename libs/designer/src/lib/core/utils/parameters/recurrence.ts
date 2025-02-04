@@ -1,21 +1,9 @@
 import constants from '../../../common/constants';
+import { getReactQueryClient } from '../../ReactQueryProvider';
 import { loadParameterValuesFromDefault, toParameterInfoMap } from './helper';
 import type { ParameterInfo } from '@microsoft/designer-ui';
-import { OutputMapKey, SchemaProcessor, toInputParameter } from '@microsoft/parsers-logic-apps';
-import type { OpenAPIV2, RecurrenceSetting } from '@microsoft/utils-logic-apps';
-import { map, RecurrenceType } from '@microsoft/utils-logic-apps';
-
-export interface Recurrence {
-  frequency: string | undefined;
-  interval: number | undefined;
-  startTime?: string;
-  timeZone?: string;
-  schedule?: {
-    hours?: string[];
-    minutes?: number[];
-    weekDays?: string[];
-  };
-}
+import { OutputMapKey, SchemaProcessor, toInputParameter, map, RecurrenceType } from '@microsoft/logic-apps-shared';
+import type { InputParameter, OpenAPIV2, RecurrenceSetting } from '@microsoft/logic-apps-shared';
 
 const getRecurrenceSchema = (recurrenceType?: RecurrenceType): OpenAPIV2.SchemaObject => {
   return {
@@ -35,9 +23,12 @@ const getRecurrenceSchema = (recurrenceType?: RecurrenceType): OpenAPIV2.SchemaO
   };
 };
 
-export const getRecurrenceParameters = (recurrence: RecurrenceSetting | undefined, operationDefinition: any): ParameterInfo[] => {
+export const getRecurrenceParameters = (
+  recurrence: RecurrenceSetting | undefined,
+  operationDefinition: any
+): { parameters: ParameterInfo[]; rawParameters: InputParameter[] } => {
   if (!recurrence || recurrence.type === RecurrenceType.None) {
-    return [];
+    return { parameters: [], rawParameters: [] };
   }
 
   const schema = getRecurrenceSchema(recurrence.type);
@@ -49,23 +40,25 @@ export const getRecurrenceParameters = (recurrence: RecurrenceSetting | undefine
     expandArrayOutputs: false,
   })
     .getSchemaProperties(schema)
-    .map((item) => toInputParameter(item, true /* suppressCasting */));
+    .map((item) => toInputParameter(item, /* suppressCasting */ true));
 
-  const defaultRecurrence = constants.DEFAULT_RECURRENCE;
+  const queryClient = getReactQueryClient();
+  const recurrenceInterval = queryClient.getQueryData(['recurrenceInterval']);
+  const recurrenceValue = recurrenceInterval ?? constants.DEFAULT_RECURRENCE;
 
   for (const parameter of recurrenceParameters) {
     if (!parameter.default) {
-      parameter.default = defaultRecurrence;
+      parameter.default = recurrenceValue;
     }
   }
 
   if (operationDefinition) {
     for (const parameter of recurrenceParameters) {
-      parameter.value = operationDefinition?.recurrence ?? defaultRecurrence;
+      parameter.value = operationDefinition?.recurrence ?? recurrenceValue;
     }
   } else {
     loadParameterValuesFromDefault(map(recurrenceParameters, OutputMapKey));
   }
 
-  return toParameterInfoMap(recurrenceParameters, operationDefinition);
+  return { parameters: toParameterInfoMap(recurrenceParameters, operationDefinition), rawParameters: recurrenceParameters };
 };

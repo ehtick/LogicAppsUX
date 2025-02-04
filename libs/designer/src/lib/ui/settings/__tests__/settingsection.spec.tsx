@@ -1,9 +1,13 @@
 import { SettingsSection } from '../settingsection';
 import type { SettingsSectionProps } from '../settingsection';
 import * as ReactShallowRenderer from 'react-test-renderer/shallow';
+import { describe, beforeEach, afterEach, it, expect, vi } from 'vitest';
+
+import * as PanelSelectors from '../../../core/state/panel/panelSelectors';
 
 describe('ui/settings/settingsection', () => {
-  let minimal: SettingsSectionProps, renderer: ReactShallowRenderer.ShallowRenderer;
+  let minimal: SettingsSectionProps;
+  let renderer: ReactShallowRenderer.ShallowRenderer;
 
   beforeEach(() => {
     minimal = {
@@ -49,8 +53,8 @@ describe('ui/settings/settingsection', () => {
           settingProp: {
             textFieldValue: 'This is a test value',
             textFieldLabel: 'Test Label',
-            onToggleLabel: 'On',
-            offToggleLabel: 'Off',
+            onText: 'On',
+            offText: 'Off',
           },
           visible: true,
         },
@@ -90,20 +94,28 @@ describe('ui/settings/settingsection', () => {
           visible: true,
         },
       ],
+      onHeaderClick: () => {
+        vi.fn();
+      },
     };
     renderer = ReactShallowRenderer.createRenderer();
   });
 
   afterEach(() => {
     renderer.unmount();
+    vi.resetAllMocks();
   });
 
   it('should construct', () => {
+    vi.spyOn(PanelSelectors, 'useOperationPanelSelectedNodeId').mockReturnValue('');
+
     const settingSection = renderer.render(<SettingsSection {...minimal} />);
     expect(settingSection).toMatchSnapshot();
   });
 
   it('should have child section when expanded', () => {
+    vi.spyOn(PanelSelectors, 'useOperationPanelSelectedNodeId').mockReturnValue('');
+
     const props: SettingsSectionProps = { ...minimal, expanded: true };
     renderer.render(<SettingsSection {...props} />);
 

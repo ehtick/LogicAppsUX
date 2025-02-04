@@ -1,5 +1,6 @@
-name: '🐞 Bug Report'
+name: '🐞 Logic Apps/Power Automate Bug Report'
 description: Create a report to help us improve Logic Apps
+labels: ['bug']
 body:
   - type: markdown
     attributes:
@@ -36,28 +37,30 @@ body:
       label: What type of Logic App Is this happening in?
       options:
         - Consumption (Portal)
+        - Power Automate
         - Standard (Portal)
         - Standard (VSCode)
     validations:
       required: true
 
   - type: dropdown
-    id: deisgnerType
+    id: operatingSystem
     attributes:
-      label: Are you using Preview Designer or GA Designer
+      label: Which operating system are you using?
       options:
-        - Preview
-        - Generally Available
+        - Windows
+        - MacOS
+        - Linux
     validations:
       required: true
-      
+
   - type: dropdown
     id: tsgchecked
     attributes:
       label: Did you refer to the TSG before filing this issue? https://aka.ms/lauxtsg
       options:
-        - "Yes"
-        - "No"
+        - 'Yes'
+        - 'No'
     validations:
       required: true
 

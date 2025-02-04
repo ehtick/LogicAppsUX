@@ -1,7 +1,8 @@
 import type { ITextFieldStyles } from '@fluentui/react';
-import { Label, TextField } from '@fluentui/react';
+import { TextField } from '@fluentui/react';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
+import { Label } from '../label';
 
 interface BaseTextProps {
   label: string;
@@ -37,10 +38,14 @@ export const TextInput = ({
   const intl = useIntl();
 
   const updateValue = (newValue?: string) => {
-    if (isInteger && isNaN(newValue as any)) {
+    if (isInteger && Number.isNaN(newValue as any)) {
       setValue(value ?? '');
       setErrorMessage(
-        intl.formatMessage({ defaultMessage: 'Invalid integer value', description: 'Error message for invalid integer value' })
+        intl.formatMessage({
+          defaultMessage: 'Invalid integer value',
+          id: 'oR2x4N',
+          description: 'Error message for invalid integer value',
+        })
       );
     } else {
       setValue(newValue ?? '');
@@ -51,13 +56,12 @@ export const TextInput = ({
   return (
     <div className={className}>
       <div className="msla-input-parameter-label">
-        <Label className={'msla-label'} required={required}>
-          {label}
-        </Label>
+        <Label text={label} isRequiredField={required} />
       </div>
       <TextField
         ariaLabel={label}
         value={value}
+        required={required}
         placeholder={placeholder}
         styles={textFieldStyles}
         readOnly={readOnly}
@@ -90,19 +94,24 @@ export const MinuteTextInput = ({
   const intl = useIntl();
   const [value, setValue] = useState<string>(initialValue);
   const getErrorMessage = (input: number[]): string => {
-    if (input.includes(NaN)) {
+    if (input.includes(Number.NaN)) {
       return intl.formatMessage({
         defaultMessage: 'This contains an invalid value',
+        id: 'i4Om5O',
         description: 'Error message for invalid integer array',
       });
-    } else if (input.some((value, index) => input.indexOf(value) !== index)) {
+    }
+    if (input.some((value, index) => input.indexOf(value) !== index)) {
       return intl.formatMessage({
         defaultMessage: 'This contains a duplicate value',
+        id: 'vxOc/M',
         description: 'Error message for duplicate integer array',
       });
-    } else if (input.some((value) => value < 0 || value > 59)) {
+    }
+    if (input.some((value) => value < 0 || value > 59)) {
       return intl.formatMessage({
         defaultMessage: 'This contains a value that is not between 0 and 59',
+        id: 'GEB1on',
         description: 'Error message for invalid minute array',
       });
     }
@@ -120,9 +129,7 @@ export const MinuteTextInput = ({
   return (
     <div className={className}>
       <div className="msla-input-parameter-label">
-        <Label className={'msla-label'} required={required}>
-          {label}
-        </Label>
+        <Label text={label} isRequiredField={required} />
       </div>
       <TextField
         ariaLabel={label}
@@ -144,6 +151,9 @@ export const MinuteTextInput = ({
 
 const convertStringToNumberArray = (value: string): number[] => {
   let newValue = value;
+  if (!newValue.trim()) {
+    return [];
+  }
   if (newValue.startsWith('[') && newValue.endsWith(']')) {
     newValue = newValue.replace(/^\[|\]$/g, '');
   }
@@ -152,9 +162,8 @@ const convertStringToNumberArray = (value: string): number[] => {
     .map((item) => item.trim())
     .map((str) => {
       if (str === '' && newValue.split(',').length > 1) {
-        return NaN;
-      } else {
-        return Number(str);
+        return Number.NaN;
       }
+      return Number(str);
     });
 };

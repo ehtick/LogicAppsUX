@@ -1,96 +1,91 @@
 import type { SectionProps } from '../';
-import constants from '../../../common/constants';
+import { SettingSectionName } from '../';
 import type { AppDispatch, RootState } from '../../../core';
-import { type ValidationError, ValidationWarningKeys } from '../../../core/state/setting/settingSlice';
-import { addEdgeFromRunAfter, removeEdgeFromRunAfter, updateRunAfter } from '../../../core/state/workflow/workflowSlice';
+import { addEdgeFromRunAfterOperation, removeEdgeFromRunAfterOperation } from '../../../core/actions/bjsworkflow/runafter';
+import { useActionMetadata, useRootTriggerId } from '../../../core/state/workflow/workflowSelectors';
+import { updateRunAfter } from '../../../core/state/workflow/workflowSlice';
 import type { SettingsSectionProps } from '../settingsection';
 import { SettingsSection } from '../settingsection';
+import { validateNodeSettings } from '../validation/validation';
 import type { RunAfterActionDetailsProps } from './runafterconfiguration';
-import type { LogicAppsV2 } from '@microsoft/utils-logic-apps';
-import { useMemo, useState } from 'react';
+import { getRecordEntry, type LogicAppsV2 } from '@microsoft/logic-apps-shared';
+import { useEffect, useMemo } from 'react';
 import { useIntl } from 'react-intl';
 import { useDispatch, useSelector } from 'react-redux';
 
-export const RunAfter = ({ readOnly = false, expanded, onHeaderClick, nodeId }: SectionProps): JSX.Element | null => {
-  const nodeData = useSelector((state: RootState) => state.workflow.operations[nodeId] as LogicAppsV2.ActionDefinition);
+export const RunAfter = ({ nodeId, readOnly = false, expanded, validationErrors, onHeaderClick }: SectionProps): JSX.Element | null => {
+  const nodeData = useActionMetadata(nodeId) as LogicAppsV2.ActionDefinition;
   const dispatch = useDispatch<AppDispatch>();
-  const [errors, setErrors] = useState<ValidationError[]>([]);
 
-  const showRunAfter = useMemo(() => {
-    return Object.keys(nodeData?.runAfter ?? {}).length > 0;
-  }, [nodeData?.runAfter]);
+  const rootState = useSelector((state: RootState) => state);
+
+  const rootTriggerId = useRootTriggerId();
+
+  useEffect(() => {
+    validateNodeSettings(nodeId, {}, SettingSectionName.RUNAFTER, rootState, dispatch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodeId, nodeData?.runAfter, dispatch]);
 
   const intl = useIntl();
+
   const runAfterTitle = intl.formatMessage({
-    defaultMessage: 'Run After',
+    defaultMessage: 'Run after',
+    id: 'mQJXU4',
     description: 'title for run after setting section',
   });
-  const lastActionErrorMessage = intl.formatMessage({
-    description: 'error message for deselection of last run after action',
-    defaultMessage: 'Each action must have one or more run after configurations',
-  });
-  const lastStatusErrorMessage = intl.formatMessage({
-    description: 'error message for deselection of last run after status',
-    defaultMessage: 'Each run after configuration must have at least one status checked',
-  });
 
-  const handleStatusChange = (predecessorId: string, status: string, checked?: boolean) => {
-    if (!nodeData.runAfter) {
+  const handleStatusChange = (parentId: string, status: string, checked?: boolean) => {
+    if (!nodeData?.runAfter) {
       return;
     }
-    const updatedStatus: string[] = [...nodeData.runAfter[predecessorId]].filter((x) => x.toLowerCase() !== status.toLowerCase());
+    const updatedStatus: string[] = [...(getRecordEntry(nodeData?.runAfter ?? {}, parentId) ?? [])].filter(
+      (x) => x?.toLowerCase() !== status?.toLowerCase()
+    );
 
     if (checked) {
       updatedStatus.push(status);
     }
 
-    if (!updatedStatus.length && !errors.some(({ key }) => key === ValidationWarningKeys.CANNOT_DELETE_LAST_STATUS)) {
-      setErrors([...errors, { key: ValidationWarningKeys.CANNOT_DELETE_LAST_STATUS, message: lastStatusErrorMessage }]);
+    if (updatedStatus.length === 0) {
       return;
-    } else if (!updatedStatus.length) {
-      return;
-    } else if (errors.some(({ key }) => key === ValidationWarningKeys.CANNOT_DELETE_LAST_STATUS)) {
-      setErrors(errors.filter(({ key }) => key !== ValidationWarningKeys.CANNOT_DELETE_LAST_STATUS));
     }
 
     dispatch(
       updateRunAfter({
         childOperation: nodeId,
-        parentOperation: predecessorId,
+        parentOperation: parentId,
         statuses: updatedStatus,
       })
     );
   };
 
-  const handleWarningDismiss = (key?: string, message?: string): void => {
-    setErrors(errors.filter((err) => (key ? err.key !== key : message ? err.message !== message : true)));
-  };
+  const dummyTriggerRunAfterSetting = useMemo(
+    () => ({
+      [rootTriggerId]: ['Succeeded'],
+    }),
+    [rootTriggerId]
+  );
 
   const GetRunAfterProps = (): RunAfterActionDetailsProps[] => {
     const items: RunAfterActionDetailsProps[] = [];
-    Object.entries(nodeData?.runAfter ?? {}).forEach(([id, value], _i, arr) => {
+    const runAfterValue = Object.keys(nodeData?.runAfter ?? {}).length ? (nodeData.runAfter ?? {}) : dummyTriggerRunAfterSetting;
+    const isSingleRunAfter = Object.keys(runAfterValue).length === 1;
+    const isAfterTrigger = Object.keys(runAfterValue)?.[0] === rootTriggerId;
+    Object.entries(runAfterValue).forEach(([id, value], _i) => {
       items.push({
         collapsible: true,
         expanded: false,
         id: id,
-        isDeleteVisible: true,
+        disableDelete: isSingleRunAfter,
+        disableStatusChange: isAfterTrigger,
         readOnly: readOnly,
         statuses: value,
         onStatusChange: (status, checked) => {
           handleStatusChange(id, status, checked);
         },
         onDelete: () => {
-          if (arr.length < 2 && !errors.some(({ key }) => key === ValidationWarningKeys.CANNOT_DELETE_LAST_ACTION)) {
-            setErrors([...errors, { key: ValidationWarningKeys.CANNOT_DELETE_LAST_ACTION, message: lastActionErrorMessage }]);
-            return;
-          } else if (arr.length < 2) {
-            return;
-          } else if (errors.some(({ key }) => key === ValidationWarningKeys.CANNOT_DELETE_LAST_ACTION)) {
-            setErrors(errors.filter(({ key }) => key !== ValidationWarningKeys.CANNOT_DELETE_LAST_ACTION));
-          }
-
           dispatch(
-            removeEdgeFromRunAfter({
+            removeEdgeFromRunAfterOperation({
               parentOperationId: id,
               childOperationId: nodeId,
             })
@@ -103,8 +98,9 @@ export const RunAfter = ({ readOnly = false, expanded, onHeaderClick, nodeId }: 
 
   const runAfterSectionProps: SettingsSectionProps = {
     id: 'runAfter',
+    nodeId,
     title: runAfterTitle,
-    sectionName: constants.SETTINGSECTIONS.RUNAFTER,
+    sectionName: SettingSectionName.RUNAFTER,
     expanded,
     isReadOnly: readOnly,
     onHeaderClick,
@@ -116,18 +112,16 @@ export const RunAfter = ({ readOnly = false, expanded, onHeaderClick, nodeId }: 
           readOnly,
           onEdgeAddition: (parentNode: string) => {
             dispatch(
-              addEdgeFromRunAfter({
+              addEdgeFromRunAfterOperation({
                 parentOperationId: parentNode,
                 childOperationId: nodeId,
               })
             );
           },
         },
-        visible: showRunAfter,
       },
     ],
-    validationErrors: errors,
-    onWarningDismiss: handleWarningDismiss,
+    validationErrors,
   };
 
   return <SettingsSection {...runAfterSectionProps} />;

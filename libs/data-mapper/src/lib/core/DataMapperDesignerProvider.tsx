@@ -9,9 +9,9 @@ import type { Theme } from '@fluentui/react-components';
 import { FluentProvider, themeToTokensObject, webDarkTheme, webLightTheme } from '@fluentui/react-components';
 import { PortalCompatProvider } from '@fluentui/react-portal-compat';
 import { AppInsightsContext } from '@microsoft/applicationinsights-react-js';
-import { IntlProvider } from '@microsoft/intl-logic-apps';
-import { Theme as ThemeType } from '@microsoft/utils-logic-apps';
-import React from 'react';
+import { IntlProvider, Theme as ThemeType } from '@microsoft/logic-apps-shared';
+import type React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Provider as ReduxProvider } from 'react-redux';
 
 interface ExtendedTheme extends Theme {
@@ -70,18 +70,20 @@ export const DataMapperDesignerProvider = ({
               {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
               {/* @ts-ignore */}
               <PortalCompatProvider>
-                <IntlProvider
-                  locale={locale}
-                  defaultLocale={locale}
-                  onError={(err) => {
-                    if (err.code === 'MISSING_TRANSLATION') {
-                      return;
-                    }
-                    throw err;
-                  }}
-                >
-                  {children}
-                </IntlProvider>
+                <QueryClientProvider client={new QueryClient()}>
+                  <IntlProvider
+                    locale={locale}
+                    defaultLocale={locale}
+                    onError={(err) => {
+                      if (err.code === 'MISSING_TRANSLATION') {
+                        return;
+                      }
+                      throw err;
+                    }}
+                  >
+                    {children}
+                  </IntlProvider>
+                </QueryClientProvider>
               </PortalCompatProvider>
             </FluentProvider>
           </ThemeProvider>

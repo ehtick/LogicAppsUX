@@ -1,25 +1,26 @@
 import type { ArrayItemSchema, ComplexArrayItems, SimpleArrayItem } from '..';
 import type { ValueSegment } from '../../editor';
-import { ValueSegmentType } from '../../editor';
 import type { CastHandler } from '../../editor/base';
-import { convertStringToSegments } from '../../editor/base/utils/editorToSegement';
-import { getChildrenNodes } from '../../editor/base/utils/helper';
+import { convertStringToSegments } from '../../editor/base/utils/editorToSegment';
+import { createLiteralValueSegment, getChildrenNodes, insertQutationForStringType } from '../../editor/base/utils/helper';
+import { convertSegmentsToString } from '../../editor/base/utils/parsesegments';
 import { convertComplexItemsToArray, validationAndSerializeComplexArray, validationAndSerializeSimpleArray } from './util';
-import { guid } from '@microsoft/utils-logic-apps';
+import { prettifyJsonString } from '@microsoft/logic-apps-shared';
 import type { LexicalEditor } from 'lexical';
 import { $getRoot } from 'lexical';
 
-const emptyArrayValue = [{ id: guid(), type: ValueSegmentType.LITERAL, value: '[]' }];
+const emptyArrayValue = [createLiteralValueSegment('[]')];
 
 export const serializeSimpleArray = (
   editor: LexicalEditor,
+  valueType: string,
   setItems: (items: SimpleArrayItem[]) => void,
   setIsValid: (b: boolean) => void
 ) => {
   editor.getEditorState().read(() => {
     const nodeMap = new Map<string, ValueSegment>();
     const editorString = getChildrenNodes($getRoot(), nodeMap);
-    validationAndSerializeSimpleArray(editorString, nodeMap, setItems, setIsValid);
+    validationAndSerializeSimpleArray(editorString, nodeMap, valueType, setItems, setIsValid);
   });
 };
 
@@ -47,22 +48,45 @@ export const parseSimpleItems = (
   const { type, format } = itemSchema;
   const castedArraySegments: ValueSegment[] = [];
   const uncastedArraySegments: ValueSegment[] = [];
-  castedArraySegments.push({ id: guid(), type: ValueSegmentType.LITERAL, value: '[\n  "' });
-  uncastedArraySegments.push({ id: guid(), type: ValueSegmentType.LITERAL, value: '[\n  "' });
+  castedArraySegments.push(createLiteralValueSegment('[\n  '));
+  uncastedArraySegments.push(createLiteralValueSegment('[\n  '));
   items.forEach((item, index) => {
     const { value } = item;
-    castedArraySegments.push({ id: guid(), type: ValueSegmentType.LITERAL, value: castParameter(value, type, format) });
-    uncastedArraySegments.push(...value);
-    castedArraySegments.push({ id: guid(), type: ValueSegmentType.LITERAL, value: index < items.length - 1 ? '",\n  "' : '"\n]' });
-    uncastedArraySegments.push({ id: guid(), type: ValueSegmentType.LITERAL, value: index < items.length - 1 ? '",\n  "' : '"\n]' });
+    if (value?.length === 0) {
+      castedArraySegments.push(createLiteralValueSegment('""'));
+      uncastedArraySegments.push(createLiteralValueSegment('""'));
+    } else {
+      insertQutationForStringType(castedArraySegments, type);
+      insertQutationForStringType(uncastedArraySegments, type);
+      castedArraySegments.push(createLiteralValueSegment(castParameter(value, type, format)));
+      uncastedArraySegments.push(...value);
+      insertQutationForStringType(castedArraySegments, type);
+      insertQutationForStringType(uncastedArraySegments, type);
+    }
+    castedArraySegments.push(createLiteralValueSegment(index < items.length - 1 ? ',\n  ' : '\n]'));
+    uncastedArraySegments.push(createLiteralValueSegment(index < items.length - 1 ? ',\n  ' : '\n]'));
   });
-  return { uncastedValue: uncastedArraySegments, castedValue: castedArraySegments };
+
+  // Beautify ValueSegment
+  try {
+    const nodeMap = new Map<string, ValueSegment>();
+    const stringValueCasted = prettifyJsonString(convertSegmentsToString(castedArraySegments, nodeMap));
+    const stringValueUncasted = prettifyJsonString(convertSegmentsToString(uncastedArraySegments, nodeMap));
+    return {
+      castedValue: convertStringToSegments(stringValueCasted, nodeMap, { tokensEnabled: false }),
+      uncastedValue: convertStringToSegments(stringValueUncasted, nodeMap, { tokensEnabled: true }),
+    };
+  } catch {
+    return { uncastedValue: uncastedArraySegments, castedValue: castedArraySegments };
+  }
 };
 
 export const parseComplexItems = (
   allItems: ComplexArrayItems[],
   itemSchema: ArrayItemSchema,
-  castParameter: CastHandler
+  isRequired: boolean,
+  castParameter: CastHandler,
+  suppressCastingForSerialize?: boolean
 ): { castedValue: ValueSegment[]; uncastedValue: ValueSegment[] } => {
   if (allItems.length === 0) {
     return { castedValue: emptyArrayValue, uncastedValue: emptyArrayValue };
@@ -72,11 +96,23 @@ export const parseComplexItems = (
   const nodeMap = new Map<string, ValueSegment>();
   allItems.forEach((currItem) => {
     const { items } = currItem;
-    castedArrayVal.push(convertComplexItemsToArray(itemSchema, items, nodeMap, /*suppress casting*/ false, castParameter));
-    uncastedArrayVal.push(convertComplexItemsToArray(itemSchema, items, nodeMap, /*suppress casting*/ true, castParameter));
+    castedArrayVal.push(
+      convertComplexItemsToArray(
+        itemSchema,
+        items,
+        isRequired,
+        nodeMap,
+        /*suppress casting*/ suppressCastingForSerialize ?? false,
+        castParameter
+      )
+    );
+    uncastedArrayVal.push(convertComplexItemsToArray(itemSchema, items, isRequired, nodeMap, /*suppress casting*/ true, castParameter));
   });
   return {
-    castedValue: convertStringToSegments(JSON.stringify(castedArrayVal, null, 4), true, nodeMap),
-    uncastedValue: convertStringToSegments(JSON.stringify(uncastedArrayVal, null, 4), true, nodeMap),
+    castedValue: convertStringToSegments(JSON.stringify(castedArrayVal, null, 4), nodeMap, { tokensEnabled: false }),
+    uncastedValue: convertStringToSegments(JSON.stringify(uncastedArrayVal, null, 4), nodeMap, {
+      tokensEnabled: true,
+      removeSingleTokenQuotesWrapping: suppressCastingForSerialize,
+    }),
   };
 };

@@ -1,19 +1,19 @@
 import type { FunctionManifest } from '../../../models/Function';
 import type { DataMapperApiServiceOptions } from './DataMapperApiService';
 import { DataMapperApiService } from './DataMapperApiService';
-import { AssertionErrorCode, AssertionException } from '@microsoft/utils-logic-apps';
+import { AssertionErrorCode, AssertionException } from '@microsoft/logic-apps-shared';
 
 let service: IDataMapperApiService;
 
 export const defaultDataMapperApiServiceOptions = {
   baseUrl: 'http://localhost',
-  port: '7071',
+  port: '8000',
   accessToken: '',
 };
 
 export interface IDataMapperApiService {
   getFunctionsManifest(): Promise<FunctionManifest>;
-  getSchemaFile(schemaName: string): Promise<any>;
+  getSchemaFile(schemaName: string, schemaFilePath: string): Promise<any>;
   generateDataMapXslt(dataMapDefinition: string): Promise<string>;
   testDataMap(dataMapXsltFilename: string, schemaInputValue: string): Promise<TestMapResponse>;
 }

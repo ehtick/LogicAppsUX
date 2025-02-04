@@ -3,7 +3,7 @@ import type { ValueProps } from '../types';
 import { CheckboxVisibility, DetailsListLayoutMode, SelectionMode } from '@fluentui/react';
 import * as React from 'react';
 import * as ReactShallowRenderer from 'react-test-renderer/shallow';
-
+import { describe, vi, beforeEach, afterEach, beforeAll, afterAll, it, test, expect } from 'vitest';
 describe('ui/monitoring/values/_keyvaluepairs', () => {
   const classNames = {
     displayName: 'msla-trace-value-display-name',
@@ -43,7 +43,7 @@ describe('ui/monitoring/values/_keyvaluepairs', () => {
     expect(text.props.className.split(' ')).toEqual(expect.arrayContaining([classNames.keyValuePairs, classNames.text]));
 
     const detailsList = React.Children.only(text.props.children);
-    expect(detailsList.props.ariaLabel).toBe(props.displayName);
+    expect(detailsList.props.ariaLabelForGrid).toBe(props.displayName);
     expect(detailsList.props.ariaLabelForListHeader).toBe(props.displayName);
     expect(detailsList.props.checkboxVisibility).toBe(CheckboxVisibility.hidden);
     expect(detailsList.props.columns).toEqual([
@@ -86,7 +86,7 @@ describe('ui/monitoring/values/_keyvaluepairs', () => {
         $value: 'no-referred-when-downgrade',
       },
     ]);
-    expect(detailsList.props.layoutMode).toBe(DetailsListLayoutMode.justified);
+    expect(detailsList.props.layoutMode).toBe(DetailsListLayoutMode.fixedColumns);
     expect(detailsList.props.selectionMode).toBe(SelectionMode.none);
   });
 

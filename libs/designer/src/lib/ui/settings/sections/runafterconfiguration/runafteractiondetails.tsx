@@ -1,21 +1,25 @@
-import constants from '../../../../common/constants';
-import { useIconUri } from '../../../../core/state/selectors/actionMetadataSelector';
+import { useOperationVisuals } from '../../../../core/state/operation/operationSelector';
 import { useNodeDisplayName } from '../../../../core/state/workflow/workflowSelectors';
 import { RunAfterActionStatuses } from './runafteractionstatuses';
 import { RunAfterTrafficLights } from './runaftertrafficlights';
-import { useTheme } from '@fluentui/react';
+import { Button, Divider, Tooltip } from '@fluentui/react-components';
 import { useBoolean } from '@fluentui/react-hooks';
-import type { IButtonStyles } from '@fluentui/react/lib/Button';
-import { IconButton } from '@fluentui/react/lib/Button';
-import type { IIconProps } from '@fluentui/react/lib/Icon';
-import { Icon } from '@fluentui/react/lib/Icon';
-import type { ISeparatorStyles } from '@fluentui/react/lib/Separator';
-import { Separator } from '@fluentui/react/lib/Separator';
-import { Failed, Skipped, Succeeded, TimedOut } from '@microsoft/designer-ui';
-import { RUN_AFTER_STATUS } from '@microsoft/utils-logic-apps';
-import type { MouseEvent } from 'react';
+import {
+  bundleIcon,
+  ChevronDown24Filled,
+  ChevronDown24Regular,
+  ChevronRight24Filled,
+  ChevronRight24Regular,
+  Delete24Filled,
+  Delete24Regular,
+} from '@fluentui/react-icons';
+import { useCallback, useMemo, type MouseEvent } from 'react';
 import { useIntl } from 'react-intl';
 import { format } from 'util';
+
+const DeleteIcon = bundleIcon(Delete24Filled, Delete24Regular);
+const ChevronDownIcon = bundleIcon(ChevronDown24Filled, ChevronDown24Regular);
+const ChevronRightIcon = bundleIcon(ChevronRight24Filled, ChevronRight24Regular);
 
 export type onChangeHandler = (status: string, checked?: boolean) => void;
 
@@ -28,7 +32,8 @@ export interface RunAfterActionDetailsProps {
   collapsible?: boolean;
   expanded: boolean;
   id: string;
-  isDeleteVisible: boolean;
+  disableDelete: boolean;
+  disableStatusChange: boolean;
   readOnly: boolean;
   statuses: string[];
   visible?: boolean;
@@ -37,149 +42,111 @@ export interface RunAfterActionDetailsProps {
   onStatusChange?: onChangeHandler;
 }
 
-const deleteIconProp: IIconProps = {
-  iconName: 'Delete',
-};
-
-const deleteIconStyles: IButtonStyles = {
-  icon: {
-    color: '#0078d4',
-    fontSize: 16,
-  },
-};
-
-const separatorStyles: Partial<ISeparatorStyles> = {
-  root: {
-    color: '#d4d4d4',
-  },
-};
-
 export const RunAfterActionDetails = ({
+  id,
   collapsible = true,
-  isDeleteVisible,
+  disableDelete,
+  disableStatusChange,
   readOnly,
   statuses,
-  id,
   onDelete,
   onStatusChange,
-  onRenderLabel,
 }: RunAfterActionDetailsProps) => {
   const [expanded, setExpanded] = useBoolean(false);
-
-  const theme = useTheme();
-  const isInverted = theme.isInverted;
 
   const intl = useIntl();
 
   const expandAriaLabel = intl.formatMessage({
     defaultMessage: 'Expand',
+    id: 'iU1OJh',
     description: 'An accessible label for expand toggle icon',
   });
   const collapseAriaLabel = intl.formatMessage({
     defaultMessage: 'Collapse',
+    id: 'PQOiAc',
     description: 'An accessible label for collapse toggle icon',
   });
 
-  const collapsibleProps: React.HTMLAttributes<HTMLDivElement> | undefined = collapsible
-    ? {
-        'aria-expanded': expanded,
-        role: 'button',
-        tabIndex: 0,
-        onClick: setExpanded.toggle,
-        onKeyDown: (key) => {
-          if (key.code === 'Space' || key.code === 'Enter') {
-            setExpanded.toggle();
-          }
-        },
-      }
-    : undefined;
-
-  const handleRenderLabel = (status: string, label: string): JSX.Element => {
-    const props: LabelProps = {
-      label,
-      status,
-    };
-
-    return onRenderLabel?.(props) ?? <Label {...props} />;
-  };
-
   const title = useNodeDisplayName(id);
-  const icon = useIconUri(id);
+  const { iconUri } = useOperationVisuals(id);
+
   return (
     <>
       <div className="msla-run-after-edge-header">
-        <div className="msla-run-after-edge-header-contents-container" {...collapsibleProps}>
-          <div>
-            <div className="msla-run-after-edge-header-contents">
-              <Icon
-                className="msla-run-after-icon"
-                aria-label={format(expanded ? `${collapseAriaLabel} ${title}` : `${expandAriaLabel} ${title}`, title)}
-                iconName={expanded ? 'ChevronDownMed' : 'ChevronRightMed'}
-                styles={{ root: { color: isInverted ? 'white' : constants.Settings.CHEVRON_ROOT_COLOR_LIGHT } }}
-              />
-              <div className="msla-run-after-edge-header-logo">
-                <img alt="" className="msla-run-after-logo-image" role="presentation" src={icon} />
-              </div>
-              <div className="msla-run-after-edge-header-text">{title}</div>
-            </div>
-            <RunAfterTrafficLights statuses={statuses} />
-          </div>
-        </div>
+        <Button
+          className="msla-run-after-edge-header-contents"
+          appearance="subtle"
+          onClick={setExpanded.toggle}
+          icon={expanded ? <ChevronDownIcon /> : <ChevronRightIcon />}
+          aria-label={format(expanded ? `${collapseAriaLabel} ${title}` : `${expandAriaLabel} ${title}`, title)}
+        >
+          <img alt="" className="msla-run-after-node-image" role="presentation" src={iconUri} />
+          <span className="msla-run-after-node-title">{title}</span>
+          <RunAfterTrafficLights statuses={statuses} />
+        </Button>
+        <DeleteButton disabled={disableDelete} visible={!readOnly} onDelete={onDelete} />
       </div>
-      <DeleteButton visible={isDeleteVisible && !readOnly} onDelete={onDelete} />
+
       {(!collapsible || expanded) && (
-        <RunAfterActionStatuses
-          isReadOnly={readOnly}
-          statuses={statuses}
-          onStatusChange={onStatusChange}
-          onRenderLabel={handleRenderLabel}
-        />
+        <RunAfterActionStatuses isReadOnly={readOnly || disableStatusChange} statuses={statuses} onStatusChange={onStatusChange} />
       )}
-      <Separator className="msla-run-after-separator" styles={separatorStyles} />
+      {expanded && <Divider className="msla-run-after-divider" />}
     </>
   );
 };
 
 interface DeleteButtonProps extends Pick<RunAfterActionDetailsProps, 'onDelete'> {
-  visible: boolean;
+  visible?: boolean;
+  disabled?: boolean;
 }
 
-const DeleteButton = ({ visible, onDelete }: DeleteButtonProps): JSX.Element | null => {
+const DeleteButton = ({ visible, disabled, onDelete }: DeleteButtonProps): JSX.Element | null => {
   const intl = useIntl();
 
   const MENU_DELETE = intl.formatMessage({
     defaultMessage: 'Delete',
+    id: 's7nGyC',
     description: 'Delete Button',
   });
-  function handleDelete(e: MouseEvent<unknown>): void {
-    e.preventDefault();
-    e.stopPropagation();
-    onDelete?.();
-  }
+
+  const preventDeleteText = intl.formatMessage({
+    defaultMessage: 'Actions must have one or more run after configurations',
+    id: 'hCrg+6',
+    description: 'Cannot delete the last run after edge',
+  });
+
+  const handleDelete = useCallback(
+    (e: MouseEvent<unknown>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      onDelete?.();
+    },
+    [onDelete]
+  );
+
+  const content = useMemo(
+    () => (
+      <Button
+        appearance="subtle"
+        icon={<DeleteIcon />}
+        aria-label={MENU_DELETE}
+        onClick={handleDelete}
+        disabled={disabled}
+        style={{ color: 'var(--colorBrandForeground1)' }}
+      />
+    ),
+    [disabled, handleDelete]
+  );
 
   if (!visible) {
     return null;
   }
 
-  return (
-    <div className="msla-run-after-delete-icon">
-      <IconButton ariaLabel={MENU_DELETE} iconProps={deleteIconProp} styles={deleteIconStyles} onClick={handleDelete} />
-    </div>
-  );
-};
-
-const Label = ({ label, status }: LabelProps): JSX.Element => {
-  const checkboxLabelBadge: Record<string, JSX.Element> = {
-    [RUN_AFTER_STATUS.SUCCEEDED]: <Succeeded />,
-    [RUN_AFTER_STATUS.SKIPPED]: <Skipped />,
-    [RUN_AFTER_STATUS.FAILED]: <Failed />,
-    [RUN_AFTER_STATUS.TIMEDOUT]: <TimedOut />,
-  };
-
-  return (
-    <>
-      <div className="msla-run-after-label-badge">{checkboxLabelBadge[status.toUpperCase()]}</div>
-      <span>{label}</span>
-    </>
+  return disabled ? (
+    <Tooltip content={preventDeleteText} relationship={'description'}>
+      {content}
+    </Tooltip>
+  ) : (
+    content
   );
 };

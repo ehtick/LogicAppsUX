@@ -1,10 +1,12 @@
+import type { ComboboxItem } from '../../combobox';
 import type { ArrayItemSchema, ComplexArrayItem, ComplexArrayItems, SimpleArrayItem } from '..';
 import constants from '../../constants';
 import type { ValueSegment } from '../../editor';
 import type { CastHandler } from '../../editor/base';
-import { convertStringToSegments } from '../../editor/base/utils/editorToSegement';
+import { convertStringToSegments } from '../../editor/base/utils/editorToSegment';
 import { convertSegmentsToString } from '../../editor/base/utils/parsesegments';
-import { guid } from '@microsoft/utils-logic-apps';
+import { ExtensionProperties, guid } from '@microsoft/logic-apps-shared';
+import type { DropdownItem } from '../../dropdown';
 
 export interface ItemSchemaItemProps {
   key: string;
@@ -14,82 +16,80 @@ export interface ItemSchemaItemProps {
   description: string;
   format?: string;
   items?: ItemSchemaItemProps[];
+  readOnly?: boolean;
+  enum?: string[];
+  [property: string]: any;
 }
 
-export const getOneDimensionalSchema = (itemSchema: ArrayItemSchema, isRequired?: any): ItemSchemaItemProps[] => {
-  const flattenedSchema: ItemSchemaItemProps[] = [];
-  if (!itemSchema) {
-    return flattenedSchema;
+export const hideComplexArray = (dimensionalSchema: ItemSchemaItemProps[]) => {
+  if (dimensionalSchema.length === 0) {
+    return true;
   }
-  if (itemSchema.type === constants.SWAGGER.TYPE.OBJECT && itemSchema.properties) {
-    const required = itemSchema.required ?? [];
-    Object.entries(itemSchema.properties).forEach(([key, value]) => {
-      if (value && key !== 'key') {
-        getOneDimensionalSchema(value, required.includes(key)).forEach((item) => {
-          const currItem = item;
-          flattenedSchema.push(currItem);
-        });
-      }
-    });
-  } else {
-    const isArray = itemSchema.type === constants.SWAGGER.TYPE.ARRAY && itemSchema.items?.properties;
-    flattenedSchema.push({
-      key: itemSchema.key,
-      title: itemSchema.title ?? (itemSchema.key.split('.').at(-1) as string),
-      type: itemSchema.type,
-      isRequired: !isArray && isRequired,
-      description: itemSchema.description ?? '',
-      format: itemSchema.format,
-      items: isArray && itemSchema.items ? getOneDimensionalSchema(itemSchema.items, isRequired) : undefined,
-    });
-  }
-  return flattenedSchema;
+  return dimensionalSchema.every((item) => item.readOnly === true);
 };
 
-// Converts Complex Array Items values to be a string from valuesegment
+export const getOneDimensionalSchema = (itemSchema: ArrayItemSchema, isRequired: boolean): ItemSchemaItemProps[] => {
+  if (!itemSchema || itemSchema[ExtensionProperties.Visibility] === 'internal') {
+    return [];
+  }
+
+  const { type, format, key, title, description = '', readOnly, properties, required, items } = itemSchema;
+
+  if (type === constants.SWAGGER.TYPE.OBJECT && properties) {
+    const requiredElements = required ?? [];
+    return Object.entries(properties).flatMap(([key, value]) =>
+      key !== 'key' && value ? getOneDimensionalSchema(value, isRequired && requiredElements.includes(key)) : []
+    );
+  }
+
+  const isArray = type === constants.SWAGGER.TYPE.ARRAY && items;
+  return [
+    {
+      key,
+      title: handleTitle(key, title),
+      type,
+      isRequired: !isArray && isRequired,
+      description,
+      format,
+      enum: itemSchema.enum,
+      items: isArray ? getOneDimensionalSchema(items, isRequired) : undefined,
+      readOnly,
+    },
+  ];
+};
+// Converts Complex Array Items values from ValueSegments Arrays to Strings
 export const convertComplexItemsToArray = (
   itemSchema: ArrayItemSchema,
   items: ComplexArrayItem[],
+  isParentRequired: boolean,
   nodeMap?: Map<string, ValueSegment>,
   suppressCasting?: boolean,
   castParameter?: CastHandler
 ) => {
-  const returnItem: any = {};
-
+  const returnItem: Record<string, any> = {};
+  // Process object type schema
   if (itemSchema.type === constants.SWAGGER.TYPE.OBJECT && itemSchema.properties) {
+    const requiredKeys = new Set(itemSchema.required ?? []);
+
     Object.entries(itemSchema.properties).forEach(([key, value]) => {
       if (key !== 'key' && items) {
-        const keyName = value.key.split('.').at(-1) as string;
-        // handle nested array items
+        const keyName = value.key.split('.').pop() as string;
+        const isKeyRequired = requiredKeys.has(keyName) && isParentRequired;
+
+        // Handle nested array items
         if (value.type === constants.SWAGGER.TYPE.ARRAY && value.items?.properties) {
-          const arrayItems = items.find((item) => {
-            return item.key === value.key;
-          })?.arrayItems;
-          if (arrayItems && arrayItems.length > 0) {
-            const arrayVal: any = [];
-            arrayItems.forEach((arrayItem) => {
-              if (value.items) {
-                arrayVal.push(convertComplexItemsToArray(value.items, arrayItem.items, nodeMap, suppressCasting, castParameter));
-              }
-            });
-            returnItem[keyName] = arrayVal;
-          }
+          handleArrayItems(value, items, isKeyRequired, keyName, returnItem, nodeMap, suppressCasting, castParameter);
         } else {
-          returnItem[keyName] = convertComplexItemsToArray(value, items, nodeMap, suppressCasting, castParameter);
+          handleSimpleItem(value, items, isKeyRequired, keyName, returnItem, nodeMap, suppressCasting, castParameter);
         }
       }
     });
-    // add all required schema properties to the return item
-    itemSchema.required?.forEach((requiredKey) => {
-      if (!returnItem[requiredKey] && itemSchema.properties) {
-        returnItem[requiredKey] = '';
-      }
-    });
   } else {
-    const complexItem = items.find((item) => {
-      return item.key === itemSchema.key;
-    });
+    const complexItem = items.find((item) => item.key === itemSchema.key);
     if (complexItem) {
+      if (complexItem.arrayItems && itemSchema.type === constants.SWAGGER.TYPE.ARRAY) {
+        return handleArrayOfComplexItems(itemSchema, complexItem, isParentRequired, nodeMap, suppressCasting, castParameter);
+      }
       const segments = complexItem.value;
 
       // we need to convert to string to extract tokens to repopulate later
@@ -101,50 +101,131 @@ export const convertComplexItemsToArray = (
   return returnItem;
 };
 
+// Helper to convert array items to complex item schema
+const handleArrayItems = (
+  value: ArrayItemSchema,
+  items: ComplexArrayItem[],
+  isKeyRequired: boolean,
+  keyName: string,
+  returnItem: Record<string, any>,
+  nodeMap?: Map<string, ValueSegment>,
+  suppressCasting?: boolean,
+  castParameter?: CastHandler
+) => {
+  const arrayItems = items.find((item) => item.key === value.key)?.arrayItems;
+
+  if (arrayItems?.length) {
+    const arrayVal: any = [];
+    arrayItems.forEach((arrayItem) => {
+      if (value.items) {
+        arrayVal.push(convertComplexItemsToArray(value.items, arrayItem.items, isKeyRequired, nodeMap, suppressCasting, castParameter));
+      }
+    });
+  } else if (isKeyRequired) {
+    returnItem[keyName] = [];
+  }
+};
+
+// Helper to convert simple items to complex item schema
+const handleSimpleItem = (
+  value: ArrayItemSchema,
+  items: ComplexArrayItem[],
+  isKeyRequired: boolean,
+  keyName: string,
+  returnItem: Record<string, any>,
+  nodeMap?: Map<string, ValueSegment>,
+  suppressCasting?: boolean,
+  castParameter?: CastHandler
+) => {
+  const convertedItem = convertComplexItemsToArray(value, items, isKeyRequired, nodeMap, suppressCasting, castParameter);
+
+  if (convertedItem && (typeof convertedItem === 'string' || Object.keys(convertedItem).length > 0)) {
+    returnItem[keyName] = castParameterValueToPrimitiveType(convertedItem, value?.type);
+  } else if (isKeyRequired) {
+    returnItem[keyName] = null;
+  }
+};
+
+// Helper to handle an array of complex items
+const handleArrayOfComplexItems = (
+  itemSchema: ArrayItemSchema,
+  complexItem: ComplexArrayItem,
+  isParentRequired: boolean,
+  nodeMap?: Map<string, ValueSegment>,
+  suppressCasting?: boolean,
+  castParameter?: CastHandler
+) => {
+  if (!complexItem.arrayItems) {
+    return [];
+  }
+  const arrayVal: any = [];
+  complexItem.arrayItems.forEach((arrayItem) => {
+    const isArrayItemRequired = !!itemSchema.required?.includes(arrayItem.key.split('.').pop() as string) && isParentRequired;
+    if (itemSchema.items) {
+      arrayVal.push(
+        convertComplexItemsToArray(itemSchema.items, arrayItem.items, isArrayItemRequired, nodeMap, suppressCasting, castParameter)
+      );
+    }
+  });
+  return arrayVal;
+};
+
+const castParameterValueToPrimitiveType = (value: any, parameterType?: string): any => {
+  if (parameterType === constants.SWAGGER.TYPE.BOOLEAN) {
+    const lowerValue = value.toLowerCase();
+    if (lowerValue === 'true' || lowerValue === 'false') {
+      return lowerValue === 'true';
+    }
+  } else if (parameterType === constants.SWAGGER.TYPE.INTEGER) {
+    const intValue = Number.parseInt(value, 10);
+    if (!Number.isNaN(intValue)) {
+      return intValue;
+    }
+  }
+  return value;
+};
+
 export const initializeSimpleArrayItems = (
   initialValue: ValueSegment[],
+  valueType: string,
   setItems: (items: SimpleArrayItem[]) => void,
   setIsValid: (b: boolean) => void,
   setCollapsed: (b: boolean) => void
-): void => {
+) => {
   const nodeMap = new Map<string, ValueSegment>();
   const stringifiedCollapsedValue = convertSegmentsToString(initialValue, nodeMap);
-  validationAndSerializeSimpleArray(stringifiedCollapsedValue, nodeMap, setItems, setIsValid, setCollapsed);
-  return;
+  validationAndSerializeSimpleArray(stringifiedCollapsedValue, nodeMap, valueType, setItems, setIsValid, setCollapsed);
 };
 
 export const validationAndSerializeSimpleArray = (
   editorString: string,
   nodeMap: Map<string, ValueSegment>,
+  valueType: string,
   setItems: (items: SimpleArrayItem[]) => void,
   setIsValid: (b: boolean) => void,
   setCollapsed?: (b: boolean) => void
 ): void => {
   try {
     const strippedEditorString = editorString.replace(/\s+/g, '');
-    if (
-      !strippedEditorString.length ||
-      strippedEditorString === '[]' ||
-      strippedEditorString === 'null' ||
-      strippedEditorString === '[null]'
-    ) {
-      setItems([]);
+    if (!strippedEditorString.length || strippedEditorString === 'null' || strippedEditorString === '[null]') {
+      setItems([{ key: guid(), value: [] }]);
     } else {
       const jsonEditor = JSON.parse(editorString);
-      if (typeof jsonEditor === 'number' || typeof jsonEditor === 'string' || typeof jsonEditor === 'boolean') {
-        throw Error();
-      }
       const returnItems: SimpleArrayItem[] = [];
       for (const [, value] of Object.entries(jsonEditor)) {
         returnItems.push({
-          value: convertStringToSegments(value as string, true, nodeMap),
+          value: convertStringToSegments(
+            valueType === constants.SWAGGER.TYPE.STRING ? (value as string) : JSON.stringify(value, null, 4),
+            nodeMap,
+            { tokensEnabled: true }
+          ),
           key: guid(),
         });
       }
       setItems(returnItems);
     }
     setIsValid?.(true);
-  } catch (e) {
+  } catch {
     setIsValid?.(false);
     setCollapsed?.(true);
   }
@@ -189,7 +270,7 @@ export const validationAndSerializeComplexArray = (
       setItems(returnItems);
     }
     setIsValid?.(true);
-  } catch (e) {
+  } catch {
     setIsValid?.(false);
     setCollapsed?.(true);
   }
@@ -202,9 +283,22 @@ const convertObjectToComplexArrayItemArray = (
 ): ComplexArrayItem[] => {
   const items: ComplexArrayItem[] = [];
 
+  if (typeof obj === 'string') {
+    return [
+      {
+        key: itemSchema.key,
+        title: handleTitle(itemSchema.key, itemSchema.title),
+        description: itemSchema.description ?? '',
+        value: convertStringToSegments(obj, nodeMap, { tokensEnabled: true }),
+      },
+    ];
+  }
+
   Object.keys(obj).forEach((key: string) => {
     const value = obj[key];
-    if (!itemSchema.properties) return;
+    if (!itemSchema.properties) {
+      return;
+    }
     const itemSchemaProperty = itemSchema.properties[key];
 
     if (Array.isArray(value)) {
@@ -220,7 +314,7 @@ const convertObjectToComplexArrayItemArray = (
       });
       items.push({
         key: itemSchemaProperty.key,
-        title: itemSchemaProperty.title ?? (itemSchema.key.split('.').at(-1) as string),
+        title: handleTitle(itemSchema.key, itemSchemaProperty.title),
         description: itemSchemaProperty.description ?? '',
         value: [],
         arrayItems,
@@ -230,11 +324,55 @@ const convertObjectToComplexArrayItemArray = (
     } else {
       items.push({
         key: itemSchemaProperty.key,
-        title: itemSchemaProperty.title ?? (itemSchema.key.split('.').at(-1) as string),
+        title: handleTitle(itemSchema.key, itemSchemaProperty.title),
         description: itemSchemaProperty.description ?? '',
-        value: convertStringToSegments(value, true, nodeMap),
+        value: convertStringToSegments(String(value), nodeMap, { tokensEnabled: true }),
       });
     }
   });
   return items;
+};
+
+const handleTitle = (key: string, title?: string): string => {
+  const keyArray = key.split('.').filter((k) => k !== 'properties');
+  if (title) {
+    keyArray.pop();
+    keyArray.push(title);
+  }
+  const resultArray = capitalizeElements(keyArray);
+  return resultArray.join(' ');
+};
+
+const capitalizeElements = (stringArray: string[]): string[] => {
+  return stringArray.map((element) => {
+    const words = element.split(' ');
+    const capitalizedWords = words.map((word) => {
+      if (word === word.toUpperCase()) {
+        return word;
+      }
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    });
+    return capitalizedWords.join(' ');
+  });
+};
+
+export const getComoboxEnumOptions = (options?: ComboboxItem[], schemaItems?: string[]) => {
+  return (
+    options ??
+    schemaItems?.map((val: string): ComboboxItem => {
+      const stringValue = String(val);
+      return {
+        displayName: stringValue,
+        key: stringValue,
+        value: stringValue,
+      };
+    })
+  );
+};
+
+export const getBooleanDropdownOptions = (): DropdownItem[] => {
+  return [
+    { key: 'true', displayName: 'true', value: true },
+    { key: 'false', displayName: 'false', value: false },
+  ];
 };

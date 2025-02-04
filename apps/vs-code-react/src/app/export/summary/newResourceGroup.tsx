@@ -1,10 +1,10 @@
 import type { INamingRules } from '../../../run-service';
 import type { RootState } from '../../../state/store';
-import type { InitializedVscodeState } from '../../../state/vscodeSlice';
 import { isNameValid } from './helper';
-import { Callout, Link, PrimaryButton, Text, TextField } from '@fluentui/react';
+import { Callout, Link, PrimaryButton, TextField } from '@fluentui/react';
 import type { IDropdownOption } from '@fluentui/react';
 import { useBoolean } from '@fluentui/react-hooks';
+import { MediumText } from '@microsoft/designer-ui';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useIntl } from 'react-intl';
@@ -25,45 +25,54 @@ export const NewResourceGroup: React.FC<INewResourceGroupProps> = ({ onAddNewRes
   const intl = useIntl();
   const [isCalloutVisible, { toggle: toggleIsCalloutVisible }] = useBoolean(false);
   const [name, setName] = useState<string>('');
-  const vscodeState = useSelector((state: RootState) => state.vscode);
-  const { exportData } = vscodeState as InitializedVscodeState;
+  const workflowState = useSelector((state: RootState) => state.workflow);
+  const { exportData } = workflowState;
   const { location } = exportData;
 
   const intlText = {
     CREATE_NEW: intl.formatMessage({
       defaultMessage: 'Create new',
+      id: 'XKQ/Lw',
       description: 'Create new text',
     }),
     RESOURCE_GROUP_DESCRIPTION: intl.formatMessage({
       defaultMessage: 'A resource group is a container that holds related resources for an Azure solution.',
+      id: 'fU98Nt',
       description: 'Deploy managed connections warning text',
     }),
     OK: intl.formatMessage({
       defaultMessage: 'OK',
+      id: '70cHmm',
       description: 'OK button',
     }),
     CANCEL: intl.formatMessage({
       defaultMessage: 'Cancel',
+      id: 'qz9XeG',
       description: 'Cancel button',
     }),
     NAME: intl.formatMessage({
       defaultMessage: 'Name',
+      id: '1kGBdP',
       description: 'Name button',
     }),
     INVALID_CHARS: intl.formatMessage({
       defaultMessage: 'The name can contain only alphanumeric characters or the following symbols: . _ - ( )',
+      id: '9vOq5B',
       description: 'RResource group name - invalid characters error',
     }),
     INVALID_ENDING_CHAR: intl.formatMessage({
-      defaultMessage: "The name can't end with a period.",
+      defaultMessage: `The name can't end with a period.`,
+      id: 'Pe0eMX',
       description: 'Resource group name ending error',
     }),
     INVALID_EXISTING_NAME: intl.formatMessage({
       defaultMessage: 'A resource group with the same name already exists in the selected subscription.',
+      id: 'KtGlzI',
       description: 'Resource group existing name error',
     }),
     NEW: intl.formatMessage({
       defaultMessage: 'New',
+      id: 'm3H+gL',
       description: 'New text',
     }),
   };
@@ -93,9 +102,7 @@ export const NewResourceGroup: React.FC<INewResourceGroupProps> = ({ onAddNewRes
           target={`.${linkClassName}`}
           onDismiss={toggleIsCalloutVisible}
         >
-          <Text variant="medium" block>
-            {intlText.RESOURCE_GROUP_DESCRIPTION}
-          </Text>
+          <MediumText text={intlText.RESOURCE_GROUP_DESCRIPTION} style={{ display: 'block' }} />
           <TextField
             required
             label={intlText.NAME}

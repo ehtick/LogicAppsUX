@@ -1,10 +1,10 @@
-import { localSettingsFileName, managementApiPrefix } from '../../../../constants';
+import { localSettingsFileName, managementApiPrefix, workflowAppApiVersion } from '../../../../constants';
 import { ext } from '../../../../extensionVariables';
 import { localize } from '../../../../localize';
 import { getLocalSettingsJson } from '../../../utils/appSettings/localSettings';
+import { getArtifactsInLocalProject } from '../../../utils/codeless/artifacts';
 import {
   cacheWebviewPanel,
-  getArtifactsInLocalProject,
   getAzureConnectorDetailsForLocalProject,
   getManualWorkflowsInLocalProject,
   getStandardAppData,
@@ -12,25 +12,33 @@ import {
 } from '../../../utils/codeless/common';
 import {
   addConnectionData,
-  containsApiHubConnectionReference,
   getConnectionsAndSettingsToUpdate,
   getConnectionsFromFile,
-  getFunctionProjectRoot,
+  getCustomCodeFromFiles,
+  getCustomCodeToUpdate,
+  getLogicAppProjectRoot,
   getParametersFromFile,
   saveConnectionReferences,
+  saveCustomCodeStandard,
 } from '../../../utils/codeless/connection';
-import { saveParameters } from '../../../utils/codeless/parameter';
+import { saveWorkflowParameter } from '../../../utils/codeless/parameter';
 import { startDesignTimeApi } from '../../../utils/codeless/startDesignTimeApi';
 import { sendRequest } from '../../../utils/requestUtils';
+import { createNewDataMapCmd } from '../../dataMapper/dataMapper';
 import { OpenDesignerBase } from './openDesignerBase';
-import { HTTP_METHODS } from '@microsoft/utils-logic-apps';
+import { HTTP_METHODS } from '@microsoft/logic-apps-shared';
 import type { IActionContext } from '@microsoft/vscode-azext-utils';
-import type { AzureConnectorDetails, FileSystemConnectionInfo, IDesignerPanelMetadata, Parameter } from '@microsoft/vscode-extension';
-import { ExtensionCommand } from '@microsoft/vscode-extension';
+import type {
+  AzureConnectorDetails,
+  FileSystemConnectionInfo,
+  IDesignerPanelMetadata,
+  Parameter,
+} from '@microsoft/vscode-extension-logic-apps';
+import { ExtensionCommand, ProjectName } from '@microsoft/vscode-extension-logic-apps';
+import axios from 'axios';
 import { exec } from 'child_process';
 import { writeFileSync, readFileSync } from 'fs';
 import * as path from 'path';
-import * as requestP from 'request-promise';
 import { env, ProgressLocation, Uri, ViewColumn, window, workspace } from 'vscode';
 import type { WebviewPanel, ProgressOptions } from 'vscode';
 
@@ -42,11 +50,11 @@ export default class OpenDesignerForLocalProject extends OpenDesignerBase {
 
   constructor(context: IActionContext, node: Uri) {
     const workflowName = path.basename(path.dirname(node.fsPath));
-    const apiVersion = '2018-11-01';
-    const panelName = `${workspace.name}-${workflowName}`;
+    const logicAppName = path.basename(path.dirname(path.dirname(node.fsPath)));
+    const panelName = `${workspace.name}-${logicAppName}-${workflowName}`;
     const panelGroupKey = ext.webViewKey.designerLocal;
 
-    super(context, workflowName, panelName, apiVersion, panelGroupKey, false, true, false);
+    super(context, workflowName, panelName, workflowAppApiVersion, panelGroupKey, false, true, false);
 
     this.workflowFilePath = node.fsPath;
   }
@@ -83,14 +91,14 @@ export default class OpenDesignerForLocalProject extends OpenDesignerBase {
       return;
     }
 
-    this.projectPath = await getFunctionProjectRoot(this.context, this.workflowFilePath);
+    this.projectPath = await getLogicAppProjectRoot(this.context, this.workflowFilePath);
     if (!this.projectPath) {
       throw new Error(localize('FunctionRootFolderError', 'Unable to determine function project root folder.'));
     }
 
     await startDesignTimeApi(this.projectPath);
 
-    this.baseUrl = `http://localhost:${ext.workflowDesignTimePort}${managementApiPrefix}`;
+    this.baseUrl = `http://localhost:${ext.designTimePort}${managementApiPrefix}`;
 
     this.panel = window.createWebviewPanel(
       this.panelGroupKey, // Key used to reference the panel
@@ -126,23 +134,9 @@ export default class OpenDesignerForLocalProject extends OpenDesignerBase {
     this.panel.onDidChangeViewState(
       async (event) => {
         const eventPanel: WebviewPanel = event.webviewPanel;
-        this.panelMetadata = await this._getDesignerPanelMetadata(this.migrationOptions);
-        eventPanel.webview.html = await this.getWebviewContent({
-          connectionsData: this.panelMetadata.connectionsData,
-          parametersData: this.panelMetadata.parametersData || {},
-          localSettings: this.panelMetadata.localSettings,
-          artifacts: this.panelMetadata.artifacts,
-          azureDetails: this.panelMetadata.azureDetails,
-          workflowDetails: this.panelMetadata.workflowDetails,
-        });
-        this.sendMsgToWebview({
-          command: ExtensionCommand.update_panel_metadata,
-          data: {
-            panelMetadata: this.panelMetadata,
-            connectionData: this.connectionData,
-            apiHubServiceDetails: this.apiHubServiceDetails,
-          },
-        });
+        if (eventPanel.visible) {
+          await this.reloadWebviewPanel(eventPanel);
+        }
       },
       undefined,
       ext.context.subscriptions
@@ -166,6 +160,7 @@ export default class OpenDesignerForLocalProject extends OpenDesignerBase {
         this.sendMsgToWebview({
           command: ExtensionCommand.initialize_frame,
           data: {
+            project: ProjectName.designer,
             panelMetadata: this.panelMetadata,
             connectionData: this.connectionData,
             baseUrl: this.baseUrl,
@@ -179,6 +174,7 @@ export default class OpenDesignerForLocalProject extends OpenDesignerBase {
             hostVersion: ext.extensionVersion,
           },
         });
+        await this.validateWorkflow(this.panelMetadata.workflowContent);
         break;
       }
       case ExtensionCommand.save: {
@@ -186,6 +182,7 @@ export default class OpenDesignerForLocalProject extends OpenDesignerBase {
           this.workflowFilePath,
           this.panelMetadata.workflowContent,
           msg,
+          this.panelMetadata.parametersData,
           this.panelMetadata.azureDetails?.tenantId,
           this.panelMetadata.azureDetails?.workflowManagementBaseUrl
         );
@@ -196,11 +193,12 @@ export default class OpenDesignerForLocalProject extends OpenDesignerBase {
         await addConnectionData(this.context, this.workflowFilePath, msg.connectionAndSetting);
         break;
       }
-      case ExtensionCommand.openOauthLoginPopup:
+      case ExtensionCommand.openOauthLoginPopup: {
         await env.openExternal(msg.url);
         break;
+      }
 
-      case ExtensionCommand.createFileSystemConnection:
+      case ExtensionCommand.createFileSystemConnection: {
         {
           const connectionName = msg.connectionName;
           const { connection, errorMessage } = await this.createFileSystemConnection(msg.connectionInfo);
@@ -214,16 +212,39 @@ export default class OpenDesignerForLocalProject extends OpenDesignerBase {
           });
         }
         break;
+      }
+
+      case ExtensionCommand.openRelativeLink: {
+        if (msg.content === '/dataMapper') {
+          createNewDataMapCmd(this.context);
+        }
+        break;
+      }
+
+      case ExtensionCommand.logTelemetry: {
+        const eventName = msg.data.name ?? msg.data.area;
+        ext.telemetryReporter.sendTelemetryEvent(eventName, { ...msg.data });
+        break;
+      }
 
       default:
         break;
     }
   }
 
+  /**
+   * Saves workflow locally in the workflow.json.
+   * @param {string} filePath - File path of file to save the workflow.
+   * @param {any} workflow - Local workflow schema before changes .
+   * @param {any} workflowToSave - Workflow schema to save.
+   * @param {string} azureTenantId - Tenant id from azure.
+   * @param {string} workflowBaseManagementUri - Workflow base url.
+   */
   private async saveWorkflow(
     filePath: string,
     workflow: any,
     workflowToSave: any,
+    panelParameterRecord: Record<string, Parameter>,
     azureTenantId?: string,
     workflowBaseManagementUri?: string
   ): Promise<void> {
@@ -234,9 +255,30 @@ export default class OpenDesignerForLocalProject extends OpenDesignerBase {
 
     await window.withProgress(options, async () => {
       try {
-        const { definition, connectionReferences, parameters } = workflowToSave;
+        const { definition, connectionReferences, parameters, customCodeData } = workflowToSave;
         const definitionToSave: any = definition;
         const parametersFromDefinition = parameters;
+        const projectPath = await getLogicAppProjectRoot(this.context, filePath);
+
+        workflow.definition = definitionToSave;
+
+        if (connectionReferences) {
+          const connectionsAndSettingsToUpdate = await getConnectionsAndSettingsToUpdate(
+            this.context,
+            projectPath,
+            connectionReferences,
+            azureTenantId,
+            workflowBaseManagementUri,
+            parametersFromDefinition
+          );
+
+          await saveConnectionReferences(this.context, projectPath, connectionsAndSettingsToUpdate);
+        }
+
+        if (customCodeData) {
+          const customCodeToUpdate = await getCustomCodeToUpdate(this.context, filePath, customCodeData);
+          await saveCustomCodeStandard(filePath, customCodeToUpdate);
+        }
 
         if (parametersFromDefinition) {
           delete parametersFromDefinition.$connections;
@@ -245,25 +287,8 @@ export default class OpenDesignerForLocalProject extends OpenDesignerBase {
             parameter.value = parameter.value ?? parameter.defaultValue;
             delete parameter.defaultValue;
           }
-          await saveParameters(this.context, filePath, parametersFromDefinition);
-        }
-
-        workflow.definition = definitionToSave;
-
-        if (connectionReferences) {
-          const connectionsAndSettingsToUpdate = await getConnectionsAndSettingsToUpdate(
-            this.context,
-            filePath,
-            connectionReferences,
-            azureTenantId,
-            workflowBaseManagementUri
-          );
-
-          await saveConnectionReferences(this.context, filePath, connectionsAndSettingsToUpdate);
-
-          if (containsApiHubConnectionReference(connectionReferences)) {
-            window.showInformationMessage(localize('keyValidity', 'The connection will be valid for 7 days only.'), 'OK');
-          }
+          await this.mergeJsonParameters(filePath, parametersFromDefinition, panelParameterRecord);
+          await saveWorkflowParameter(this.context, filePath, parametersFromDefinition);
         }
 
         writeFileSync(filePath, JSON.stringify(workflow, null, 4));
@@ -274,14 +299,18 @@ export default class OpenDesignerForLocalProject extends OpenDesignerBase {
     });
   }
 
+  /**
+   * Calls the validate api to validate the workflow schema.
+   * @param {any} workflow - Workflow schema to validate.
+   */
   private async validateWorkflow(workflow: any): Promise<void> {
-    const url = `http://localhost:${ext.workflowDesignTimePort}${managementApiPrefix}/workflows/${this.workflowName}/validate?api-version=${this.apiVersion}`;
+    const url = `http://localhost:${ext.designTimePort}${managementApiPrefix}/workflows/${this.workflowName}/validate?api-version=${this.apiVersion}`;
     try {
       await sendRequest(this.context, {
         url,
         method: HTTP_METHODS.POST,
         headers: { ['Content-Type']: 'application/json' },
-        body: JSON.stringify({ properties: workflow }),
+        body: { properties: workflow },
       });
     } catch (error) {
       if (error.statusCode !== 404) {
@@ -306,7 +335,7 @@ export default class OpenDesignerForLocalProject extends OpenDesignerBase {
   private _traverseAction(action: any, migrationOptions: Record<string, any>): void {
     const type = action?.type;
     switch ((type || '').toLowerCase()) {
-      case 'liquid':
+      case 'liquid': {
         if (migrationOptions['liquidJsonToJson']?.inputs?.properties?.map?.properties?.source) {
           const map = action?.inputs?.map;
           if (map && map.source === undefined) {
@@ -314,7 +343,8 @@ export default class OpenDesignerForLocalProject extends OpenDesignerBase {
           }
         }
         break;
-      case 'xmlvalidation':
+      }
+      case 'xmlvalidation': {
         if (migrationOptions['xmlValidation']?.inputs?.properties?.schema?.properties?.source) {
           const schema = action?.inputs?.schema;
           if (schema && schema.source === undefined) {
@@ -322,7 +352,8 @@ export default class OpenDesignerForLocalProject extends OpenDesignerBase {
           }
         }
         break;
-      case 'xslt':
+      }
+      case 'xslt': {
         if (migrationOptions['xslt']?.inputs?.properties?.map?.properties?.source) {
           const map = action?.inputs?.map;
           if (map && map.source === undefined) {
@@ -330,8 +361,9 @@ export default class OpenDesignerForLocalProject extends OpenDesignerBase {
           }
         }
         break;
+      }
       case 'flatfileencoding':
-      case 'flatfiledecoding':
+      case 'flatfiledecoding': {
         if (migrationOptions['flatFileEncoding']?.inputs?.properties?.schema?.properties?.source) {
           const schema = action?.inputs?.schema;
           if (schema && schema.source === undefined) {
@@ -339,54 +371,50 @@ export default class OpenDesignerForLocalProject extends OpenDesignerBase {
           }
         }
         break;
-      case 'if':
+      }
+      case 'if': {
         this._traverseActions(action.else?.actions, migrationOptions);
-      // fall through
+        break;
+      }
       case 'scope':
       case 'foreach':
       case 'changeset':
-      case 'until':
+      case 'until': {
         this._traverseActions(action.actions, migrationOptions);
         break;
-      case 'switch':
+      }
+      case 'switch': {
         for (const caseKey of Object.keys(action.cases || {})) {
           this._traverseActions(action.cases[caseKey]?.actions, migrationOptions);
         }
         this._traverseActions(action.default?.actions, migrationOptions);
 
         break;
+      }
     }
   }
 
   private _getMigrationOptions(baseUrl: string): Promise<Record<string, any>> {
-    const flatFileEncodingPromise = requestP({
-      json: true,
-      method: HTTP_METHODS.GET,
-      uri: `${baseUrl}/operationGroups/flatFileOperations/operations/flatFileEncoding?api-version=2019-10-01-edge-preview&$expand=properties/manifest`,
-    });
-    const liquidJsonToJsonPromise = requestP({
-      json: true,
-      method: HTTP_METHODS.GET,
-      uri: `${baseUrl}/operationGroups/liquidOperations/operations/liquidJsonToJson?api-version=2019-10-01-edge-preview&$expand=properties/manifest`,
-    });
-    const xmlValidationPromise = requestP({
-      json: true,
-      method: HTTP_METHODS.GET,
-      uri: `${baseUrl}/operationGroups/xmlOperations/operations/xmlValidation?api-version=2019-10-01-edge-preview&$expand=properties/manifest`,
-    });
-    const xsltPromise = requestP({
-      json: true,
-      method: HTTP_METHODS.GET,
-      uri: `${baseUrl}/operationGroups/xmlOperations/operations/xmlTransform?api-version=2019-10-01-edge-preview&$expand=properties/manifest`,
-    });
+    const flatFileEncodingPromise = axios.get(
+      `${baseUrl}/operationGroups/flatFileOperations/operations/flatFileEncoding?api-version=2019-10-01-edge-preview&$expand=properties/manifest`
+    );
+    const liquidJsonToJsonPromise = axios.get(
+      `${baseUrl}/operationGroups/liquidOperations/operations/liquidJsonToJson?api-version=2019-10-01-edge-preview&$expand=properties/manifest`
+    );
+    const xmlValidationPromise = axios.get(
+      `${baseUrl}/operationGroups/xmlOperations/operations/xmlValidation?api-version=2019-10-01-edge-preview&$expand=properties/manifest`
+    );
+    const xsltPromise = axios.get(
+      `${baseUrl}/operationGroups/xmlOperations/operations/xmlTransform?api-version=2019-10-01-edge-preview&$expand=properties/manifest`
+    );
 
     return Promise.all([flatFileEncodingPromise, liquidJsonToJsonPromise, xmlValidationPromise, xsltPromise]).then(
       ([ff, liquid, xmlvalidation, xslt]) => {
         return {
-          flatFileEncoding: ff.properties.manifest,
-          liquidJsonToJson: liquid.properties.manifest,
-          xmlValidation: xmlvalidation.properties.manifest,
-          xslt: xslt.properties.manifest,
+          flatFileEncoding: ff.data.properties.manifest,
+          liquidJsonToJson: liquid.data.properties.manifest,
+          xmlValidation: xmlvalidation.data.properties.manifest,
+          xslt: xslt.data.properties.manifest,
         };
       }
     );
@@ -396,8 +424,11 @@ export default class OpenDesignerForLocalProject extends OpenDesignerBase {
     const workflowContent: any = JSON.parse(readFileSync(this.workflowFilePath, 'utf8'));
     this._migrate(workflowContent, migrationOptions);
     const connectionsData: string = await getConnectionsFromFile(this.context, this.workflowFilePath);
-    const projectPath: string | undefined = await getFunctionProjectRoot(this.context, this.workflowFilePath);
+    const projectPath: string | undefined = await getLogicAppProjectRoot(this.context, this.workflowFilePath);
     const parametersData: Record<string, Parameter> = await getParametersFromFile(this.context, this.workflowFilePath);
+    const customCodeData: Record<string, string> = await getCustomCodeFromFiles(this.workflowFilePath);
+    const workflowDetails = await getManualWorkflowsInLocalProject(projectPath, this.workflowName);
+    const artifacts = await getArtifactsInLocalProject(projectPath);
     let localSettings: Record<string, string>;
     let azureDetails: AzureConnectorDetails;
 
@@ -411,18 +442,64 @@ export default class OpenDesignerForLocalProject extends OpenDesignerBase {
     return {
       panelId: this.panelName,
       appSettingNames: Object.keys(localSettings),
-      standardApp: getStandardAppData(this.workflowName, workflowContent, parametersData),
+      standardApp: getStandardAppData(this.workflowName, workflowContent),
       connectionsData,
+      customCodeData,
       parametersData,
       localSettings,
       azureDetails,
       accessToken: azureDetails.accessToken,
       workflowContent,
-      workflowDetails: await getManualWorkflowsInLocalProject(projectPath, this.workflowName),
+      workflowDetails,
       workflowName: this.workflowName,
-      artifacts: await getArtifactsInLocalProject(projectPath),
+      artifacts,
       schemaArtifacts: this.schemaArtifacts,
       mapArtifacts: this.mapArtifacts,
     };
+  }
+
+  /**
+   * Merges parameters from JSON.
+   * @param filePath The file path of the parameters JSON file.
+   * @param definitionParameters The parameters from the designer.
+   * @param panelParameterRecord The parameters from the panel
+   * @returns parameters from JSON file and designer.
+   */
+  private async mergeJsonParameters(
+    filePath: string,
+    definitionParameters: any,
+    panelParameterRecord: Record<string, Parameter>
+  ): Promise<void> {
+    const jsonParameters = await getParametersFromFile(this.context, filePath);
+
+    Object.entries(jsonParameters).forEach(([key, parameter]) => {
+      if (!definitionParameters[key] && !panelParameterRecord[key]) {
+        definitionParameters[key] = parameter;
+      }
+    });
+  }
+
+  /**
+   * Reloads the webview panel and updates the view state.
+   * @param webviewPanel The web view panel to update.
+   */
+  private async reloadWebviewPanel(webviewPanel: WebviewPanel): Promise<void> {
+    this.panelMetadata = await this._getDesignerPanelMetadata(this.migrationOptions);
+    webviewPanel.webview.html = await this.getWebviewContent({
+      connectionsData: this.panelMetadata.connectionsData,
+      parametersData: this.panelMetadata.parametersData || {},
+      localSettings: this.panelMetadata.localSettings,
+      artifacts: this.panelMetadata.artifacts,
+      azureDetails: this.panelMetadata.azureDetails,
+      workflowDetails: this.panelMetadata.workflowDetails,
+    });
+    this.sendMsgToWebview({
+      command: ExtensionCommand.update_panel_metadata,
+      data: {
+        panelMetadata: this.panelMetadata,
+        connectionData: this.connectionData,
+        apiHubServiceDetails: this.apiHubServiceDetails,
+      },
+    });
   }
 }

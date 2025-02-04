@@ -1,32 +1,50 @@
 import { ArrayEditor } from '../../arrayeditor';
 import { AuthenticationEditor } from '../../authentication';
 import { CodeEditor } from '../../code';
+import { isCustomCode } from '../../code/util';
 import { Combobox } from '../../combobox';
+import constants from '../../constants';
 import { CopyInputControl } from '../../copyinputcontrol';
 import { DictionaryEditor } from '../../dictionary';
 import { DropdownEditor } from '../../dropdown';
 import type { ValueSegment } from '../../editor';
-import type { CallbackHandler, CastHandler, ChangeHandler, GetTokenPickerHandler } from '../../editor/base';
-import { EditorLanguage } from '../../editor/monaco';
+import type {
+  CallbackHandler,
+  CastHandler,
+  ChangeHandler,
+  FileNameChangeHandler,
+  GetTokenPickerHandler,
+  loadParameterValueFromStringHandler,
+} from '../../editor/base';
+import type { TokenPickerButtonEditorProps } from '../../editor/base/plugins/tokenpickerbutton';
+import { createLiteralValueSegment, getDropdownOptionsFromOptions } from '../../editor/base/utils/helper';
 import { StringEditor } from '../../editor/string';
-import { FloatingActionMenu } from '../../floatingactionmenu';
+import { FloatingActionMenuKind } from '../../floatingactionmenu/constants';
+import { FloatingActionMenuInputs } from '../../floatingactionmenu/floatingactionmenuinputs';
+import { FloatingActionMenuOutputs } from '../../floatingactionmenu/floatingactionmenuoutputs';
 import { HTMLEditor } from '../../html';
-import type { PickerCallbackHandlers } from '../../picker/filepickereditor';
-import { FilePickerEditor } from '../../picker/filepickereditor';
+import type { PickerCallbackHandlers } from '../../picker/filepickerEditor';
+import { FilePickerEditor } from '../../picker/filepickerEditor';
 import { QueryBuilderEditor } from '../../querybuilder';
 import { HybridQueryBuilderEditor } from '../../querybuilder/HybridQueryBuilder';
 import { SimpleQueryBuilder } from '../../querybuilder/SimpleQueryBuilder';
 import { ScheduleEditor } from '../../recurrence';
 import { SchemaEditor } from '../../schemaeditor';
 import { TableEditor } from '../../table';
-import type { TokenGroup } from '../../tokenpicker/models/token';
+import type { TokenGroup } from '@microsoft/logic-apps-shared';
 import { useId } from '../../useId';
-import type { SettingProps } from './settingtoggle';
-import { Label } from '@fluentui/react';
+import type { SettingProps } from './';
+import { CustomTokenField, isCustomEditor } from './customTokenField';
+import { Label } from '../../label';
+import { EditorLanguage, equals, getPropertyValue, replaceWhiteSpaceWithUnderscore } from '@microsoft/logic-apps-shared';
+import { MixedInputEditor } from '../../mixedinputeditor/mixedinputeditor';
+import { useMemo } from 'react';
+import { useIntl } from 'react-intl';
 
 export interface SettingTokenFieldProps extends SettingProps {
   id?: string;
   value: ValueSegment[];
+  isDynamic?: boolean;
   isLoading?: boolean;
   errorDetails?: { message: string };
   editor?: string;
@@ -41,86 +59,163 @@ export interface SettingTokenFieldProps extends SettingProps {
   showTokens?: boolean;
   tokenGroup?: TokenGroup[];
   expressionGroup?: TokenGroup[];
+  tokenMapping: Record<string, ValueSegment>;
+  loadParameterValueFromString?: loadParameterValueFromStringHandler;
   onValueChange?: ChangeHandler;
   onComboboxMenuOpen?: CallbackHandler;
   onCastParameter: CastHandler;
+  onFileNameChange?: FileNameChangeHandler;
   pickerCallbacks?: PickerCallbackHandlers;
+  tokenpickerButtonProps?: TokenPickerButtonEditorProps;
   getTokenPicker: GetTokenPickerHandler;
   validationErrors?: string[];
   hideValidationErrors?: ChangeHandler;
+  suppressCastingForSerialize?: boolean;
 }
 
 export const SettingTokenField = ({ ...props }: SettingTokenFieldProps) => {
-  const labelId = useId('msla-editor-label');
-  const renderLabel = props.editor?.toLowerCase() !== 'floatingactionmenu';
+  const normalizedLabel = props.label?.replace(/ /g, '-');
+  const labelId = useId(normalizedLabel);
+  const hideLabel =
+    (isCustomEditor(props) && props.editorOptions?.hideLabel === true) ||
+    equals(props.editor?.toLowerCase(), constants.PARAMETER.EDITOR.FLOATINGACTIONMENU);
   return (
     <>
-      {renderLabel && (
+      {!hideLabel && (
         <div className="msla-input-parameter-label">
-          <Label id={labelId} className="msla-label" required={props.required}>
-            {props.label}
-          </Label>
+          <Label id={labelId} isRequiredField={props.required} text={props.label} />
         </div>
       )}
-      <TokenField {...props} labelId={labelId} />
+      <div key={props.id}>
+        {isCustomEditor(props) ? <CustomTokenField {...props} labelId={labelId} /> : <TokenField {...props} labelId={labelId} />}
+      </div>
     </>
   );
 };
 
-const TokenField = ({
+export type TokenFieldProps = SettingTokenFieldProps & { labelId: string };
+
+export const TokenField = ({
   editor,
   editorOptions,
   editorViewModel,
   placeholder,
   readOnly,
   value,
+  isDynamic,
   isLoading,
   errorDetails,
   showTokens,
   label,
   labelId,
   pickerCallbacks,
+  tokenpickerButtonProps,
+  tokenMapping,
+  loadParameterValueFromString,
   onValueChange,
   onComboboxMenuOpen,
   hideValidationErrors,
   onCastParameter,
+  onFileNameChange,
   getTokenPicker,
-}: SettingTokenFieldProps & { labelId: string }) => {
-  const dropdownOptions = editorOptions?.options?.value ?? editorOptions?.options ?? [];
+  suppressCastingForSerialize,
+  required,
+}: TokenFieldProps) => {
+  const intl = useIntl();
+  const dropdownOptions = useMemo(() => getDropdownOptionsFromOptions(editorOptions), [editorOptions]);
+  const labelForAutomationId = useMemo(() => replaceWhiteSpaceWithUnderscore(label), [label]);
+
+  const arrayItemLabel = intl.formatMessage(
+    {
+      defaultMessage: '{label} Item',
+      id: 'fBUCrA',
+      description: 'Label for array item',
+    },
+    { label }
+  );
+
+  const defaultArrayItemLabel = intl.formatMessage({
+    defaultMessage: 'Array Item',
+    id: 'gS4Teq',
+    description: 'Label for array item',
+  });
 
   switch (editor?.toLowerCase()) {
-    case 'copyable':
-      return <CopyInputControl placeholder={placeholder} text={value[0].value} />;
-
-    case 'dropdown':
+    case constants.PARAMETER.EDITOR.ARRAY:
       return (
-        <DropdownEditor
-          label={label}
+        <ArrayEditor
+          isRequired={required}
+          labelId={labelId}
+          arrayType={editorViewModel.arrayType}
+          initialMode={editorOptions?.initialMode}
+          labelProps={{ text: label ? arrayItemLabel : defaultArrayItemLabel }}
+          placeholder={placeholder}
           readonly={readOnly}
-          initialValue={value}
-          options={dropdownOptions.map((option: any, index: number) => ({ key: index.toString(), ...option }))}
-          multiSelect={!!editorOptions?.multiSelect}
-          serialization={editorOptions?.serialization}
+          initialValue={editorViewModel.uncastedValue}
+          tokenPickerButtonProps={tokenpickerButtonProps}
+          getTokenPicker={getTokenPicker}
+          itemSchema={editorViewModel.itemSchema}
+          castParameter={onCastParameter}
           onChange={onValueChange}
-          data-automation-id={`msla-setting-token-editor-dropdowneditor-${label}`}
+          dataAutomationId={`msla-setting-token-editor-arrayeditor-${labelForAutomationId}`}
+          // Props for dynamic options
+          isDynamic={isDynamic}
+          options={dropdownOptions}
+          isLoading={isLoading}
+          errorDetails={errorDetails}
+          onMenuOpen={onComboboxMenuOpen}
+          tokenMapping={tokenMapping}
+          loadParameterValueFromString={loadParameterValueFromString}
+          suppressCastingForSerialize={suppressCastingForSerialize}
         />
       );
 
-    case 'code':
+    case constants.PARAMETER.EDITOR.AUTHENTICATION:
       return (
-        <CodeEditor
+        <AuthenticationEditor
           labelId={labelId}
           initialValue={value}
+          options={editorOptions}
+          type={editorViewModel.type}
+          authenticationValue={editorViewModel.authenticationValue}
           getTokenPicker={getTokenPicker}
-          language={EditorLanguage.javascript}
+          onChange={onValueChange}
+          tokenMapping={tokenMapping}
+          loadParameterValueFromString={loadParameterValueFromString}
+          basePlugins={{ tokens: showTokens }}
+          readonly={readOnly}
+          tokenPickerButtonProps={tokenpickerButtonProps}
+        />
+      );
+
+    case constants.PARAMETER.EDITOR.CODE: {
+      const { language = EditorLanguage.javascript } = editorOptions || {};
+      const customCodeEditor = isCustomCode(editor, language);
+      const customCodeData = (() => {
+        const data = editorViewModel?.customCodeData?.fileData ?? '';
+        return typeof data === 'string' ? data : JSON.stringify(data);
+      })();
+      const fileName = editorViewModel?.customCodeData?.fileName;
+
+      const initialValue = customCodeEditor ? [createLiteralValueSegment(customCodeData)] : value;
+
+      return (
+        <CodeEditor
+          originalFileName={fileName}
+          labelId={labelId}
+          initialValue={initialValue}
+          getTokenPicker={getTokenPicker}
+          onFileNameChange={onFileNameChange}
+          language={language}
           onChange={onValueChange}
           readonly={readOnly}
           placeholder={placeholder}
-          data-automation-id={`msla-setting-token-editor-codeeditor-${label}`}
+          customCodeEditor={customCodeEditor}
         />
       );
+    }
 
-    case 'combobox':
+    case constants.PARAMETER.EDITOR.COMBOBOX:
       return (
         <Combobox
           labelId={labelId}
@@ -128,44 +223,166 @@ const TokenField = ({
           placeholder={placeholder}
           readonly={readOnly}
           initialValue={value}
-          options={dropdownOptions.map((option: any, index: number) => ({ key: index.toString(), ...option }))}
+          options={dropdownOptions}
           useOption={true}
           isLoading={isLoading}
           errorDetails={errorDetails}
           getTokenPicker={getTokenPicker}
           onChange={onValueChange}
           onMenuOpen={onComboboxMenuOpen}
-          data-automation-id={`msla-setting-token-editor-combobox-${label}`}
+          multiSelect={getPropertyValue(editorOptions, 'multiSelect')}
+          serialization={editorOptions?.serialization}
+          dataAutomationId={`msla-setting-token-editor-combobox-${labelForAutomationId}`}
+          tokenMapping={tokenMapping}
+          loadParameterValueFromString={loadParameterValueFromString}
         />
       );
 
-    case 'schema':
-      return (
-        <SchemaEditor
-          label={label}
+    case constants.PARAMETER.EDITOR.COPYABLE:
+      return <CopyInputControl placeholder={placeholder} text={value[0].value} />;
+
+    case constants.PARAMETER.EDITOR.CONDITION:
+      return editorViewModel.isOldFormat ? (
+        <SimpleQueryBuilder
           readonly={readOnly}
-          initialValue={value}
+          itemValue={editorViewModel.itemValue ?? value}
+          tokenMapping={tokenMapping}
+          loadParameterValueFromString={loadParameterValueFromString}
+          getTokenPicker={getTokenPicker}
           onChange={onValueChange}
-          data-automation-id={`msla-setting-token-editor-schemaeditor-${label}`}
+        />
+      ) : editorViewModel.isHybridEditor ? (
+        <HybridQueryBuilderEditor
+          readonly={readOnly}
+          groupProps={JSON.parse(JSON.stringify(editorViewModel.items))}
+          onChange={onValueChange}
+          getTokenPicker={getTokenPicker}
+        />
+      ) : (
+        <QueryBuilderEditor
+          readonly={readOnly}
+          groupProps={JSON.parse(JSON.stringify(editorViewModel.items))}
+          onChange={onValueChange}
+          tokenMapping={tokenMapping}
+          loadParameterValueFromString={loadParameterValueFromString}
+          getTokenPicker={getTokenPicker}
+          showDescription={true}
         />
       );
-
-    case 'dictionary':
+    case constants.PARAMETER.EDITOR.DICTIONARY:
       return (
         <DictionaryEditor
           labelId={labelId}
+          label={label}
           placeholder={placeholder}
           readonly={readOnly}
           initialValue={value}
           initialItems={editorViewModel.items}
           valueType={editorOptions?.valueType}
+          tokenPickerButtonProps={tokenpickerButtonProps}
           getTokenPicker={getTokenPicker}
           onChange={onValueChange}
-          data-automation-id={`msla-setting-token-editor-dictionaryeditor-${label}`}
+          dataAutomationId={`msla-setting-token-editor-dictionaryeditor-${labelForAutomationId}`}
+          tokenMapping={tokenMapping}
+          loadParameterValueFromString={loadParameterValueFromString}
         />
       );
 
-    case 'table':
+    case constants.PARAMETER.EDITOR.DROPDOWN:
+      return (
+        <DropdownEditor
+          label={label}
+          readonly={readOnly}
+          initialValue={value}
+          options={dropdownOptions.map((option: any, index: number) => ({ key: index.toString(), ...option }))}
+          multiSelect={!!getPropertyValue(editorOptions, 'multiSelect')}
+          serialization={editorOptions?.serialization}
+          onChange={onValueChange}
+          dataAutomationId={`msla-setting-token-editor-dropdowneditor-${labelForAutomationId}`}
+        />
+      );
+
+    case constants.PARAMETER.EDITOR.FLOATINGACTIONMENU: {
+      return editorOptions?.menuKind === FloatingActionMenuKind.outputs ? (
+        <FloatingActionMenuOutputs
+          supportedTypes={editorOptions?.supportedTypes}
+          initialValue={value}
+          onChange={onValueChange}
+          editorViewModel={editorViewModel}
+          basePlugins={{ tokens: showTokens }}
+          tokenPickerButtonProps={tokenpickerButtonProps}
+          getTokenPicker={getTokenPicker}
+          hideValidationErrors={hideValidationErrors}
+          includeOutputDescription={editorOptions?.includeOutputDescription}
+        />
+      ) : (
+        <FloatingActionMenuInputs
+          supportedTypes={editorOptions?.supportedTypes}
+          useStaticInputs={editorOptions?.useStaticInputs}
+          initialValue={value}
+          isRequestApiConnectionTrigger={editorOptions?.isRequestApiConnectionTrigger}
+          onChange={onValueChange}
+        />
+      );
+    }
+
+    case constants.PARAMETER.EDITOR.FILEPICKER:
+      return (
+        <FilePickerEditor
+          className="msla-setting-token-editor-container"
+          placeholder={placeholder}
+          basePlugins={{ tokens: showTokens, clearEditor: true }}
+          readonly={readOnly}
+          initialValue={value}
+          displayValue={editorViewModel.displayValue}
+          type={editorOptions.pickerType}
+          items={editorOptions.items}
+          fileFilters={editorOptions.fileFilters}
+          pickerCallbacks={pickerCallbacks as PickerCallbackHandlers}
+          isLoading={isLoading}
+          errorDetails={errorDetails}
+          tokenMapping={tokenMapping}
+          loadParameterValueFromString={loadParameterValueFromString}
+          editorBlur={onValueChange}
+          tokenPickerButtonProps={tokenpickerButtonProps}
+          getTokenPicker={getTokenPicker}
+          onChange={hideValidationErrors}
+          dataAutomationId={`msla-setting-token-editor-filepickereditor-${labelForAutomationId}`}
+        />
+      );
+
+    case constants.PARAMETER.EDITOR.HTML:
+      return (
+        <HTMLEditor
+          labelId={labelId}
+          initialValue={value}
+          placeholder={placeholder}
+          basePlugins={{ tokens: showTokens }}
+          readonly={readOnly}
+          tokenPickerButtonProps={tokenpickerButtonProps}
+          loadParameterValueFromString={loadParameterValueFromString}
+          tokenMapping={tokenMapping}
+          getTokenPicker={getTokenPicker}
+          onChange={onValueChange}
+          dataAutomationId={`msla-setting-token-editor-htmleditor-${labelForAutomationId}`}
+        />
+      );
+
+    case constants.PARAMETER.EDITOR.RECURRENCE:
+      return (
+        <ScheduleEditor
+          readOnly={readOnly}
+          type={editorOptions?.recurrenceType}
+          showPreview={editorOptions?.showPreview}
+          initialValue={value}
+          onChange={onValueChange}
+        />
+      );
+
+    case constants.PARAMETER.EDITOR.SCHEMA:
+      return <SchemaEditor label={label} readonly={readOnly} initialValue={value} onChange={onValueChange} />;
+
+    case constants.PARAMETER.EDITOR.TABLE:
       return (
         <TableEditor
           labelId={labelId}
@@ -177,124 +394,23 @@ const TokenField = ({
           titles={editorOptions?.columns?.titles}
           keys={editorOptions?.columns?.keys}
           types={editorOptions?.columns?.types}
+          tokenPickerButtonProps={tokenpickerButtonProps}
           getTokenPicker={getTokenPicker}
           onChange={onValueChange}
-          data-automation-id={`msla-setting-token-editor-tableditor-${label}`}
+          dataAutomationId={`msla-setting-token-editor-tableditor-${labelForAutomationId}`}
+          tokenMapping={tokenMapping}
+          loadParameterValueFromString={loadParameterValueFromString}
         />
       );
 
-    case 'array':
+    case constants.PARAMETER.EDITOR.MIXEDINPUTEDITOR: {
       return (
-        <ArrayEditor
-          labelId={labelId}
-          arrayType={editorViewModel.arrayType}
-          labelProps={{ text: label ? `${label} Item` : 'Array Item' }}
-          placeholder={placeholder}
-          readonly={readOnly}
-          initialValue={editorViewModel.uncastedValue}
-          getTokenPicker={getTokenPicker}
-          itemSchema={editorViewModel.itemSchema}
-          castParameter={onCastParameter}
-          onChange={onValueChange}
-          data-automation-id={`msla-setting-token-editor-arrayeditor-${label}`}
-        />
-      );
-
-    case 'authentication':
-      return (
-        <AuthenticationEditor
-          labelId={labelId}
-          initialValue={value}
-          options={editorOptions}
-          type={editorViewModel.type}
-          authenticationValue={editorViewModel.authenticationValue}
-          getTokenPicker={getTokenPicker}
-          onChange={onValueChange}
-          BasePlugins={{ tokens: showTokens }}
-          data-automation-id={`msla-setting-token-editor-authenticationeditor-${label}`}
-        />
-      );
-
-    case 'condition':
-      return editorViewModel.isOldFormat ? (
-        <SimpleQueryBuilder
-          readonly={readOnly}
-          itemValue={editorViewModel.itemValue ?? value}
-          isRowFormat={editorViewModel.isRowFormat}
-          getTokenPicker={getTokenPicker}
-          onChange={onValueChange}
-          data-automation-id={`msla-setting-token-editor-simplequerybuildereditor-${label}`}
-        />
-      ) : editorViewModel.isHybridEditor ? (
-        <HybridQueryBuilderEditor
-          readonly={readOnly}
-          groupProps={JSON.parse(JSON.stringify(editorViewModel.items))}
-          onChange={onValueChange}
-          getTokenPicker={getTokenPicker}
-          data-automation-id={`msla-setting-token-editor-hybridquerybuildereditor-${label}`}
-        />
-      ) : (
-        <QueryBuilderEditor
-          readonly={readOnly}
-          groupProps={JSON.parse(JSON.stringify(editorViewModel.items))}
-          onChange={onValueChange}
-          getTokenPicker={getTokenPicker}
-          data-automation-id={`msla-setting-token-editor-querybuildereditor-${label}`}
-        />
-      );
-
-    case 'recurrence':
-      return (
-        <ScheduleEditor
-          readOnly={readOnly}
-          type={editorOptions?.recurrenceType}
-          showPreview={editorOptions?.showPreview}
-          initialValue={value}
-          onChange={onValueChange}
-          data-automation-id={`msla-setting-token-editor-scheduleeditor-${label}`}
-        />
-      );
-
-    case 'filepicker':
-      return (
-        <FilePickerEditor
-          className="msla-setting-token-editor-container"
-          placeholder={placeholder}
-          BasePlugins={{ tokens: showTokens, clearEditor: true }}
-          readonly={readOnly}
-          initialValue={value}
-          displayValue={editorViewModel.displayValue}
-          type={editorOptions.pickerType}
-          items={editorOptions.items}
-          fileFilters={editorOptions.fileFilters}
-          pickerCallbacks={pickerCallbacks as PickerCallbackHandlers}
-          isLoading={isLoading}
-          errorDetails={errorDetails}
-          editorBlur={onValueChange}
-          getTokenPicker={getTokenPicker}
-          onChange={hideValidationErrors}
-          data-automation-id={`msla-setting-token-editor-filepickereditor-${label}`}
-        />
-      );
-    case 'html':
-      return (
-        <HTMLEditor
-          initialValue={value}
-          placeholder={placeholder}
-          BasePlugins={{ tokens: showTokens }}
-          readonly={readOnly}
-          getTokenPicker={getTokenPicker}
-          onChange={onValueChange}
-        />
-      );
-    case 'floatingactionmenu': {
-      return (
-        <FloatingActionMenu
+        <MixedInputEditor
           supportedTypes={editorOptions?.supportedTypes}
           useStaticInputs={editorOptions?.useStaticInputs}
           initialValue={value}
-          onChange={onValueChange}
-          data-automation-id={`msla-setting-token-editor-floatingactionmenu-${label}`}
+          isRequestApiConnectionTrigger={editorOptions?.isRequestApiConnectionTrigger}
+          onChange={onValueChange ?? (() => {})}
         />
       );
     }
@@ -305,13 +421,16 @@ const TokenField = ({
           labelId={labelId}
           className="msla-setting-token-editor-container"
           placeholder={placeholder}
-          BasePlugins={{ tokens: showTokens }}
+          basePlugins={{ tokens: showTokens }}
           readonly={readOnly}
           initialValue={value}
+          tokenPickerButtonProps={tokenpickerButtonProps}
+          tokenMapping={tokenMapping}
+          loadParameterValueFromString={loadParameterValueFromString}
           editorBlur={onValueChange}
           getTokenPicker={getTokenPicker}
           onChange={hideValidationErrors}
-          data-automation-id={`msla-setting-token-editor-stringeditor-${label}`}
+          dataAutomationId={`msla-setting-token-editor-stringeditor-${labelForAutomationId}`}
         />
       );
   }

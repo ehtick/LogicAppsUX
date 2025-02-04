@@ -1,50 +1,67 @@
 import type { RootState } from '../../store';
-import type { PanelState } from './panelInterfaces';
 import { createSelector } from '@reduxjs/toolkit';
 import { useSelector } from 'react-redux';
 
 const getPanelState = (state: RootState) => state.panel;
 
-export const useIsPanelCollapsed = () => useSelector(createSelector(getPanelState, (state: PanelState) => state.collapsed));
+export const useConnectionPanelSelectedNodeIds = () =>
+  useSelector(createSelector(getPanelState, (state) => state.connectionContent.selectedNodeIds));
 
-export const useCurrentPanelModePanelMode = () => useSelector(createSelector(getPanelState, (state: PanelState) => state.currentState));
+export const useCurrentPanelMode = () => useSelector(createSelector(getPanelState, (state) => state.currentPanelMode));
 
-export const useIsNodeSearchMode = () =>
-  useSelector(createSelector(getPanelState, (state: PanelState) => state.currentState === 'NodeSearch'));
+export const useDiscoveryPanelSelectedOperationGroupId = () =>
+  useSelector(createSelector(getPanelState, (state) => state.discoveryContent.selectedOperationGroupId));
 
-export const useIsAddingTrigger = () => useSelector(createSelector(getPanelState, (state: PanelState) => state.addingTrigger));
+export const useDiscoveryPanelSelectedOperationId = () =>
+  useSelector(createSelector(getPanelState, (state) => state.discoveryContent.selectedOperationId));
 
-export const useRelationshipIds = () => useSelector(createSelector(getPanelState, (state: PanelState) => state.relationshipIds));
+export const useDiscoveryPanelSelectedNodeIds = () =>
+  useSelector(createSelector(getPanelState, (state) => state.discoveryContent.selectedNodeIds));
 
-export const useIsParallelBranch = () => useSelector(createSelector(getPanelState, (state: PanelState) => state.isParallelBranch));
+export const useDiscoveryPanelIsAddingTrigger = () =>
+  useSelector(createSelector(getPanelState, (state) => state.discoveryContent.isAddingTrigger));
 
-export const useSelectedSearchOperationGroupId = () =>
-  useSelector(createSelector(getPanelState, (state: PanelState) => state.selectedOperationGroupId));
+export const useDiscoveryPanelIsParallelBranch = () =>
+  useSelector(createSelector(getPanelState, (state) => state.discoveryContent.isParallelBranch));
 
-export const useSelectedSearchOperationId = () =>
-  useSelector(createSelector(getPanelState, (state: PanelState) => state.selectedOperationId));
+export const useDiscoveryPanelRelationshipIds = () =>
+  useSelector(createSelector(getPanelState, (state) => state.discoveryContent.relationshipIds));
 
-export const useSelectedNodeId = () => useSelector(createSelector(getPanelState, (state: PanelState) => state.selectedNode));
+export const useErrorsPanelSelectedTabId = () => useSelector(createSelector(getPanelState, (state) => state.errorContent.selectedTabId));
 
-export const useIsNodeSelected = (nodeId: string) =>
-  useSelector(createSelector(getPanelState, (state: PanelState) => state.selectedNode === nodeId));
+export const useFocusReturnElementId = () => useSelector(createSelector(getPanelState, (state) => state.focusReturnElementId));
 
-export const useRegisteredPanelTabs = () => useSelector(createSelector(getPanelState, (state: PanelState) => state.registeredTabs));
+export const useIsCreatingConnection = () =>
+  useSelector(createSelector(getPanelState, (state) => state.connectionContent.isCreatingConnection));
 
-export const usePanelTabByName = (tabName: string) =>
-  useSelector(createSelector(getPanelState, (state: PanelState) => state.registeredTabs[tabName]));
+export const useIsPanelCollapsed = () => useSelector(createSelector(getPanelState, (state) => state.isCollapsed));
 
-export const useVisiblePanelTabs = () =>
-  useSelector(
-    createSelector(getPanelState, (state: PanelState) => {
-      const visibleTabs = Object.values(state.registeredTabs).filter((tab) => tab.visible !== false);
-      return visibleTabs.sort((a, b) => a.order - b.order);
-    })
-  );
+export const useIsPanelLoading = () => useSelector(createSelector(getPanelState, (state) => state.isLoading));
 
-export const useSelectedPanelTabName = () => useSelector(createSelector(getPanelState, (state: PanelState) => state.selectedTabName));
+export const useIsNodePinnedToOperationPanel = (nodeId: string) =>
+  useSelector(createSelector(getPanelState, (state) => (state.operationContent.pinnedNodeId ?? '') === nodeId));
 
-export const useSelectedPanelTab = () => {
-  const selectedPanelTabName = useSelectedPanelTabName();
-  return useSelector(createSelector(getPanelState, (state: PanelState) => state.registeredTabs[selectedPanelTabName ?? '']));
+export const useIsNodeSelectedInOperationPanel = (nodeId: string) =>
+  useSelector(createSelector(getPanelState, (state) => (state.operationContent.selectedNodeId ?? '') === nodeId));
+
+export const useIsPanelInPinnedViewMode = (): boolean => {
+  const selectedNodeId = useOperationPanelSelectedNodeId();
+  const pinnedNodeId = useOperationPanelPinnedNodeId();
+  return !!(selectedNodeId && pinnedNodeId && pinnedNodeId !== selectedNodeId);
 };
+
+export const useOperationPanelPinnedNodeId = () =>
+  useSelector(createSelector(getPanelState, (state) => state.operationContent.pinnedNodeId ?? ''));
+
+export const useOperationPanelPinnedNodeActiveTabId = () =>
+  useSelector(createSelector(getPanelState, (state) => state.operationContent.pinnedNodeActiveTabId));
+
+export const useOperationPanelSelectedNodeId = () =>
+  useSelector(createSelector(getPanelState, (state) => state.operationContent.selectedNodeId ?? ''));
+
+export const useOperationPanelSelectedNodeActiveTabId = () =>
+  useSelector(createSelector(getPanelState, (state) => state.operationContent.selectedNodeActiveTabId));
+
+export const usePanelLocation = () => useSelector(createSelector(getPanelState, (state) => state.location));
+
+export const usePreviousPanelMode = () => useSelector(createSelector(getPanelState, (state) => state.previousPanelMode));

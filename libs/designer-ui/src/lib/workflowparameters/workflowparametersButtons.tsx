@@ -1,11 +1,15 @@
 import type { EventHandler } from '../eventhandler';
 import type { WorkflowParameterDefinition } from './workflowparameter';
-import type { IButtonStyles, IIconProps, ITooltipHostStyles } from '@fluentui/react';
-import { IconButton, TooltipHost } from '@fluentui/react';
+import { Button, Tooltip } from '@fluentui/react-components';
+import { bundleIcon, Delete24Filled, Delete24Regular, Edit24Filled, Edit24Regular } from '@fluentui/react-icons';
 import { useIntl } from 'react-intl';
+
+const DeleteIcon = bundleIcon(Delete24Filled, Delete24Regular);
+const EditIcon = bundleIcon(Edit24Filled, Edit24Regular);
 
 interface ButtonProps {
   onClick: React.MouseEventHandler<HTMLButtonElement>;
+  definition: WorkflowParameterDefinition;
 }
 
 interface WorkflowParameterDeleteEvent {
@@ -40,78 +44,54 @@ export const EditOrDeleteButton = ({
     setIsEditable(true);
     setExpanded(true);
   };
-  return showDelete ? <DeleteButton onClick={handleDelete} /> : <EditButton onClick={handleEdit} />;
+
+  return showDelete ? (
+    <DeleteButton onClick={handleDelete} definition={definition} />
+  ) : (
+    <EditButton onClick={handleEdit} definition={definition} />
+  );
 };
 
-const tooltipStyles: ITooltipHostStyles = {
-  root: {
-    height: 'fit-content',
-  },
-};
-const buttonStyles: IButtonStyles = {
-  root: {
-    alignSelf: 'flex-end',
-    margin: 0,
-  },
-};
-
-const deleteIcon: IIconProps = {
-  iconName: 'Delete',
-  styles: {
-    root: {
-      color: '#3AA0F3',
-    },
-  },
-};
-
-const editIcon: IIconProps = {
-  iconName: 'Edit',
-  styles: {
-    root: {
-      color: '#3AA0F3',
-    },
-  },
-};
-
-function DeleteButton({ onClick }: ButtonProps): JSX.Element {
+function DeleteButton({ onClick, definition }: ButtonProps): JSX.Element {
   const intl = useIntl();
 
   const deleteTitle = intl.formatMessage({
-    defaultMessage: 'Delete Parameter',
+    defaultMessage: 'Delete parameter',
+    id: 'qsL/fE',
     description: 'Delete Button Tooltip Text',
   });
 
   return (
-    <TooltipHost styles={tooltipStyles} content={deleteTitle}>
-      <IconButton
-        className="msla-delete-parameter-button"
-        ariaLabel={deleteTitle}
-        iconProps={deleteIcon}
-        styles={buttonStyles}
+    <Tooltip relationship="label" content={deleteTitle}>
+      <Button
+        appearance="subtle"
+        data-automation-id={`${definition.id}-parameter-delete-button`}
+        aria-label={deleteTitle}
         onClick={onClick}
+        icon={<DeleteIcon style={{ color: 'var(--colorBrandForeground1)' }} />}
       />
-    </TooltipHost>
+    </Tooltip>
   );
 }
 
-function EditButton({ onClick }: ButtonProps): JSX.Element {
+function EditButton({ onClick, definition }: ButtonProps): JSX.Element {
   const intl = useIntl();
 
   const editTitle = intl.formatMessage({
-    defaultMessage: 'Edit Parameter',
+    defaultMessage: 'Edit parameter',
+    id: '03RO5d',
     description: 'Edit Button Tooltip Text',
   });
 
   return (
-    <TooltipHost content={editTitle}>
-      <IconButton
-        data-testid="parameter-edit-icon-button"
-        className="msla-edit-parameter-button"
-        ariaLabel={editTitle}
-        iconProps={editIcon}
-        styles={buttonStyles}
+    <Tooltip relationship="label" content={editTitle}>
+      <Button
+        appearance="subtle"
+        data-automation-id={`${definition.id}-parameter-edit-button`}
+        aria-label={editTitle}
         onClick={onClick}
+        icon={<EditIcon style={{ color: 'var(--colorBrandForeground1)' }} />}
       />
-    </TooltipHost>
+    </Tooltip>
   );
 }

@@ -11,9 +11,8 @@ import {
 import { getAuthorizationToken } from '../../../utils/codeless/getAuthorizationToken';
 import type { IAzureConnectorsContext } from '../azureConnectorWizard';
 import { OpenDesignerBase } from './openDesignerBase';
-import type { ServiceClientCredentials } from '@azure/ms-rest-js';
-import type { IWorkflowFileContent, IDesignerPanelMetadata } from '@microsoft/vscode-extension';
-import { ExtensionCommand } from '@microsoft/vscode-extension';
+import type { IWorkflowFileContent, IDesignerPanelMetadata } from '@microsoft/vscode-extension-logic-apps';
+import { ExtensionCommand, ProjectName } from '@microsoft/vscode-extension-logic-apps';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { Uri } from 'vscode';
@@ -84,6 +83,7 @@ export class OpenDesignerForAzureResource extends OpenDesignerBase {
         this.sendMsgToWebview({
           command: ExtensionCommand.initialize_frame,
           data: {
+            project: ProjectName.designer,
             panelMetadata: this.panelMetadata,
             connectionData: this.connectionData,
             baseUrl: this.baseUrl,
@@ -98,20 +98,23 @@ export class OpenDesignerForAzureResource extends OpenDesignerBase {
         });
         break;
       }
+      case ExtensionCommand.logTelemetry: {
+        const eventName = msg.data.name ?? msg.data.area;
+        ext.telemetryReporter.sendTelemetryEvent(eventName, { ...msg.data });
+        break;
+      }
       default:
         break;
     }
   }
 
   private async getDesignerPanelMetadata(): Promise<IDesignerPanelMetadata> {
-    const parameters = await this.node.getParametersData();
-    const credentials: ServiceClientCredentials = this.node.credentials;
-    const accessToken: string = await getAuthorizationToken(credentials);
+    const accessToken: string = await getAuthorizationToken();
 
     return {
       panelId: this.panelName,
       connectionsData: await this.node.getConnectionsData(),
-      parametersData: parameters,
+      parametersData: await this.node.getParametersData(),
       localSettings: await this.node.getAppSettings(),
       artifacts: await this.node.getArtifacts(),
       workflowDetails: await this.node.getChildWorkflows(this.context),
@@ -126,7 +129,7 @@ export class OpenDesignerForAzureResource extends OpenDesignerBase {
         resourceGroupName: this.node?.parent?.parent?.site.resourceGroup,
       },
       workflowName: this.workflowName,
-      standardApp: getStandardAppData(this.workflowName, this.workflow, parameters),
+      standardApp: getStandardAppData(this.workflowName, this.workflow),
       schemaArtifacts: this.schemaArtifacts,
       mapArtifacts: this.mapArtifacts,
     };

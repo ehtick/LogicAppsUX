@@ -16,12 +16,14 @@ interface AddSectionProps {
 export const AddSection = ({ readonly, handleUpdateParent, index, addEmptyRow }: AddSectionProps) => {
   const intl = useIntl();
   const addRowText = intl.formatMessage({
-    defaultMessage: 'Add Row',
+    defaultMessage: 'Add row',
+    id: 'PpupBE',
     description: 'Button to add row',
   });
 
   const addGroupText = intl.formatMessage({
-    defaultMessage: 'Add Group',
+    defaultMessage: 'Add group',
+    id: 'ZXc10N',
     description: 'Button to add group',
   });
 
@@ -57,8 +59,8 @@ export const AddSection = ({ readonly, handleUpdateParent, index, addEmptyRow }:
         onClick: () => handleAddGroup(),
       },
     ],
-    directionalHintFixed: true,
   };
+
   return (
     <div className="msla-querybuilder-row-add-container">
       <div className="msla-querybuilder-row-gutter-hook" />

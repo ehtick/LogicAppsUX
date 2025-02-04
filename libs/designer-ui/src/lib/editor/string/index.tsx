@@ -1,22 +1,18 @@
 import type { BaseEditorProps, ChangeHandler } from '../base';
-import { BaseEditor } from '../base';
-import { Change } from '../base/plugins/Change';
+import { EditorWrapper } from '../base/EditorWrapper';
+import { EditorChangePlugin } from '../base/plugins/EditorChange';
+import { notEqual } from '../base/utils/helper';
 import type { ValueSegment } from '../models/parameter';
-import SingleLine from './stringPlugins/SingleLine';
 import { useState } from 'react';
 
 export interface StringEditorProps extends BaseEditorProps {
-  singleLine?: boolean;
   clearEditorOnTokenInsertion?: boolean;
   editorBlur?: ChangeHandler;
 }
 
 export const StringEditor = ({
-  singleLine,
   initialValue,
-  labelId,
   clearEditorOnTokenInsertion,
-  valueType,
   editorBlur,
   onChange,
   ...baseEditorProps
@@ -28,29 +24,25 @@ export const StringEditor = ({
     onChange?.({ value: newValue, viewModel: { hideErrorMessage: true } });
   };
   const handleBlur = () => {
-    editorBlur?.({ value: value });
-    onChange?.({ value: value, viewModel: { hideErrorMessage: false } });
+    if (notEqual(value, initialValue)) {
+      editorBlur?.({ value: value });
+    }
+
+    onChange?.({ value, viewModel: { hideErrorMessage: false } });
   };
 
   return (
-    <BaseEditor
-      placeholder={baseEditorProps.placeholder}
-      className={baseEditorProps.className}
+    <EditorWrapper
+      {...baseEditorProps}
       initialValue={initialValue}
-      BasePlugins={{
-        tokens: baseEditorProps.BasePlugins?.tokens ?? true,
+      basePlugins={{
         clearEditor: clearEditorOnTokenInsertion,
         singleValueSegment: clearEditorOnTokenInsertion,
+        ...baseEditorProps.basePlugins,
       }}
-      valueType={valueType}
-      readonly={baseEditorProps.readonly}
-      getTokenPicker={baseEditorProps.getTokenPicker}
       onBlur={handleBlur}
-      onFocus={baseEditorProps.onFocus}
-      labelId={labelId}
     >
-      {singleLine ? <SingleLine /> : null}
-      <Change setValue={onValueChange} />
-    </BaseEditor>
+      <EditorChangePlugin setValue={onValueChange} />
+    </EditorWrapper>
   );
 };

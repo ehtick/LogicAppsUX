@@ -6,6 +6,11 @@ import {
   workflowLocationKey,
   workflowManagementBaseURIKey,
   managementApiPrefix,
+  workflowFileName,
+  artifactsDirectory,
+  mapsDirectory,
+  schemasDirectory,
+  azurePublicBaseUrl,
 } from '../../../constants';
 import { ext } from '../../../extensionVariables';
 import { localize } from '../../../localize';
@@ -14,23 +19,27 @@ import type { IAzureConnectorsContext } from '../../commands/workflows/azureConn
 import type { RemoteWorkflowTreeItem } from '../../tree/remoteWorkflowsTree/RemoteWorkflowTreeItem';
 import { getLocalSettingsJson } from '../appSettings/localSettings';
 import { getAuthorizationToken } from './getAuthorizationToken';
-import type { ServiceClientCredentials } from '@azure/ms-rest-js';
 import type { IActionContext } from '@microsoft/vscode-azext-utils';
 import { DialogResponses } from '@microsoft/vscode-azext-utils';
 import type {
   IWorkflowFileContent,
-  Parameter,
   StandardApp,
-  Artifacts,
   AzureConnectorDetails,
   ILocalSettingsJson,
+  Parameter,
   WorkflowParameter,
-} from '@microsoft/vscode-extension';
+  Artifacts,
+} from '@microsoft/vscode-extension-logic-apps';
 import { readFileSync } from 'fs';
 import * as fse from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
 import type { MessageItem, WebviewPanel } from 'vscode';
+
+export type File = {
+  path: string;
+  name: string;
+};
 
 export function tryGetWebviewPanel(category: string, name: string): WebviewPanel | undefined {
   const currentPanels = ext.openWebviewPanels[category];
@@ -53,22 +62,14 @@ export function removeWebviewPanelFromCache(category: string, name: string): voi
   }
 }
 
-export function getStandardAppData(
-  workflowName: string,
-  workflow: IWorkflowFileContent,
-  parameters: Record<string, Parameter>
-): StandardApp {
+export function getStandardAppData(workflowName: string, workflow: IWorkflowFileContent): StandardApp {
   const { definition, kind, runtimeConfiguration } = workflow;
   const statelessRunMode = runtimeConfiguration && runtimeConfiguration.statelessRunMode ? runtimeConfiguration.statelessRunMode : '';
   const operationOptions = runtimeConfiguration && runtimeConfiguration.operationOptions ? runtimeConfiguration.operationOptions : '';
-  const workflowParameters = getWorkflowParameters(parameters);
 
   return {
     statelessRunMode,
-    definition: {
-      ...definition,
-      parameters: workflowParameters,
-    },
+    definition,
     name: workflowName,
     stateful: kind === 'Stateful',
     kind,
@@ -76,7 +77,7 @@ export function getStandardAppData(
   };
 }
 
-function getWorkflowParameters(parameters: Record<string, Parameter>): Record<string, WorkflowParameter> {
+export function getWorkflowParameters(parameters: Record<string, Parameter>): Record<string, WorkflowParameter> {
   const workflowParameters: Record<string, WorkflowParameter> = {};
   for (const parameterKey of Object.keys(parameters)) {
     const parameter = parameters[parameterKey];
@@ -107,14 +108,65 @@ export async function updateFuncIgnore(projectPath: string, variables: string[])
   await fse.writeFile(funcIgnorePath, funcIgnoreContents);
 }
 
+export async function getArtifactsPathInLocalProject(projectPath: string): Promise<{ maps: File[]; schemas: File[] }> {
+  const artifacts = {
+    maps: [],
+    schemas: [],
+  };
+  const artifactsPath = path.join(projectPath, artifactsDirectory);
+  const mapsPath = path.join(projectPath, artifactsDirectory, mapsDirectory);
+  const schemasPath = path.join(projectPath, artifactsDirectory, schemasDirectory);
+
+  if (!(await fse.pathExists(projectPath)) || !(await fse.pathExists(artifactsPath))) {
+    return artifacts;
+  }
+
+  if (await fse.pathExists(mapsPath)) {
+    const mapsFiles = [];
+    const subPaths: string[] = await fse.readdir(mapsPath);
+
+    for (const subPath of subPaths) {
+      const fullPath: string = path.join(mapsPath, subPath);
+      const fileStats = await fse.lstat(fullPath);
+
+      if (fileStats.isFile()) {
+        if (await fse.pathExists(fullPath)) {
+          mapsFiles.push({ path: fullPath, name: subPath });
+        }
+      }
+    }
+    artifacts.maps = mapsFiles;
+  }
+
+  if (await fse.pathExists(schemasPath)) {
+    const schemasFiles = [];
+    const subPaths: string[] = await fse.readdir(schemasPath);
+
+    for (const subPath of subPaths) {
+      const fullPath: string = path.join(schemasPath, subPath);
+      const fileStats = await fse.lstat(fullPath);
+
+      if (fileStats.isFile()) {
+        if (await fse.pathExists(fullPath)) {
+          schemasFiles.push({ path: fullPath, name: subPath });
+        }
+      }
+    }
+    artifacts.schemas = schemasFiles;
+  }
+
+  return artifacts;
+}
+
 export async function getArtifactsInLocalProject(projectPath: string): Promise<Artifacts> {
   const artifacts: Artifacts = {
     maps: {},
     schemas: [],
   };
-  const artifactsPath = path.join(projectPath, 'Artifacts');
-  const mapsPath = path.join(projectPath, 'Artifacts', 'Maps');
-  const schemasPath = path.join(projectPath, 'Artifacts', 'Schemas');
+
+  const artifactsPath = path.join(projectPath, artifactsDirectory);
+  const mapsPath = path.join(projectPath, artifactsDirectory, mapsDirectory);
+  const schemasPath = path.join(projectPath, artifactsDirectory, schemasDirectory);
 
   if (!(await fse.pathExists(projectPath)) || !(await fse.pathExists(artifactsPath))) {
     return artifacts;
@@ -171,10 +223,9 @@ export async function getAzureConnectorDetailsForLocalProject(
   let subscriptionId = localSettings.Values[workflowSubscriptionIdKey];
   let resourceGroupName = localSettings.Values[workflowResourceGroupNameKey];
   let location = localSettings.Values[workflowLocationKey];
-  let credentials: ServiceClientCredentials;
 
   // Set default for customers who created Logic Apps before sovereign cloud support was added.
-  let workflowManagementBaseUrl = localSettings.Values[workflowManagementBaseURIKey] ?? 'https://management.azure.com/';
+  let workflowManagementBaseUrl = localSettings.Values[workflowManagementBaseURIKey] ?? `${azurePublicBaseUrl}/`;
 
   if (subscriptionId === undefined) {
     const wizard = createAzureWizard(connectorsContext, projectPath);
@@ -185,7 +236,6 @@ export async function getAzureConnectorDetailsForLocalProject(
     subscriptionId = connectorsContext.subscriptionId;
     resourceGroupName = connectorsContext.resourceGroup?.name || '';
     location = connectorsContext.resourceGroup?.location || '';
-    credentials = connectorsContext.credentials;
     workflowManagementBaseUrl = connectorsContext.environment?.resourceManagerEndpointUrl;
   }
 
@@ -193,7 +243,7 @@ export async function getAzureConnectorDetailsForLocalProject(
 
   return {
     enabled,
-    accessToken: enabled ? await getAuthorizationToken(credentials, tenantId) : undefined,
+    accessToken: enabled ? await getAuthorizationToken(tenantId) : undefined,
     subscriptionId: enabled ? subscriptionId : undefined,
     resourceGroupName: enabled ? resourceGroupName : undefined,
     location: enabled ? location : undefined,
@@ -215,7 +265,7 @@ export async function getManualWorkflowsInLocalProject(projectPath: string, work
 
     if (fileStats.isDirectory() && subPath !== workflowToExclude) {
       try {
-        const workflowFilePath = path.join(fullPath, 'workflow.json');
+        const workflowFilePath = path.join(fullPath, workflowFileName);
 
         if (await fse.pathExists(workflowFilePath)) {
           const schema = getRequestTriggerSchema(JSON.parse(readFileSync(workflowFilePath, 'utf8')));
@@ -232,6 +282,35 @@ export async function getManualWorkflowsInLocalProject(projectPath: string, work
   }
 
   return workflowDetails;
+}
+
+export async function getWorkflowsPathInLocalProject(projectPath: string): Promise<File[]> {
+  if (!(await fse.pathExists(projectPath))) {
+    return [];
+  }
+
+  const worfklowFiles = [];
+  const subPaths: string[] = await fse.readdir(projectPath);
+
+  for (const subPath of subPaths) {
+    const fullPath: string = path.join(projectPath, subPath);
+    const fileStats = await fse.lstat(fullPath);
+
+    if (fileStats.isDirectory()) {
+      try {
+        const workflowFilePath = path.join(fullPath, workflowFileName);
+
+        if (await fse.pathExists(workflowFilePath)) {
+          worfklowFiles.push({ path: workflowFilePath, name: subPath });
+        }
+      } catch {
+        // If unable to load the workflow or read the definition we skip the workflow
+        // in child workflow list.
+      }
+    }
+  }
+
+  return worfklowFiles;
 }
 
 export function getRequestTriggerSchema(workflowContent: IWorkflowFileContent): any {
@@ -280,10 +359,4 @@ export async function verifyDeploymentResourceGroup(
     const deployButton: MessageItem = { title: localize('deploy', 'Deploy') };
     await context.ui.showWarningMessage(warning, { modal: true }, deployButton, DialogResponses.cancel);
   }
-}
-
-export function getTriggerName(definition: any): string | undefined {
-  const { triggers } = definition;
-  const triggerNames = Object.keys(triggers);
-  return triggerNames.length === 1 ? triggerNames[0] : undefined;
 }

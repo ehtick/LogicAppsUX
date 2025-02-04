@@ -2,6 +2,8 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+import type { LogicAppsV2 } from '@microsoft/logic-apps-shared';
+import { getRequestTriggerName, getTriggerName, HTTP_METHODS, isNullOrUndefined } from '@microsoft/logic-apps-shared';
 import { localSettingsFileName, managementApiPrefix, workflowAppApiVersion } from '../../../constants';
 import { ext } from '../../../extensionVariables';
 import { localize } from '../../../localize';
@@ -14,17 +16,16 @@ import {
   removeWebviewPanelFromCache,
   tryGetWebviewPanel,
 } from '../../utils/codeless/common';
-import { getFunctionProjectRoot } from '../../utils/codeless/connection';
+import { getLogicAppProjectRoot } from '../../utils/codeless/connection';
 import { getAuthorizationToken } from '../../utils/codeless/getAuthorizationToken';
 import { getWebViewHTML } from '../../utils/codeless/getWebViewHTML';
 import { sendRequest } from '../../utils/requestUtils';
 import { getWorkflowNode } from '../../utils/workspace';
 import type { IAzureConnectorsContext } from './azureConnectorWizard';
 import { openMonitoringView } from './openMonitoringView/openMonitoringView';
-import type { ServiceClientCredentials } from '@azure/ms-rest-js';
 import type { IActionContext } from '@microsoft/vscode-azext-utils';
-import type { ICallbackUrlResponse } from '@microsoft/vscode-extension';
-import { ExtensionCommand } from '@microsoft/vscode-extension';
+import type { ICallbackUrlResponse } from '@microsoft/vscode-extension-logic-apps';
+import { ExtensionCommand, ProjectName } from '@microsoft/vscode-extension-logic-apps';
 import { readFileSync } from 'fs';
 import { basename, dirname, join } from 'path';
 import * as path from 'path';
@@ -41,7 +42,8 @@ export async function openOverview(context: IAzureConnectorsContext, node: vscod
   let panelName = '';
   let corsNotice: string | undefined;
   let localSettings: Record<string, string> = {};
-  let credentials: ServiceClientCredentials;
+  let isWorkflowRuntimeRunning: boolean;
+  let triggerName: string;
   const workflowNode = getWorkflowNode(node);
   const panelGroupKey = ext.webViewKey.overview;
 
@@ -53,24 +55,23 @@ export async function openOverview(context: IAzureConnectorsContext, node: vscod
     baseUrl = `http://localhost:${ext.workflowRuntimePort}${managementApiPrefix}`;
     apiVersion = '2019-10-01-edge-preview';
     accessToken = '';
-    const triggerName = getRequestTriggerName(workflowContent.definition);
-    callbackInfo = await getLocalWorkflowCallbackInfo(
-      context,
-      `${baseUrl}/workflows/${workflowName}/triggers/${triggerName}/listCallbackUrl?api-version=${apiVersion}`
-    );
+    triggerName = getTriggerName(workflowContent.definition);
+    callbackInfo = await getLocalWorkflowCallbackInfo(context, workflowContent.definition, baseUrl, workflowName, triggerName, apiVersion);
 
-    const projectPath = await getFunctionProjectRoot(context, workflowFilePath);
+    const projectPath = await getLogicAppProjectRoot(context, workflowFilePath);
     localSettings = projectPath ? (await getLocalSettingsJson(context, join(projectPath, localSettingsFileName))).Values || {} : {};
+    isWorkflowRuntimeRunning = !isNullOrUndefined(ext.workflowRuntimePort);
   } else if (workflowNode instanceof RemoteWorkflowTreeItem) {
     workflowName = workflowNode.name;
     panelName = `${workflowNode.id}-${workflowName}-overview`;
     workflowContent = workflowNode.workflowFileContent;
-    credentials = workflowNode.credentials;
-    accessToken = await getAuthorizationToken(credentials);
+    accessToken = await workflowNode.subscription.credentials.getToken();
     baseUrl = getWorkflowManagementBaseURI(workflowNode);
     apiVersion = workflowAppApiVersion;
-    callbackInfo = await workflowNode.getCallbackUrl(workflowNode, getRequestTriggerName(workflowContent.definition));
+    triggerName = getTriggerName(workflowContent.definition);
+    callbackInfo = await workflowNode.getCallbackUrl(workflowNode, baseUrl, triggerName, apiVersion);
     corsNotice = localize('CorsNotice', 'To view runs, set "*" to allowed origins in the CORS setting.');
+    isWorkflowRuntimeRunning = true;
   }
 
   const existingPanel: vscode.WebviewPanel | undefined = tryGetWebviewPanel(panelGroupKey, panelName);
@@ -87,13 +88,15 @@ export async function openOverview(context: IAzureConnectorsContext, node: vscod
     enableScripts: true,
     retainContextWhenHidden: true,
   };
-  const { name, kind, operationOptions, statelessRunMode } = getStandardAppData(workflowName, workflowContent, /* parameters*/ {});
+  const { name, kind, operationOptions, statelessRunMode } = getStandardAppData(workflowName, workflowContent);
   const workflowProps = {
     name,
     stateType: getWorkflowStateType(name, kind, localSettings),
     operationOptions,
     statelessRunMode,
     callbackInfo,
+    triggerName,
+    definition: workflowContent.definition,
   };
 
   const panel: vscode.WebviewPanel = vscode.window.createWebviewPanel(
@@ -110,13 +113,14 @@ export async function openOverview(context: IAzureConnectorsContext, node: vscod
 
   panel.webview.html = await getWebViewHTML('vs-code-react', panel);
 
-  let interval;
+  let interval: NodeJS.Timeout;
   panel.webview.onDidReceiveMessage(async (message) => {
     switch (message.command) {
-      case ExtensionCommand.loadRun:
+      case ExtensionCommand.loadRun: {
         openMonitoringView(context, workflowNode, message.item.id, workflowFilePath);
         break;
-      case ExtensionCommand.initialize:
+      }
+      case ExtensionCommand.initialize: {
         panel.webview.postMessage({
           command: ExtensionCommand.initialize_frame,
           data: {
@@ -125,14 +129,15 @@ export async function openOverview(context: IAzureConnectorsContext, node: vscod
             corsNotice,
             accessToken: accessToken,
             workflowProperties: workflowProps,
-            project: 'overview',
+            project: ProjectName.overview,
             hostVersion: ext.extensionVersion,
+            isWorkflowRuntimeRunning: isWorkflowRuntimeRunning,
           },
         });
         // Just shipping the access Token every 5 seconds is easier and more
         // performant that asking for it every time and waiting.
         interval = setInterval(async () => {
-          const updatedAccessToken = await getAuthorizationToken(credentials);
+          const updatedAccessToken = await getAuthorizationToken();
 
           if (updatedAccessToken !== accessToken) {
             accessToken = updatedAccessToken;
@@ -145,6 +150,7 @@ export async function openOverview(context: IAzureConnectorsContext, node: vscod
           }
         }, 5000);
         break;
+      }
       default:
         break;
     }
@@ -161,26 +167,31 @@ export async function openOverview(context: IAzureConnectorsContext, node: vscod
   cacheWebviewPanel(panelGroupKey, panelName, panel);
 }
 
-function getRequestTriggerName(definition: any): string | undefined {
-  const { triggers } = definition;
-  for (const triggerName of Object.keys(triggers)) {
-    if (triggers[triggerName].type.toLowerCase() === 'request') {
-      return triggerName;
+async function getLocalWorkflowCallbackInfo(
+  context: IActionContext,
+  definition: LogicAppsV2.WorkflowDefinition,
+  baseUrl: string,
+  workflowName: string,
+  triggerName: string,
+  apiVersion: string
+): Promise<ICallbackUrlResponse | undefined> {
+  const requestTriggerName = getRequestTriggerName(definition);
+  if (requestTriggerName) {
+    try {
+      const url = `${baseUrl}/workflows/${workflowName}/triggers/${requestTriggerName}/listCallbackUrl?api-version=${apiVersion}`;
+      const response: string = await sendRequest(context, {
+        url,
+        method: HTTP_METHODS.POST,
+      });
+      return JSON.parse(response);
+    } catch (error) {
+      return undefined;
     }
-  }
-
-  return undefined;
-}
-
-async function getLocalWorkflowCallbackInfo(context: IActionContext, url: string): Promise<ICallbackUrlResponse | undefined> {
-  try {
-    const response: string = await sendRequest(context, {
-      url,
-      method: 'POST',
-    });
-    return JSON.parse(response);
-  } catch (error) {
-    return undefined;
+  } else {
+    return {
+      value: `${baseUrl}/workflows/${workflowName}/triggers/${triggerName}/run?api-version=${apiVersion}`,
+      method: HTTP_METHODS.POST,
+    };
   }
 }
 
@@ -189,6 +200,6 @@ function getWorkflowStateType(workflowName: string, kind: string, settings: Reco
   return kind?.toLowerCase() === 'stateful'
     ? localize('logicapps.stateful', 'Stateful')
     : settings[settingName]?.toLowerCase() === 'withstatelessrunhistory'
-    ? localize('logicapps.statelessDebug', 'Stateless (debug mode)')
-    : localize('logicapps.stateless', 'Stateless');
+      ? localize('logicapps.statelessDebug', 'Stateless (debug mode)')
+      : localize('logicapps.stateless', 'Stateless');
 }

@@ -1,7 +1,10 @@
 @import '../../../../designer-ui/src/styles.less';
 @import './settings/sections/runafterconfiguration/runafterconfiguration.less';
 @import './connections/runAfterIndicator/styles.less';
-@import (css) '~reactflow/dist/style.css';
+@import './panel/connectionsPanel/connectionsPanel.less';
+@import './panel/runHistoryPanel/runHistoryPanel.less';
+@import './templates/styles.less';
+@import (css) '~@xyflow/react/dist/style.css';
 
 .react-flow__edge {
   cursor: grab;
@@ -21,11 +24,12 @@
 
 .node-handle {
   visibility: hidden;
+	transform: translate(-50%, 0%);
   &.top {
-    transform: translate(-50%, 50%);
+		top: 0px;
   }
   &.bottom {
-    transform: translate(-50%, -50%);
+		bottom: 0px;
   }
 }
 
@@ -67,10 +71,9 @@
   gap: 8px;
   align-items: flex-end;
   box-sizing: border-box;
-}
-
-.msla-designer-tools-left-panel {
-  left: 52px; // Add extra 32px taken from the collapsed panel
+  &.left-panel {
+    left: 52px; // Add extra 32px taken from the collapsed panel
+  }
 }
 
 .react-flow__node {
@@ -78,7 +81,7 @@
 }
 
 .react-flow__panel {
-  margin: 0px;
+  margin: 0px !important;
   z-index: 0 !important;
 }
 
@@ -123,10 +126,26 @@
   width: 20px !important;
   height: 20px !important;
   font-size: 16px;
+	border-bottom: 1px solid #eee;
+	box-sizing: content-box;
 }
 
 .react-flow__edge-path {
   stroke-width: 2 !important;
+
+	&.highlighted {
+		stroke: #1f85ff;
+	}
+}
+
+.react-flow__edge {
+	marker > path {
+		fill: @ms-color-edge;
+	}
+
+	marker.highlighted > path {
+		fill: #1f85ff;
+	}
 }
 
 .msla-add-context-menu {
@@ -180,12 +199,20 @@
   }
 
   .react-flow__edge-path {
-    stroke: @ms-color-edge;
+    stroke: @ms-color-edge-dark;
+
+		&.highlighted {
+			stroke: #1f85ff;
+		}
   }
+
   .react-flow__edge {
     marker > path {
-      fill: @ms-color-edge;
+      fill: @ms-color-edge-dark;
     }
+		marker.highlighted > path {
+			fill: #1f85ff;
+		}
   }
 
   .ms-Pivot-link {

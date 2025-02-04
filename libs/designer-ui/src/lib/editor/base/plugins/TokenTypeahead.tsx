@@ -1,8 +1,10 @@
 import { TokenPickerMode } from '../../../tokenpicker';
 import { useTokenTypeaheadTriggerMatch } from '../utils/tokenTypeaheadMatcher';
-import { Icon, Text, css, useTheme } from '@fluentui/react';
+import type { hideButtonOptions } from './tokenpickerbutton';
+import { Icon, css, useTheme } from '@fluentui/react';
+import { Text } from '@fluentui/react-components';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
-import { LexicalTypeaheadMenuPlugin, TypeaheadOption } from '@lexical/react/LexicalTypeaheadMenuPlugin';
+import { LexicalTypeaheadMenuPlugin, MenuOption } from '@lexical/react/LexicalTypeaheadMenuPlugin';
 import type { TextNode } from 'lexical';
 import { $getSelection, $isRangeSelection } from 'lexical';
 import type { ReactNode } from 'react';
@@ -10,15 +12,15 @@ import { useCallback } from 'react';
 import * as ReactDOM from 'react-dom';
 import { useIntl } from 'react-intl';
 
-class TokenOption extends TypeaheadOption {
+class TokenOption extends MenuOption {
   title: string;
-  keywords: Array<string>;
+  keywords: string[];
   icon: (selected: boolean, inverted: boolean) => ReactNode;
   constructor(
     title: string,
     key: string,
     options: {
-      keywords?: Array<string>;
+      keywords?: string[];
       icon: (selected: boolean, inverted: boolean) => ReactNode;
     }
   ) {
@@ -55,7 +57,7 @@ function TokenMenuItem({
       ref={option.setRefElement}
       role="option"
       aria-selected={isSelected}
-      id={'typeahead-item-' + index}
+      id={`typeahead-item-${index}`}
       onMouseEnter={onMouseEnter}
       onClick={onClick}
     >
@@ -66,12 +68,14 @@ function TokenMenuItem({
 }
 
 interface TokenTypeAheadPluginProps {
-  openTokenPicker: (tokenPickerMode: TokenPickerMode) => void;
   isEditorFocused?: boolean;
+  hideTokenPickerOptions?: hideButtonOptions;
+  openTokenPicker: (tokenPickerMode: TokenPickerMode) => void;
 }
 
-export const TokenTypeAheadPlugin = ({ openTokenPicker, isEditorFocused }: TokenTypeAheadPluginProps) => {
+export const TokenTypeAheadPlugin = ({ isEditorFocused, hideTokenPickerOptions, openTokenPicker }: TokenTypeAheadPluginProps) => {
   const [editor] = useLexicalComposerContext();
+  const { hideDynamicContent, hideExpression } = hideTokenPickerOptions ?? {};
   const { isInverted } = useTheme();
   const checkForTriggerMatch = useTokenTypeaheadTriggerMatch('/', {
     minLength: 0,
@@ -98,21 +102,32 @@ export const TokenTypeAheadPlugin = ({ openTokenPicker, isEditorFocused }: Token
 
   const intl = useIntl();
   const expressionButtonText = intl.formatMessage({
-    defaultMessage: 'Insert Expression',
+    defaultMessage: 'Insert expression',
+    id: 'F2wR+r',
     description: 'Label for button to open expression token picker',
   });
   const dynamicDataButtonText = intl.formatMessage({
-    defaultMessage: 'Insert Dynamic Content',
+    defaultMessage: 'Insert dynamic content',
+    id: 'hz9HJ2',
     description: 'Label for button to open dynamic content picker',
   });
-  const options: TokenOption[] = [
-    new TokenOption(dynamicDataButtonText, 'dynamic', {
-      icon: () => <Icon iconName="LightningBolt" />,
-    }),
-    new TokenOption(expressionButtonText, 'expression', {
-      icon: () => <Icon iconName="Variable" />,
-    }),
-  ];
+  const options: TokenOption[] = [];
+  // making the dynamic content button optional
+  !hideDynamicContent &&
+    options.push(
+      new TokenOption(dynamicDataButtonText, 'dynamic', {
+        icon: () => <Icon iconName="LightningBolt" />,
+      })
+    );
+
+  // making the expression button optional
+  !hideExpression &&
+    options.push(
+      new TokenOption(expressionButtonText, 'expression', {
+        icon: () => <Icon iconName="Variable" />,
+      })
+    );
+
   return (
     <LexicalTypeaheadMenuPlugin
       // eslint-disable-next-line @typescript-eslint/no-empty-function

@@ -1,36 +1,28 @@
 {
   "root": true,
-  "ignorePatterns": ["**/*"],
-  "plugins": ["@nrwl/nx", "formatjs", "react", "react-hooks"],
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["formatjs", "react", "react-hooks", "@typescript-eslint"],
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  },
+  "extends": "eslint:recommended",
   "overrides": [
     {
-      "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
+      "files": ["*.ts", "*.tsx"],
+      "extends": ["plugin:react/recommended", "plugin:react-hooks/recommended", "plugin:import/recommended", "plugin:import/typescript"],
       "rules": {
-        "@nrwl/nx/enforce-module-boundaries": [
+        "no-unused-vars": "off",
+        "no-redeclare": "off",
+        "no-undef": "off",
+        "no-restricted-syntax": [
           "error",
           {
-            "enforceBuildableLibDependency": true,
-            "allow": [],
-            "depConstraints": [
-              {
-                "sourceTag": "*",
-                "onlyDependOnLibsWithTags": ["*"]
-              }
-            ]
+            "selector": "TSEnumDeclaration",
+            "message": "Don't use enums."
           }
-        ]
-      }
-    },
-    {
-      "files": ["*.ts", "*.tsx"],
-      "extends": [
-        "plugin:@nrwl/nx/typescript",
-        "plugin:react/recommended",
-        "plugin:react-hooks/recommended",
-        "plugin:import/recommended",
-        "plugin:import/typescript"
-      ],
-      "rules": {
+        ],
         "react-hooks/exhaustive-deps": [
           "warn",
           {
@@ -48,7 +40,8 @@
           "error",
           {
             "argsIgnorePattern": "^_",
-            "destructuredArrayIgnorePattern": "^_"
+            "destructuredArrayIgnorePattern": "^_",
+            "caughtErrorsIgnorePattern": "^_"
           }
         ],
         "@typescript-eslint/explicit-module-boundary-types": "off",
@@ -66,24 +59,23 @@
             "disallowTypeAnnotations": true
           }
         ],
+        "formatjs/enforce-id": [
+          "error",
+          {
+            "idInterpolationPattern": "[sha512:contenthash:base64:6]"
+          }
+        ],
         "formatjs/enforce-placeholders": [
           "error",
           {
             "ignoreList": ["foo"]
           }
         ],
-        "no-param-reassign": [
-          "error",
-          {
-            "props": true,
-            "ignorePropertyModificationsFor": ["state"]
-          }
-        ],
+        "no-param-reassign": "off",
         "formatjs/enforce-default-message": ["error", "literal"],
         "formatjs/enforce-description": ["error", "literal"],
         "formatjs/no-multiple-whitespaces": [1],
         "formatjs/no-multiple-plurals": ["error"],
-        "formatjs/no-id": ["error"],
         "formatjs/no-complex-selectors": [
           "error",
           {
@@ -93,11 +85,6 @@
         "react/react-in-jsx-scope": 0,
         "react/prop-types": 0
       }
-    },
-    {
-      "files": ["*.js", "*.jsx"],
-      "extends": ["plugin:@nrwl/nx/javascript"],
-      "rules": {}
     },
     {
       "files": "*.json",

@@ -1,9 +1,10 @@
 import { getReactQueryClient } from '../ReactQueryProvider';
-import { ApiManagementService, ConnectionService } from '@microsoft/designer-client-services-logic-apps';
-import { SwaggerParser } from '@microsoft/parsers-logic-apps';
-import type { Connector } from '@microsoft/utils-logic-apps';
-import { equals } from '@microsoft/utils-logic-apps';
-import { useQuery } from 'react-query';
+import { ConnectionService, SwaggerParser, equals, cleanResourceId } from '@microsoft/logic-apps-shared';
+import type { Connection, Connector } from '@microsoft/logic-apps-shared';
+import { useMemo } from 'react';
+import type { UseQueryResult } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { getConnector, getSwagger } from './operation';
 
 const connectionKey = 'connections';
 export interface ConnectorWithParsedSwagger {
@@ -12,13 +13,9 @@ export interface ConnectorWithParsedSwagger {
 }
 
 export const getConnectorWithSwagger = async (connectorId: string): Promise<ConnectorWithParsedSwagger> => {
-  const { connector, swagger } = await getReactQueryClient().fetchQuery(['apiWithSwaggers', connectorId.toLowerCase()], async () => {
-    const { connector, swagger } = await ConnectionService().getConnectorAndSwagger(connectorId);
-    const parsedSwagger = await SwaggerParser.parse(swagger);
-    return { connector, swagger: parsedSwagger };
-  });
-
-  return { connector, parsedSwagger: new SwaggerParser(swagger) };
+  const [connector, swagger] = await Promise.all([await getConnector(connectorId), await getSwagger(connectorId)]);
+  const parsedSwagger = await SwaggerParser.parse(swagger);
+  return { connector, parsedSwagger: new SwaggerParser(parsedSwagger) };
 };
 
 export const getSwaggerFromEndpoint = async (uri: string): Promise<SwaggerParser> => {
@@ -37,81 +34,72 @@ export const getConnectionsQuery = async (): Promise<void> => {
 };
 
 export const useConnectionById = (connectionId: string, connectorId: string) => {
-  const { data: connections, isLoading } = useConnectionsForConnector(connectorId);
+  const { data: connections, isLoading: areConnectionsLoading } = useConnectionsForConnector(connectorId);
   const { data: connection, isLoading: isConnectionLoading } = useConnectionResource(connectionId);
+  const isLoading = areConnectionsLoading || isConnectionLoading;
 
-  if (!connectionId) {
-    return { isLoading: false, result: undefined };
-  }
+  return useMemo(() => {
+    if (!connectionId || !connectorId) {
+      return { isLoading: false, result: undefined };
+    }
 
-  if (connections) {
-    const foundConnection = connections.find((connection) => equals(connection.id, connectionId));
-
-    if (foundConnection) {
+    if (!connections && !connection) {
       return {
         isLoading,
-        result: foundConnection,
-      };
-    } else {
-      return {
-        isLoading: isConnectionLoading,
-        result: connection,
+        result: undefined,
       };
     }
-  }
 
-  return {
-    isLoading: isLoading || isConnectionLoading,
-    result: undefined,
-  };
+    const foundConnection = (connections ?? []).find((connection: any) => equals(connection.id, connectionId));
+    return {
+      isLoading,
+      result: foundConnection ?? connection,
+    };
+  }, [connection, connectionId, connections, connectorId, isLoading]);
 };
 
-export const useAllConnections = () => {
+export const useAllConnections = (): UseQueryResult<Connection[], unknown> => {
   return useQuery([connectionKey], () => ConnectionService().getConnections(), {
     cacheTime: 0,
     staleTime: 0,
   });
 };
 
-export const useConnectionsForConnector = (connectorId: string) => {
-  return useQuery([connectionKey, connectorId?.toLowerCase()], () => ConnectionService().getConnections(connectorId), {
+export const useConnectionsForConnector = (connectorId: string, shouldNotRefetch?: boolean) => {
+  const queryClient = useQueryClient();
+  return useQuery([connectionKey, connectorId?.toLowerCase()], () => ConnectionService().getConnections(connectorId, queryClient), {
     enabled: !!connectorId,
-    refetchOnMount: true,
+    refetchOnMount: !shouldNotRefetch && true,
+    cacheTime: 0,
+    staleTime: 0,
   });
 };
 
 export const getConnectionsForConnector = async (connectorId: string) => {
   const queryClient = getReactQueryClient();
   return queryClient.fetchQuery([connectionKey, connectorId?.toLowerCase()], async () => {
-    return await ConnectionService().getConnections(connectorId);
+    return await ConnectionService().getConnections(connectorId, queryClient);
   });
 };
 
-export const getConnection = async (connectionId: string, connectorId: string, fetchResourceIfNeeded = false) => {
+export const getConnection = async (_connectionId: string, _connectorId: string, fetchResourceIfNeeded = false) => {
+  const connectionId = cleanResourceId(_connectionId);
+  const connectorId = cleanResourceId(_connectorId);
   const connections = await getConnectionsForConnector(connectorId);
   const connection = connections?.find((connection) => equals(connection.id, connectionId));
-  return !connection && fetchResourceIfNeeded ? getConnectionFromResource(connectionId) : connection;
+  return (!connection && fetchResourceIfNeeded ? getConnectionFromResource(connectionId) : connection) ?? null;
 };
 
-export const getUniqueConnectionName = async (connectorId: string): Promise<string> => {
+export const getUniqueConnectionName = async (connectorId: string, existingKeys: string[] = []): Promise<string> => {
   const connectionNames = (await getConnectionsForConnector(connectorId)).map((connection) => connection.name);
   const connectorName = connectorId.split('/').at(-1);
-  return ConnectionService().getUniqueConnectionName(connectorId, connectionNames, connectorName as string);
+  return ConnectionService().getUniqueConnectionName(connectorId, [...connectionNames, ...existingKeys], connectorName as string);
 };
 
-export const getApiManagementSwagger = async (apimApiId: string): Promise<SwaggerParser> => {
-  const queryClient = getReactQueryClient();
-  const swagger = await queryClient.fetchQuery(['apimSwagger', apimApiId?.toLowerCase()], async () => {
-    const swagger = await ApiManagementService().fetchApiMSwagger(apimApiId);
-    return SwaggerParser.parse(swagger);
-  });
-
-  return new SwaggerParser(swagger);
-};
-
-const useConnectionResource = (connectionId: string) => {
-  return useQuery(['connection', connectionId?.toLowerCase()], () => ConnectionService().getConnection(connectionId), {
-    enabled: !!connectionId,
+export const useConnectionResource = (_connectionId: string) => {
+  const connectionId = cleanResourceId(_connectionId)?.toLowerCase();
+  return useQuery(['connection', connectionId], () => ConnectionService().getConnection(connectionId) ?? null, {
+    enabled: !!_connectionId,
     refetchOnMount: false,
   });
 };
@@ -119,6 +107,6 @@ const useConnectionResource = (connectionId: string) => {
 const getConnectionFromResource = async (connectionId: string) => {
   const queryClient = getReactQueryClient();
   return queryClient.fetchQuery(['connection', connectionId?.toLowerCase()], async () => {
-    return await ConnectionService().getConnection(connectionId);
+    return (await ConnectionService().getConnection(connectionId)) ?? null;
   });
 };

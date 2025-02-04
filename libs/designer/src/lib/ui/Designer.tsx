@@ -1,11 +1,11 @@
+import { openPanel, useNodesInitialized } from '../core';
 import { useLayout } from '../core/graphlayout';
 import { usePreloadOperationsQuery, usePreloadConnectorsQuery } from '../core/queries/browse';
-import { useReadOnly } from '../core/state/designerOptions/designerOptionsSelectors';
+import { useMonitoringView, useReadOnly, useHostOptions, useIsVSCode } from '../core/state/designerOptions/designerOptionsSelectors';
 import { useClampPan } from '../core/state/designerView/designerViewSelectors';
-import { useIsPanelCollapsed } from '../core/state/panel/panelSelectors';
-import { switchToNodeSearchPanel } from '../core/state/panel/panelSlice';
+import { clearPanel } from '../core/state/panel/panelSlice';
 import { useIsGraphEmpty } from '../core/state/workflow/workflowSelectors';
-import { buildEdgeIdsBySource, clearFocusNode, updateNodeSizes } from '../core/state/workflow/workflowSlice';
+import { buildEdgeIdsBySource, updateNodeSizes } from '../core/state/workflow/workflowSlice';
 import type { AppDispatch, RootState } from '../core/store';
 import { DEFAULT_NODE_SIZE } from '../core/utils/graph';
 import Controls from './Controls';
@@ -16,25 +16,36 @@ import PlaceholderNode from './CustomNodes/PlaceholderNode';
 import ScopeCardNode from './CustomNodes/ScopeCardNode';
 import SubgraphCardNode from './CustomNodes/SubgraphCardNode';
 import Minimap from './Minimap';
-import { ButtonEdge } from './connections/edge';
-import { HiddenEdge } from './connections/hiddenEdge';
-import { PanelRoot } from './panel/panelroot';
-import { setLayerHostSelector } from '@fluentui/react';
+import DeleteModal from './common/DeleteModal/DeleteModal';
+import ButtonEdge from './connections/edge';
+import HiddenEdge from './connections/hiddenEdge';
+import { PanelRoot } from './panel/panelRoot';
+import { css, setLayerHostSelector } from '@fluentui/react';
 import { PanelLocation } from '@microsoft/designer-ui';
-import type { WorkflowNodeType } from '@microsoft/utils-logic-apps';
-import { useWindowDimensions, WORKFLOW_NODE_TYPES, useThrottledEffect } from '@microsoft/utils-logic-apps';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { CustomPanelLocation } from '@microsoft/designer-ui';
+import type { WorkflowNodeType } from '@microsoft/logic-apps-shared';
+import { WORKFLOW_NODE_TYPES, useThrottledEffect } from '@microsoft/logic-apps-shared';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import KeyboardBackendFactory, { isKeyboardDragTrigger } from 'react-dnd-accessible-backend';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { DndProvider, createTransition, MouseTransition } from 'react-dnd-multi-backend';
 import { useHotkeys } from 'react-hotkeys-hook';
+import { useQuery } from '@tanstack/react-query';
 import { useDispatch, useSelector } from 'react-redux';
-import { Background, ReactFlow, ReactFlowProvider, useNodes, useReactFlow, useStore, BezierEdge } from 'reactflow';
-import type { BackgroundProps, NodeChange } from 'reactflow';
+import { Background, ReactFlow, ReactFlowProvider, BezierEdge } from '@xyflow/react';
+import type { BackgroundProps, EdgeTypes, NodeChange } from '@xyflow/react';
+import { PerformanceDebugTool } from './common/PerformanceDebug/PerformanceDebug';
+import { CanvasFinder } from './CanvasFinder';
+import { DesignerContextualMenu } from './common/DesignerContextualMenu/DesignerContextualMenu';
+import { EdgeContextualMenu } from './common/EdgeContextualMenu/EdgeContextualMenu';
+import { DragPanMonitor } from './common/DragPanMonitor/DragPanMonitor';
+import { CanvasSizeMonitor } from './CanvasSizeMonitor';
+import { useResizeObserver } from '@react-hookz/web';
 
 export interface DesignerProps {
   backgroundProps?: BackgroundProps;
   panelLocation?: PanelLocation;
+  customPanelLocations?: CustomPanelLocation[];
   displayRuntimeInfo?: boolean;
 }
 
@@ -56,68 +67,7 @@ const edgeTypes = {
   HEADING_EDGE: ButtonEdge, // This is functionally the same as a button edge
   ONLY_EDGE: BezierEdge, // Setting it as default React Flow Edge, can be changed as needed
   HIDDEN_EDGE: HiddenEdge,
-};
-export interface CanvasFinderProps {
-  panelLocation?: PanelLocation;
-}
-export const CanvasFinder = (props: CanvasFinderProps) => {
-  const { panelLocation } = props;
-  const focusNode = useSelector((state: RootState) => state.workflow.focusedCanvasNodeId);
-  const isEmpty = useIsGraphEmpty();
-  const { setCenter, getZoom } = useReactFlow();
-  const height = useStore((state) => state.height);
-
-  const isPanelCollapsed = useIsPanelCollapsed();
-  const [firstLoad, setFirstLoad] = useState(true);
-
-  // If first load is an empty workflow, set canvas to center
-  useEffect(() => {
-    if (isEmpty && firstLoad) {
-      setCenter(DEFAULT_NODE_SIZE.width / 2, DEFAULT_NODE_SIZE.height, { zoom: 1 });
-      setFirstLoad(false);
-    }
-  }, [setCenter, height, isEmpty, firstLoad]);
-
-  const nodeData = useNodes().find((x) => x.id === focusNode);
-  const dispatch = useDispatch<AppDispatch>();
-  const handleTransform = useCallback(() => {
-    if (!focusNode) return;
-    if ((!nodeData?.position?.x && !nodeData?.position?.y) || !nodeData?.width || !nodeData?.height) {
-      return;
-    }
-
-    let xRawPos = nodeData?.positionAbsolute?.x ?? 0;
-    const yRawPos = nodeData?.positionAbsolute?.y ?? 0;
-
-    // If the panel is open, reduce X space
-    if (!isPanelCollapsed) {
-      // Move center to the right if Panel is located to the left; otherwise move center to the left.
-      const directionMultiplier = panelLocation && panelLocation === PanelLocation.Left ? -1 : 1;
-      xRawPos += (directionMultiplier * 630) / 2;
-    }
-
-    const xTarget = xRawPos + (nodeData?.width ?? DEFAULT_NODE_SIZE.width) / 2; // Center X on node midpoint
-    const yTarget = yRawPos + (nodeData?.height ?? DEFAULT_NODE_SIZE.height); // Center Y on bottom edge
-
-    if (firstLoad) {
-      const firstNodeYPos = 150;
-      setCenter(xTarget, height / 2 - firstNodeYPos, { zoom: 1 });
-      setFirstLoad(false);
-    } else {
-      setCenter(xTarget, yTarget, {
-        zoom: getZoom(),
-        duration: 500,
-      });
-    }
-    dispatch(clearFocusNode());
-  }, [dispatch, firstLoad, focusNode, getZoom, nodeData, setCenter, height, isPanelCollapsed, panelLocation]);
-
-  useEffect(() => {
-    handleTransform();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodeData, focusNode]);
-  return null;
-};
+} as EdgeTypes;
 
 export const SearchPreloader = () => {
   usePreloadOperationsQuery();
@@ -126,12 +76,13 @@ export const SearchPreloader = () => {
 };
 
 export const Designer = (props: DesignerProps) => {
-  const { backgroundProps, panelLocation, displayRuntimeInfo } = props;
+  const { backgroundProps, panelLocation = PanelLocation.Right, customPanelLocations } = props;
 
   const [nodes, edges, flowSize] = useLayout();
   const isEmpty = useIsGraphEmpty();
+  const isVSCode = useIsVSCode();
   const isReadOnly = useReadOnly();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
       dispatch(updateNodeSizes(changes));
@@ -139,51 +90,65 @@ export const Designer = (props: DesignerProps) => {
     [dispatch]
   );
 
+  const designerContainerRef = useRef<HTMLDivElement>(null);
+
   const emptyWorkflowPlaceholderNodes = [
     {
       id: 'newWorkflowTrigger',
       position: { x: 0, y: 0 },
       data: { label: 'newWorkflowTrigger' },
-      parentNode: undefined,
+      parentId: undefined,
       type: WORKFLOW_NODE_TYPES.PLACEHOLDER_NODE,
       style: DEFAULT_NODE_SIZE,
     },
   ];
 
-  const nodesWithPlaceholder = !isEmpty ? nodes : isReadOnly ? [] : emptyWorkflowPlaceholderNodes;
+  const nodesWithPlaceholder = isEmpty ? (isReadOnly ? [] : emptyWorkflowPlaceholderNodes) : nodes;
 
   const graph = useSelector((state: RootState) => state.workflow.graph);
   useThrottledEffect(() => dispatch(buildEdgeIdsBySource()), [graph], 200);
 
   const clampPan = useClampPan();
-  const windowDimensions = useWindowDimensions();
+	
+	const canvasRef = useRef<HTMLDivElement>(null);
+	const [containerDimensions, setContainerDimentions] = useState(canvasRef.current?.getBoundingClientRect() ?? { width: 0, height: 0 });
+	useResizeObserver(canvasRef, (el) => setContainerDimentions(el.contentRect));
 
   const [zoom, setZoom] = useState(1);
 
   const translateExtent = useMemo((): [[number, number], [number, number]] => {
-    const padding = 64 + 24;
+    const padding = 64;
     const [flowWidth, flowHeight] = flowSize;
 
-    const xVal = windowDimensions.width / zoom - padding - DEFAULT_NODE_SIZE.width;
-    const yVal = windowDimensions.height / zoom - padding - DEFAULT_NODE_SIZE.height;
+		const xVal = containerDimensions.width / zoom - padding - DEFAULT_NODE_SIZE.width;
+		const yVal = containerDimensions.height / zoom - padding - DEFAULT_NODE_SIZE.height;
 
     return [
-      [-xVal + 32, -yVal],
+      [-xVal, -yVal],
       [xVal + flowWidth, yVal + flowHeight - 30],
     ];
-  }, [flowSize, windowDimensions, zoom]);
+	}, [flowSize, containerDimensions, zoom]);
 
   useEffect(() => setLayerHostSelector('#msla-layer-host'), []);
   const KeyboardTransition = createTransition('keydown', (event) => {
-    if (!isKeyboardDragTrigger(event as KeyboardEvent)) return false;
+    if (!isKeyboardDragTrigger(event as KeyboardEvent)) {
+      return false;
+    }
     event.preventDefault();
     return true;
   });
 
-  useHotkeys(['meta+shift+p'], (event) => {
+  useHotkeys(['meta+shift+p', 'ctrl+shift+p'], (event) => {
     event.preventDefault();
-    dispatch(switchToNodeSearchPanel());
-  });
+    dispatch(openPanel({ panelMode: 'NodeSearch' }));
+  },{enabled: !isVSCode});
+
+  useHotkeys(['meta+alt+p', 'ctrl+alt+p', 'meta+option+p',  'ctrl+option+p'], (event) => {
+    event.preventDefault();
+    dispatch(openPanel({ panelMode: 'NodeSearch' }));
+  }, {enabled: isVSCode});
+
+  const isMonitoringView = useMonitoringView();
   const DND_OPTIONS: any = {
     backends: [
       {
@@ -201,38 +166,102 @@ export const Designer = (props: DesignerProps) => {
     ],
   };
 
+  const isInitialized = useNodesInitialized();
+  const preloadSearch = useMemo(() => !(isMonitoringView || isReadOnly) && isInitialized, [isMonitoringView, isReadOnly, isInitialized]);
+
+  // Adding recurrence interval to the query to access outside of functional components
+  const recurrenceInterval = useHostOptions().recurrenceInterval;
+  useQuery({
+    queryKey: ['recurrenceInterval'],
+    initialData: recurrenceInterval,
+    queryFn: () => {
+      return recurrenceInterval ?? null;
+    },
+  });
+
+  // Adding workflowKind (stateful or stateless) to the query to access outside of functional components
+  const workflowKind = useSelector((state: RootState) => state.workflow.workflowKind);
+  // This delayes the query until the workflowKind is available
+  useQuery({ queryKey: ['workflowKind'], initialData: undefined, enabled: !!workflowKind, queryFn: () => workflowKind });
+
+  // Our "onlyRenderVisibleElements" prop makes offscreen nodes inaccessible to tab navigation.
+  // In order to maintain accessibility, we are disabling this prop for tab navigation users
+  // We are inferring tab nav users if they press the tab key 5 times within the first 10 seconds
+  // This is not exact but should cover most cases
+  const [userInferredTabNavigation, setUserInferredTabNavigation] = useState(false);
+  useEffect(() => {
+    if (!isInitialized) {
+      return;
+    }
+    const tabCountTimeout = 10;
+    const tabCountThreshold = 4;
+    let tabCount = 0;
+    const tabListener = (e: KeyboardEvent) => {
+      if (e.key === 'Tab') {
+        tabCount++;
+        if (tabCount > tabCountThreshold) {
+          document.removeEventListener('keydown', tabListener);
+          setUserInferredTabNavigation(true);
+        }
+      }
+    };
+    document.addEventListener('keydown', tabListener);
+    setTimeout(() => {
+      document.removeEventListener('keydown', tabListener);
+    }, tabCountTimeout * 1000);
+  }, [isInitialized]);
+
   return (
     <DndProvider options={DND_OPTIONS}>
-      <SearchPreloader />
-      <div className="msla-designer-canvas msla-panel-mode">
+      {preloadSearch ? <SearchPreloader /> : null}
+      <div className="msla-designer-canvas msla-panel-mode" ref={designerContainerRef}>
         <ReactFlowProvider>
-          <ReactFlow
-            nodeTypes={nodeTypes}
-            nodes={nodesWithPlaceholder}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            nodesDraggable={false}
-            nodesFocusable={false}
-            edgesFocusable={false}
-            edgeTypes={edgeTypes}
-            panOnScroll={true}
-            deleteKeyCode={['Backspace', 'Delete']}
-            zoomActivationKeyCode={['Ctrl', 'Meta', 'Alt', 'Control']}
-            translateExtent={clampPan ? translateExtent : undefined}
-            onMove={(_e, viewport) => setZoom(viewport.zoom)}
-            proOptions={{
-              account: 'paid-sponsor',
-              hideAttribution: true,
-            }}
-          >
-            <PanelRoot panelLocation={panelLocation} displayRuntimeInfo={displayRuntimeInfo ?? true} />
-            {backgroundProps ? <Background {...backgroundProps} /> : null}
-          </ReactFlow>
-          <div className={`msla-designer-tools ${panelLocation === PanelLocation.Left ? 'msla-designer-tools-left-panel' : ''}`}>
+					<div style={{ flexGrow: 1}}>
+						<ReactFlow
+							ref={canvasRef}
+							nodeTypes={nodeTypes}
+							nodes={nodesWithPlaceholder}
+							edges={edges}
+							onNodesChange={onNodesChange}
+							nodesConnectable={false}
+							nodesDraggable={false}
+							nodesFocusable={false}
+							edgesFocusable={false}
+							edgeTypes={edgeTypes}
+							panOnScroll={true}
+							deleteKeyCode={['Backspace', 'Delete']}
+							zoomActivationKeyCode={['Ctrl', 'Meta', 'Alt', 'Control']}
+							translateExtent={clampPan ? translateExtent : undefined}
+							onMove={(_e, viewport) => setZoom(viewport.zoom)}
+							minZoom={0.05}
+							onPaneClick={() => dispatch(clearPanel())}
+							disableKeyboardA11y={true}
+							onlyRenderVisibleElements={!userInferredTabNavigation}
+							proOptions={{
+								account: 'paid-sponsor',
+								hideAttribution: true,
+							}}
+						>
+							{backgroundProps ? <Background {...backgroundProps} /> : null}
+							<DeleteModal />
+							<DesignerContextualMenu />
+							<EdgeContextualMenu />
+						</ReactFlow>
+					</div>
+					<PanelRoot
+						panelContainerRef={designerContainerRef}
+						panelLocation={panelLocation}
+						customPanelLocations={customPanelLocations}
+						isResizeable={true}
+					/>
+          <div className={css('msla-designer-tools', panelLocation === PanelLocation.Left && 'left-panel')}>
             <Controls />
             <Minimap />
           </div>
-          <CanvasFinder panelLocation={panelLocation} />
+          <PerformanceDebugTool />
+          <CanvasFinder />
+					<CanvasSizeMonitor canvasRef={canvasRef} />
+          <DragPanMonitor canvasRef={canvasRef} />
         </ReactFlowProvider>
         <div
           id={'msla-layer-host'}

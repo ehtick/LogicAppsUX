@@ -2,11 +2,11 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { DotnetVersion } from '../../../constants';
+import { DotnetVersion, localSettingsFileName } from '../../../constants';
 import { localize } from '../../../localize';
 import { getProjFiles } from '../dotnet/dotnet';
 import type { IActionContext } from '@microsoft/vscode-azext-utils';
-import { ProjectLanguage } from '@microsoft/vscode-extension';
+import { ProjectLanguage } from '@microsoft/vscode-extension-logic-apps';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Uri } from 'vscode';
@@ -40,9 +40,8 @@ export async function getDotnetBuildFile(context: IActionContext, projectPath: s
     const xmlString: string = fs.readFileSync(buildFileUri.fsPath, 'utf8').toString();
     const xmlObject: Record<string, any> | undefined = await getXMLString(xmlString, { explicitArray: false });
     return JSON.stringify(xmlObject);
-  } else {
-    throw new Error(localize('dotnetProjectFileNotFound', 'Dotnet project file could not be found.'));
   }
+  throw new Error(localize('dotnetProjectFileNotFound', 'Dotnet project file could not be found.'));
 }
 
 export function addFolderToBuildPath(xmlBuildFile: Record<string, any>, folderName: string): Record<string, any> {
@@ -115,11 +114,37 @@ export function suppressJavaScriptBuildWarnings(xmlBuildFile: Record<string, any
 
 export function updateFunctionsSDKVersion(xmlBuildFile: Record<string, any>, dotnetVersion: string): Record<string, any> {
   for (const item of xmlBuildFile['Project']['ItemGroup']) {
-    if ('PackageReference' in item && item['PackageReference']['$']['Include'] == 'Microsoft.NET.Sdk.Functions') {
+    if ('PackageReference' in item && item['PackageReference']['$']['Include'] === 'Microsoft.NET.Sdk.Functions') {
       const packageVersion = dotnetVersion === DotnetVersion.net6 ? '4.1.3' : '3.0.13';
       item['PackageReference']['$']['Version'] = packageVersion;
       break;
     }
+  }
+
+  return xmlBuildFile;
+}
+
+/**
+ * Allows local settings to be published to the directory by modifying the XML build file.
+ * @param context - The action context.
+ * @param xmlBuildFile - The XML build file to update.
+ * @returns The updated XML build file.
+ */
+export function allowLocalSettingsToPublishDirectory(context: IActionContext, xmlBuildFile: Record<string, any>): Record<string, any> {
+  try {
+    for (const itemGroup of xmlBuildFile['Project']['ItemGroup']) {
+      if ('None' in itemGroup) {
+        for (const item of itemGroup['None']) {
+          if (item?.['$']?.['Update'] === localSettingsFileName) {
+            delete item.CopyToPublishDirectory;
+          }
+        }
+      }
+    }
+    context.telemetry.properties.allowSettingsToPublish = 'true';
+  } catch (error) {
+    context.telemetry.properties.error = error.message;
+    context.telemetry.properties.allowSettingsToPublish = 'false';
   }
 
   return xmlBuildFile;

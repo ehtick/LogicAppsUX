@@ -14,6 +14,7 @@ import {
 } from '../../../../constants';
 import { localize } from '../../../../localize';
 import { setLocalAppSetting } from '../../../utils/appSettings/localSettings';
+import { getCodelessWorkflowTemplate } from '../../../utils/codeless/templates';
 import {
   addFolderToBuildPath,
   addNugetPackagesToBuildFile,
@@ -28,8 +29,8 @@ import { parseJson } from '../../../utils/parseJson';
 import { WorkflowCreateStepBase } from './WorkflowCreateStepBase';
 import type { IActionContext } from '@microsoft/vscode-azext-utils';
 import { DialogResponses, nonNullProp, parseError } from '@microsoft/vscode-azext-utils';
-import { WorkflowProjectType, MismatchBehavior } from '@microsoft/vscode-extension';
-import type { IFunctionWizardContext, IWorkflowTemplate, IHostJsonV2, StandardApp } from '@microsoft/vscode-extension';
+import { WorkflowProjectType, MismatchBehavior } from '@microsoft/vscode-extension-logic-apps';
+import type { IFunctionWizardContext, IWorkflowTemplate, IHostJsonV2, StandardApp } from '@microsoft/vscode-extension-logic-apps';
 import * as fse from 'fs-extra';
 import * as path from 'path';
 import type { MessageItem } from 'vscode';
@@ -48,29 +49,7 @@ export class CodelessWorkflowCreateStep extends WorkflowCreateStepBase<IFunction
     const template: IWorkflowTemplate = nonNullProp(context, 'functionTemplate');
     const functionPath: string = path.join(context.projectPath, nonNullProp(context, 'functionName'));
 
-    const emptyStatefulDefinition: StandardApp = {
-      definition: {
-        $schema: 'https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#',
-        actions: {},
-        contentVersion: '1.0.0.0',
-        outputs: {},
-        triggers: {},
-      },
-      kind: 'Stateful',
-    };
-
-    const emptyStatelessDefinition: StandardApp = {
-      definition: {
-        $schema: 'https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#',
-        actions: {},
-        contentVersion: '1.0.0.0',
-        outputs: {},
-        triggers: {},
-      },
-      kind: 'Stateless',
-    };
-
-    const codelessDefinition: StandardApp = template?.id === workflowType.stateful ? emptyStatefulDefinition : emptyStatelessDefinition;
+    const codelessDefinition: StandardApp = getCodelessWorkflowTemplate(template?.id === workflowType.stateful);
 
     const workflowJsonFullPath: string = path.join(functionPath, workflowFileName);
 
@@ -142,7 +121,7 @@ export class CodelessWorkflowCreateStep extends WorkflowCreateStepBase<IFunction
   ): Promise<T> {
     if (await fse.pathExists(filePath)) {
       const data: string = (await fse.readFile(filePath)).toString();
-      if (/[^\s]/.test(data)) {
+      if (emptyStringTest.test(data)) {
         try {
           return parseJson(data);
         } catch (error) {
@@ -172,3 +151,5 @@ export class CodelessWorkflowCreateStep extends WorkflowCreateStepBase<IFunction
     return defaultValue;
   }
 }
+
+const emptyStringTest = /[^\s]/;

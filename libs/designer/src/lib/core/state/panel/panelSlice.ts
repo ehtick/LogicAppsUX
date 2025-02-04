@@ -1,176 +1,309 @@
-import constants from '../../../common/constants';
-import type { RelationshipIds, PanelState } from './panelInterfaces';
-import type { PanelTab } from '@microsoft/designer-ui';
-import { createSlice } from '@reduxjs/toolkit';
+import { PanelLocation } from '@microsoft/designer-ui';
+import type { LogicAppsV2 } from '@microsoft/logic-apps-shared';
+import { cleanConnectorId, LogEntryLevel, LoggerService } from '@microsoft/logic-apps-shared';
 import type { PayloadAction } from '@reduxjs/toolkit';
+import { createSlice } from '@reduxjs/toolkit';
+import { resetWorkflowState, setStateAfterUndoRedo } from '../global';
+import type {
+  ConnectionPanelContentState,
+  DiscoveryPanelContentState,
+  ErrorPanelContentState,
+  NodeSearchPanelContentState,
+  OperationPanelContentState,
+  PanelMode,
+  PanelState,
+  RelationshipIds,
+  WorkflowParametersPanelContentState,
+} from './panelTypes';
+import type { UndoRedoPartialRootState } from '../undoRedo/undoRedoTypes';
 
-const initialState: PanelState = {
-  collapsed: true,
-  selectedNode: '',
+const getInitialConnectionContentState = (): ConnectionPanelContentState => ({
+  isCreatingConnection: false,
+  panelMode: 'Connection',
+  selectedNodeIds: [],
+});
+
+const getInitialDiscoveryContentState = (): DiscoveryPanelContentState => ({
+  isAddingTrigger: false,
+  isParallelBranch: false,
+  panelMode: 'Discovery',
   relationshipIds: {
     graphId: 'root',
   },
-  isParallelBranch: false,
-  registeredTabs: {},
-  selectedTabName: undefined,
+  selectedNodeIds: [],
   selectedOperationGroupId: '',
   selectedOperationId: '',
-  addingTrigger: false,
+});
+
+const getInitialErrorContentState = (): ErrorPanelContentState => ({
+  selectedTabId: 'ERRORS',
+  panelMode: 'Error',
+});
+
+const getInitialNodeSearchContentState = (): NodeSearchPanelContentState => ({
+  panelMode: 'NodeSearch',
+});
+
+const getInitialOperationContentState = (): OperationPanelContentState => ({
+  panelMode: 'Operation',
+  pinnedNodeId: undefined,
+  pinnedNodeActiveTabId: undefined,
+  selectedNodeId: undefined,
+  selectedNodeActiveTabId: undefined,
+});
+
+const getInitialWorkflowParametersContentState = (): WorkflowParametersPanelContentState => ({
+  panelMode: 'WorkflowParameters',
+});
+
+export const initialState: PanelState = {
+  connectionContent: getInitialConnectionContentState(),
+  currentPanelMode: 'Operation',
+  discoveryContent: getInitialDiscoveryContentState(),
+  errorContent: getInitialErrorContentState(),
+  isCollapsed: true,
+  isLoading: false,
+  location: PanelLocation.Right,
+  nodeSearchContent: getInitialNodeSearchContentState(),
+  operationContent: getInitialOperationContentState(),
+  previousPanelMode: undefined,
+  workflowParametersContent: getInitialWorkflowParametersContentState(),
 };
+
+const area = 'Designer:Panel Slice';
 
 export const panelSlice = createSlice({
   name: 'panel',
   initialState,
   reducers: {
     expandPanel: (state) => {
-      state.collapsed = false;
+      state.isCollapsed = false;
     },
     collapsePanel: (state) => {
-      state.collapsed = true;
-      state.selectedOperationGroupId = '';
+      state.isCollapsed = true;
+      state.discoveryContent.selectedOperationGroupId = '';
+      state.discoveryContent.isAddingTrigger = false;
     },
-    clearPanel: (state) => {
-      state.collapsed = true;
-      state.currentState = undefined;
-      state.selectedNode = '';
-      state.selectedOperationGroupId = '';
+    clearPanel: (state, action: PayloadAction<{ clearPinnedState?: boolean } | undefined>) => {
+      const { clearPinnedState } = action.payload ?? {};
+
+      state.connectionContent = getInitialConnectionContentState();
+      state.currentPanelMode = 'Operation';
+      state.discoveryContent = getInitialDiscoveryContentState();
+      state.errorContent = getInitialErrorContentState();
+      state.nodeSearchContent = getInitialNodeSearchContentState();
+      state.previousPanelMode = undefined;
+      state.workflowParametersContent = getInitialWorkflowParametersContentState();
+
+      if (clearPinnedState) {
+        state.isCollapsed = true;
+        state.operationContent = getInitialOperationContentState();
+      } else {
+        state.isCollapsed = !state.operationContent.pinnedNodeId;
+        state.operationContent = {
+          ...getInitialOperationContentState(),
+          pinnedNodeId: state.operationContent.pinnedNodeId,
+          pinnedNodeActiveTabId: state.operationContent.pinnedNodeActiveTabId,
+        };
+      }
+    },
+    updatePanelLocation: (state, action: PayloadAction<PanelLocation | undefined>) => {
+      if (action.payload && action.payload !== state.location) {
+        state.location = action.payload;
+      }
+    },
+    setPinnedNode: (state, action: PayloadAction<{ nodeId: string; updatePanelOpenState?: boolean }>) => {
+      const { nodeId, updatePanelOpenState } = action.payload;
+      const hasSelectedNode = !!state.operationContent.selectedNodeId;
+
+      if (nodeId && !hasSelectedNode) {
+        state.connectionContent.selectedNodeIds = [nodeId];
+        state.discoveryContent.selectedNodeIds = [nodeId];
+        state.operationContent.selectedNodeId = nodeId;
+      }
+
+      state.operationContent.pinnedNodeId = nodeId;
+      state.operationContent.pinnedNodeActiveTabId = undefined;
+
+      if (updatePanelOpenState) {
+        if (nodeId) {
+          state.isCollapsed = false;
+          state.currentPanelMode = 'Operation';
+        } else {
+          state.isCollapsed = !hasSelectedNode;
+        }
+      }
+    },
+    setSelectedNodeId: (state, action: PayloadAction<string>) => {
+      const selectedNodes = [action.payload];
+
+      state.connectionContent.selectedNodeIds = selectedNodes;
+      state.discoveryContent.selectedNodeIds = selectedNodes;
+      state.operationContent.selectedNodeId = selectedNodes[0];
+    },
+    setSelectedNodeIds: (state, action: PayloadAction<string[]>) => {
+      const selectedNodes = action.payload;
+
+      state.connectionContent.selectedNodeIds = selectedNodes;
+      state.discoveryContent.selectedNodeIds = selectedNodes;
+      state.operationContent.selectedNodeId = selectedNodes[0];
     },
     changePanelNode: (state, action: PayloadAction<string>) => {
-      if (!action) return;
-      if (state.collapsed) state.collapsed = false;
-      state.selectedNode = action.payload;
-      state.currentState = undefined;
-      state.selectedOperationGroupId = '';
+      const selectedNodes = [action.payload];
+
+      state.isCollapsed = false;
+      state.currentPanelMode = 'Operation';
+      state.connectionContent.selectedNodeIds = selectedNodes;
+      state.operationContent.selectedNodeId = selectedNodes[0];
+      state.operationContent.selectedNodeActiveTabId = undefined;
+
+      LoggerService().log({
+        level: LogEntryLevel.Verbose,
+        area,
+        message: action.type,
+        args: [action.payload],
+      });
     },
     expandDiscoveryPanel: (
       state,
-      action: PayloadAction<{ relationshipIds: RelationshipIds; nodeId: string; isParallelBranch?: boolean; addingTrigger?: boolean }>
+      action: PayloadAction<{
+        addingTrigger?: boolean;
+        focusReturnElementId?: string;
+        isParallelBranch?: boolean;
+        nodeId: string;
+        relationshipIds: RelationshipIds;
+      }>
     ) => {
-      state.collapsed = false;
-      state.currentState = 'Discovery';
-      state.relationshipIds = action.payload.relationshipIds;
-      state.selectedNode = action.payload.nodeId;
-      state.isParallelBranch = action.payload?.isParallelBranch ?? false;
-      state.addingTrigger = !!action.payload?.addingTrigger;
+      const { addingTrigger, focusReturnElementId, isParallelBranch, nodeId, relationshipIds } = action.payload;
+
+      state.currentPanelMode = 'Discovery';
+      state.focusReturnElementId = focusReturnElementId;
+      state.isCollapsed = false;
+      state.discoveryContent.isAddingTrigger = !!addingTrigger;
+      state.discoveryContent.isParallelBranch = isParallelBranch ?? false;
+      state.discoveryContent.relationshipIds = relationshipIds;
+      state.discoveryContent.selectedNodeIds = [nodeId];
+
+      LoggerService().log({
+        level: LogEntryLevel.Verbose,
+        area,
+        message: action.type,
+        args: [action.payload],
+      });
     },
     selectOperationGroupId: (state, action: PayloadAction<string>) => {
-      state.selectedOperationGroupId = action.payload;
+      state.discoveryContent.selectedOperationGroupId = cleanConnectorId(action.payload);
+
+      LoggerService().log({
+        level: LogEntryLevel.Verbose,
+        area,
+        message: action.type,
+        args: [action.payload],
+      });
     },
     selectOperationId: (state, action: PayloadAction<string>) => {
-      state.selectedOperationId = action.payload;
+      state.discoveryContent.selectedOperationId = action.payload;
     },
-    switchToOperationPanel: (state, action: PayloadAction<string>) => {
-      state.selectedNode = action.payload;
-      state.currentState = undefined;
-      state.selectedOperationGroupId = '';
-      state.selectedOperationId = action.payload;
-    },
-    switchToWorkflowParameters: (state) => {
-      state.collapsed = false;
-      state.currentState = 'WorkflowParameters';
-      state.selectedNode = '';
-      state.selectedOperationGroupId = '';
-      state.selectedOperationId = '';
-    },
-    switchToNodeSearchPanel: (state) => {
-      state.collapsed = false;
-      state.currentState = 'NodeSearch';
-      state.selectedNode = '';
-      state.selectedOperationGroupId = '';
-      state.selectedOperationId = '';
-    },
-    registerPanelTabs: (state, action: PayloadAction<Array<PanelTab>>) => {
-      action.payload.forEach((tab) => {
-        state.registeredTabs[tab.name.toLowerCase()] = tab;
-      });
-    },
-    setTabError: (state, action: PayloadAction<{ tabName: string; hasErrors: boolean; nodeId: string }>) => {
-      const tabName = action.payload.tabName.toLowerCase();
-      const { nodeId, hasErrors } = action.payload;
-      if (tabName) {
-        state.registeredTabs[tabName] = {
-          ...state.registeredTabs[tabName],
-          tabErrors: {
-            ...state.registeredTabs[tabName].tabErrors,
-            [nodeId]: hasErrors,
-          },
-        };
-      }
-    },
-    unregisterPanelTab: (state, action: PayloadAction<string>) => {
-      delete state.registeredTabs[action.payload];
-    },
-    setTabVisibility: (state, action: PayloadAction<{ tabName: string; visible?: boolean }>) => {
-      const tabName = action.payload.tabName.toLowerCase();
-      if (tabName) {
-        state.registeredTabs[tabName] = {
-          ...state.registeredTabs[tabName],
-          visible: !!action.payload.visible,
-        };
-      }
-    },
-    showDefaultTabs: (
+    openPanel: (
       state,
-      action: PayloadAction<{ isScopeNode?: boolean; isMonitoringView?: boolean; hasSchema?: boolean } | undefined>
+      action: PayloadAction<{
+        focusReturnElementId?: string;
+        nodeId?: string;
+        nodeIds?: string[];
+        panelMode: PanelMode;
+        referencePanelMode?: PanelMode;
+      }>
     ) => {
-      const isMonitoringView = action.payload?.isMonitoringView;
-      const isScopeNode = action.payload?.isScopeNode;
-      const hasSchema = action.payload?.hasSchema;
-      const defaultTabs = [
-        constants.PANEL_TAB_NAMES.ABOUT,
-        constants.PANEL_TAB_NAMES.CODE_VIEW,
-        constants.PANEL_TAB_NAMES.SETTINGS,
-        constants.PANEL_TAB_NAMES.SCRATCH,
-      ];
+      const { focusReturnElementId, nodeId, nodeIds, panelMode, referencePanelMode } = action.payload;
+      const selectedNodes = nodeIds ? nodeIds : nodeId ? [nodeId] : [];
 
-      isMonitoringView
-        ? defaultTabs.unshift(constants.PANEL_TAB_NAMES.MONITORING)
-        : defaultTabs.unshift(constants.PANEL_TAB_NAMES.PARAMETERS);
+      state.currentPanelMode = panelMode;
+      state.isCollapsed = false;
+      state.focusReturnElementId = focusReturnElementId;
+      state.previousPanelMode = referencePanelMode;
+      state.connectionContent.selectedNodeIds = selectedNodes;
+      state.discoveryContent.selectedNodeIds = selectedNodes;
+      state.operationContent.selectedNodeId = selectedNodes[0];
+    },
+    setPinnedPanelActiveTab: (state, action: PayloadAction<string | undefined>) => {
+      state.operationContent.pinnedNodeActiveTabId = action.payload;
 
-      if (hasSchema && !isMonitoringView) {
-        defaultTabs.unshift(constants.PANEL_TAB_NAMES.TESTING);
-      }
-      if (isScopeNode && !isMonitoringView) {
-        defaultTabs.shift();
-      }
-
-      Object.values(state.registeredTabs as Record<string, PanelTab>).forEach((tab) => {
-        if (state.registeredTabs[tab.name.toLowerCase()]) {
-          state.registeredTabs[tab.name.toLowerCase()] = { ...tab, visible: defaultTabs.includes(tab.name) };
-        }
+      LoggerService().log({
+        level: LogEntryLevel.Verbose,
+        area,
+        message: action.type,
+        args: [action.payload],
       });
     },
-    isolateTab: (state, action: PayloadAction<string>) => {
-      Object.values(state.registeredTabs as Record<string, PanelTab>).forEach((tab) => {
-        state.registeredTabs[tab.name.toLowerCase()] = { ...tab, visible: tab.name === action.payload };
+    setSelectedPanelActiveTab: (state, action: PayloadAction<string | undefined>) => {
+      state.operationContent.selectedNodeActiveTabId = action.payload;
+
+      LoggerService().log({
+        level: LogEntryLevel.Verbose,
+        area,
+        message: action.type,
+        args: [action.payload],
       });
-      state.selectedTabName = action.payload;
     },
-    selectPanelTab: (state, action: PayloadAction<string | undefined>) => {
-      state.selectedTabName = action.payload;
+    setIsPanelLoading: (state, action: PayloadAction<boolean>) => {
+      state.isLoading = action.payload;
     },
+    setIsCreatingConnection: (state, action: PayloadAction<boolean>) => {
+      state.connectionContent.isCreatingConnection = action.payload;
+    },
+    selectErrorsPanelTab: (state, action: PayloadAction<string>) => {
+      state.errorContent.selectedTabId = action.payload;
+
+      LoggerService().log({
+        level: LogEntryLevel.Verbose,
+        area,
+        message: action.type,
+        args: [action.payload],
+      });
+    },
+    initRunInPanel: (state, action: PayloadAction<LogicAppsV2.RunInstanceDefinition | null>) => {
+      const actionIds = Object.keys(action.payload?.properties?.actions ?? {});
+      actionIds.push(action.payload?.properties?.trigger.name ?? '');
+      if (actionIds.length === 0) {
+        return; // This is sometimes run too early when we don't have any actions yet
+      }
+      if (state.operationContent.pinnedNodeId && !actionIds.includes(state.operationContent.pinnedNodeId ?? '')) {
+        state.operationContent.pinnedNodeId = undefined;
+      }
+      if (state.operationContent.selectedNodeId && !actionIds.includes(state.operationContent.selectedNodeId ?? '')) {
+        state.operationContent.selectedNodeId = undefined;
+      }
+      if (state.operationContent.pinnedNodeId == null && state.operationContent.selectedNodeId == null) {
+        state.operationContent = getInitialOperationContentState();
+        state.isCollapsed = true;
+      }
+    },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(resetWorkflowState, () => initialState);
+    builder.addCase(setStateAfterUndoRedo, (_, action: PayloadAction<UndoRedoPartialRootState>) => action.payload.panel);
   },
 });
 
-// Action creators are generated for each case reducer function
 export const {
-  expandPanel,
-  collapsePanel,
-  clearPanel,
   changePanelNode,
+  clearPanel,
+  collapsePanel,
   expandDiscoveryPanel,
+  expandPanel,
+  openPanel,
+  selectErrorsPanelTab,
   selectOperationGroupId,
   selectOperationId,
-  switchToOperationPanel,
-  registerPanelTabs,
-  unregisterPanelTab,
-  showDefaultTabs,
-  setTabVisibility,
-  isolateTab,
-  selectPanelTab,
-  setTabError,
-  switchToNodeSearchPanel,
-  switchToWorkflowParameters,
+  setPinnedPanelActiveTab,
+  setSelectedPanelActiveTab,
+  setIsCreatingConnection,
+  setIsPanelLoading,
+  setPinnedNode,
+  setSelectedNodeId,
+  setSelectedNodeIds,
+  updatePanelLocation,
+  initRunInPanel,
 } = panelSlice.actions;
 
 export default panelSlice.reducer;

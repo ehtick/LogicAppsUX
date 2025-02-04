@@ -2,7 +2,8 @@ import * as ReactShallowRenderer from 'react-test-renderer/shallow';
 import { getTestIntl } from '../../../__test__/intl-test-helper';
 import { DecimalValue } from '../decimal';
 import type { ValueProps } from '../types';
-
+import { describe, vi, beforeEach, afterEach, beforeAll, afterAll, it, test, expect } from 'vitest';
+import React from 'react';
 describe('ui/monitoring/values/decimal', () => {
   let props: ValueProps, renderer: ReactShallowRenderer.ShallowRenderer;
 

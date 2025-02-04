@@ -2,12 +2,12 @@ import type { StaticResultRootSchemaType } from '.';
 import constants from '../constants';
 import type { DropdownItem } from '../dropdown';
 import type { ValueSegment } from '../editor';
-import { ValueSegmentType } from '../editor';
+import { createLiteralValueSegment } from '../editor/base/utils/helper';
 import { SchemaPropertyValueType } from './propertyEditor/PropertyEditorItem';
-import type { OpenAPIV2 } from '@microsoft/utils-logic-apps';
-import { capitalizeFirstLetter, guid } from '@microsoft/utils-logic-apps';
+import type { OpenAPIV2 } from '@microsoft/logic-apps-shared';
+import { capitalizeFirstLetter } from '@microsoft/logic-apps-shared';
 
-export const parseStaticResultSchema = (staticResultSchema: OpenAPIV2.SchemaObject) => {
+export const parseStaticResultSchema = (staticResultSchema: any) => {
   const { additionalProperties, properties, required, type } = staticResultSchema;
   return {
     additionalProperties,
@@ -52,31 +52,51 @@ export const serializePropertyValuesAsArray = (
   staticResultSchema: OpenAPIV2.SchemaObject
 ): OpenAPIV2.SchemaObject[] => {
   const serializedProperty: OpenAPIV2.SchemaObject[] = [];
-  const schemaObject = Object.entries(staticResultSchema?.items?.properties ?? {});
-  // cycles through element in the array
-  Object.values(propertyValues).forEach((propertyValue) => {
+  const schemaProperties = staticResultSchema?.items?.properties ?? {};
+  const schemaEntries = Object.entries(schemaProperties);
+
+  // if the schema does not define properties (this can happen incases of dynamic schema or schema with no properties)
+  if (schemaEntries.length === 0) {
+    // if the schema is an object, we need to serialize the object properties
+    if (staticResultSchema?.items?.type === constants.SWAGGER.TYPE.OBJECT) {
+      Object.entries(propertyValues).forEach(([key, value]) => {
+        if (value !== undefined) {
+          serializedProperty.push({ [key]: value });
+        }
+      });
+    } else {
+      serializedProperty.push(...Object.values(propertyValues));
+    }
+
+    return serializedProperty;
+  }
+
+  // if the schema defines properties
+  Object.entries(propertyValues).forEach(([, propertyValue]) => {
+    if (typeof propertyValue !== 'object' || propertyValue === null) {
+      return;
+    }
+
     const serializedPropertyValue: OpenAPIV2.SchemaObject = {};
-    schemaObject.forEach(([schemaPropertyName, schemaPropertyValue]) => {
-      if (propertyValue[schemaPropertyName]) {
-        // if is a nested array property value
-        if (schemaPropertyValue.type === constants.SWAGGER.TYPE.ARRAY && schemaPropertyValue.items && propertyValue[schemaPropertyName]) {
-          const serializedPropertyValueArray = serializePropertyValuesAsArray(propertyValue[schemaPropertyName], schemaPropertyValue);
-          if (serializedPropertyValueArray && serializedPropertyValueArray.length > 0) {
-            serializedPropertyValue[schemaPropertyName] = serializedPropertyValueArray;
+    schemaEntries.forEach(([schemaPropertyName, schemaPropertyValue]) => {
+      const value = propertyValue[schemaPropertyName];
+      if (value !== undefined) {
+        if (schemaPropertyValue.type === constants.SWAGGER.TYPE.ARRAY && schemaPropertyValue.items) {
+          const serializedArrayValue = serializePropertyValuesAsArray(value, schemaPropertyValue);
+          if (serializedArrayValue.length > 0) {
+            serializedPropertyValue[schemaPropertyName] = serializedArrayValue;
           }
         } else {
-          serializedPropertyValue[schemaPropertyName] = propertyValue[schemaPropertyName];
+          serializedPropertyValue[schemaPropertyName] = value;
         }
       }
     });
+
     if (Object.keys(serializedPropertyValue).length > 0) {
       serializedProperty.push(serializedPropertyValue);
     }
   });
 
-  if (!staticResultSchema?.items?.properties && propertyValues) {
-    serializedProperty.push(...Object.values(propertyValues));
-  }
   return serializedProperty;
 };
 
@@ -129,19 +149,21 @@ export const initializeShownProperties = (
 };
 
 export const formatShownProperties = (propertiesSchema: Record<string, boolean>): ValueSegment[] => {
-  if (!propertiesSchema) return [];
+  if (!propertiesSchema) {
+    return [];
+  }
   const filteredProperties: Record<string, boolean> = Object.fromEntries(Object.entries(propertiesSchema).filter(([, value]) => value));
-  return [{ id: guid(), type: ValueSegmentType.LITERAL, value: Object.keys(filteredProperties).toString() }];
+  return [createLiteralValueSegment(Object.keys(filteredProperties).toString())];
 };
 
 export const getOptions = (propertiesSchema: StaticResultRootSchemaType, required: string[]): DropdownItem[] => {
   const options: DropdownItem[] = [];
   if (propertiesSchema) {
-    Object.keys(propertiesSchema).forEach((propertyName, i) => {
+    Object.keys(propertiesSchema).forEach((propertyName) => {
       options.push({
-        key: i.toString(),
-        displayName: `${capitalizeFirstLetter(propertyName)}`,
+        key: propertyName,
         value: propertyName,
+        displayName: `${capitalizeFirstLetter(propertyName)}`,
         disabled: required.includes(propertyName),
       });
     });
@@ -153,7 +175,9 @@ export const initializeCheckedDropdown = (
   propertyValue: OpenAPIV2.SchemaObject | string,
   propertyType: SchemaPropertyValueType
 ): Record<string, boolean> => {
-  if (propertyType === SchemaPropertyValueType.STRING) return {};
+  if (propertyType === SchemaPropertyValueType.STRING) {
+    return {};
+  }
   const returnDropdown: Record<string, boolean> = {};
 
   Object.keys(propertyValue).forEach((propertyValueKey) => {
@@ -166,6 +190,22 @@ export const initializePropertyValueText = (
   propertyValue: OpenAPIV2.SchemaObject | string,
   propertyType: SchemaPropertyValueType
 ): string => {
-  if (propertyType === SchemaPropertyValueType.OBJECT) return '';
+  if (propertyType === SchemaPropertyValueType.OBJECT) {
+    return '';
+  }
   return propertyValue as string;
+};
+
+export const initializePropertyValueInput = (
+  currProperties: OpenAPIV2.SchemaObject,
+  schema: StaticResultRootSchemaType | OpenAPIV2.SchemaObject
+): string => {
+  const inputVal = (
+    typeof currProperties === 'string' || typeof currProperties === 'number' || typeof currProperties === 'boolean'
+      ? currProperties
+      : Object.keys(currProperties).length > 0
+        ? JSON.stringify(currProperties, null, 2)
+        : (schema?.default ?? '')
+  ) as string;
+  return inputVal;
 };

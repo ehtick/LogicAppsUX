@@ -6,7 +6,6 @@ import {
   func,
   projectLanguageSetting,
   funcVersionSetting,
-  deploySubpathSetting,
   tasksVersion,
   tasksFileName,
   launchVersion,
@@ -15,7 +14,8 @@ import {
   launchFileName,
   extensionsFileName,
   extensionCommand,
-  functionsExtensionId,
+  logicAppsStandardExtensionId,
+  vscodeFolderName,
 } from '../../../../../../constants';
 import { ext } from '../../../../../../extensionVariables';
 import { localize } from '../../../../../../localize';
@@ -48,8 +48,8 @@ import type {
   ITasksJson,
   ILaunchJson,
   IExtensionsJson,
-} from '@microsoft/vscode-extension';
-import { WorkflowProjectType, FuncVersion } from '@microsoft/vscode-extension';
+} from '@microsoft/vscode-extension-logic-apps';
+import { WorkflowProjectType, FuncVersion } from '@microsoft/vscode-extension-logic-apps';
 import * as fse from 'fs-extra';
 import * as path from 'path';
 import type { TaskDefinition, DebugConfiguration, WorkspaceFolder } from 'vscode';
@@ -66,7 +66,7 @@ export abstract class InitCodeProject extends AzureWizardExecuteStep<IProjectWiz
 
   protected getDebugConfiguration(version: FuncVersion): DebugConfiguration {
     return {
-      name: localize('attachToNetFunc', 'Attach to Logic App'),
+      name: localize('attachToNetFunc', 'Attach to logic app'),
       type: version === FuncVersion.v1 ? 'clr' : 'coreclr',
       request: 'attach',
       processId: `\${command:${extensionCommand.pickProcess}}`,
@@ -88,12 +88,12 @@ export abstract class InitCodeProject extends AzureWizardExecuteStep<IProjectWiz
     // Define the Logic App folder path using the context property of the wizard
     const logicAppFolderPath = context.logicAppFolderPath;
 
-    // Create the necessary files and folders for VS Code under the Logic App folder path
+    // Create the necessary files and folders for Visual Studio Code under the logic app folder path.
     await fse.ensureDir(logicAppFolderPath);
-    const vscodePath: string = path.join(logicAppFolderPath, '.vscode');
+    const vscodePath: string = path.join(logicAppFolderPath, vscodeFolderName);
     await fse.ensureDir(vscodePath);
 
-    // Write the necessary VS Code configuration files
+    // Write the necessary Visual Studio Code configuration files.
     await this.writeTasksJson(context, vscodePath);
     await this.writeLaunchJson(context, context.workspaceFolder, vscodePath, version);
     await this.writeSettingsJson(context, vscodePath, language, version);
@@ -117,48 +117,49 @@ export abstract class InitCodeProject extends AzureWizardExecuteStep<IProjectWiz
    * @param context The project wizard context.
    **/
   public async overwriteTasksJson(context: IProjectWizardContext): Promise<void> {
-    const tasksJsonPath: string = path.join(context.projectPath, '.vscode', 'Tasks.json');
+    const tasksJsonPath: string = path.join(context.projectPath, vscodeFolderName, 'Tasks.json');
     const tasksJsonContent = `{
-    "version": "2.0.0",
-    "tasks": [
-      {
-        "label": "generateDebugSymbols",
-        "command": "dotnet",
-        "args": [
-          "\${input:getDebugSymbolDll}"
+        "version": "2.0.0",
+        "tasks": [
+          {
+            "label": "generateDebugSymbols",
+            "command": '\${config:azureLogicAppsStandard.dotnetBinaryPath}',
+            "args": [
+              "\${input:getDebugSymbolDll}"
+            ],
+            "type": "process",
+            "problemMatcher": "$msCompile"
+          },
+          {
+            "type": "shell",
+            "command":"\${config:azureLogicAppsStandard.funcCoreToolsBinaryPath}",
+            "args" : ["host", "start"],
+            "options": {
+              "env": {
+                "PATH": "\${config:azureLogicAppsStandard.autoRuntimeDependenciesPath}\\\\NodeJs;\${config:azureLogicAppsStandard.autoRuntimeDependenciesPath}\\\\DotNetSDK;$env:PATH"
+              }
+            },
+            "problemMatcher": "$func-watch",
+            "isBackground": true,
+            "label": "func: host start",
+            "group": {
+              "kind": "build",
+              "isDefault": true
+            }
+          }
         ],
-        "type": "process",
-        "problemMatcher": "$msCompile"
-      },
-      {
-        "type": "func",
-        "command": "host start",
-        "problemMatcher": "$func-watch",
-        "isBackground": true,
-        "label": "func: host start",
-        "group": {
-          "kind": "build",
-          "isDefault": true
-        }
-      }
-    ],
-    "inputs": [
-      {
-        "id": "getDebugSymbolDll",
-        "type": "command",
-        "command": "azureLogicAppsStandard.getDebugSymbolDll"
-      }
-    ]
-  }`;
+        "inputs": [
+          {
+            "id": "getDebugSymbolDll",
+            "type": "command",
+            "command": "azureLogicAppsStandard.getDebugSymbolDll"
+          }
+        ]
+      }`;
 
     if (await confirmOverwriteFile(context, tasksJsonPath)) {
       await fse.writeFile(tasksJsonPath, tasksJsonContent);
     }
-  }
-  protected setDeploySubpath(context: IProjectWizardContext, deploySubpath: string): string {
-    deploySubpath = this.addSubDir(context, deploySubpath);
-    this.settings.push({ key: deploySubpathSetting, value: deploySubpath });
-    return deploySubpath;
   }
 
   protected addSubDir(context: IProjectWizardContext, fsPath: string): string {
@@ -173,10 +174,10 @@ export abstract class InitCodeProject extends AzureWizardExecuteStep<IProjectWiz
       localize('versionMismatchError', 'The version in your {0} must be "{1}" to work with Azure Functions.', tasksFileName, tasksVersion)
     );
 
-    // Use VS Code api to update config if folder is open and it's not a multi-root workspace (https://github.com/Microsoft/vscode-azurefunctions/issues/1235)
-    // The VS Code api is better for several reasons, including:
-    // 1. It handles comments in json files
-    // 2. It sends the 'onDidChangeConfiguration' event
+    // Use the Visual Studio Code API to update config, if the folder is open and isn't a multi-root workspace (https://github.com/Microsoft/vscode-azurefunctions/issues/1235).
+    // The Visual Studio Code API is better for several reasons:
+    // - The Visual Studio Code API handles comments in JSON files.
+    // - The Visual Studio Code API sends the 'onDidChangeConfiguration' event.
     if (context.workspaceFolder && !isMultiRootWorkspace()) {
       const currentVersion: string | undefined = getTasksVersion(context.workspaceFolder);
       if (!currentVersion) {
@@ -225,9 +226,8 @@ export abstract class InitCodeProject extends AzureWizardExecuteStep<IProjectWiz
                 // Worst case the user has an extra task in their tasks.json
                 return false;
             }
-          } else {
-            return false;
           }
+          return false;
         })
     );
     existingTasks.push(...newTasks);
@@ -235,7 +235,7 @@ export abstract class InitCodeProject extends AzureWizardExecuteStep<IProjectWiz
   }
 
   private insertNewTaskInputs(context: IProjectWizardContext, existingInputs: ITaskInputs[] = [], newInputs: ITaskInputs[]): ITaskInputs[] {
-    if (context.workflowProjectType == WorkflowProjectType.Bundle) {
+    if (context.workflowProjectType === WorkflowProjectType.Bundle) {
       // Remove inputs that match the ones we're about to add
       existingInputs = existingInputs.filter(
         (t1) =>
@@ -273,10 +273,10 @@ export abstract class InitCodeProject extends AzureWizardExecuteStep<IProjectWiz
         )
       );
 
-      // Use VS Code api to update config if folder is open and it's not a multi-root workspace (https://github.com/Microsoft/vscode-azurefunctions/issues/1235)
-      // The VS Code api is better for several reasons, including:
-      // 1. It handles comments in json files
-      // 2. It sends the 'onDidChangeConfiguration' event
+      // Use the Visual Studio Code API to update config, if the folder is open and isn't a multi-root workspace (https://github.com/Microsoft/vscode-azurefunctions/issues/1235).
+      // The Visual Studio Code API is better for several reasons:
+      // - The API handles comments in JSON files.
+      // - The API sends the 'onDidChangeConfiguration' event.
       if (folder && !isMultiRootWorkspace()) {
         const currentVersion: string | undefined = getLaunchVersion(folder);
         if (!currentVersion) {
@@ -319,7 +319,7 @@ export abstract class InitCodeProject extends AzureWizardExecuteStep<IProjectWiz
     const settings: ISettingToAdd[] = this.settings.concat(
       { key: projectLanguageSetting, value: language },
       { key: funcVersionSetting, value: version },
-      // We want the terminal to be open after F5, not the debug console (Since http triggers are printed in the terminal)
+      // We want the terminal to open after F5, not the debug console because HTTP triggers are printed in the terminal.
       { prefix: 'debug', key: 'internalConsoleOptions', value: 'neverOpen' }
     );
 
@@ -333,7 +333,7 @@ export abstract class InitCodeProject extends AzureWizardExecuteStep<IProjectWiz
     }
 
     if (context.workspaceFolder) {
-      // Use VS Code api to update config if folder is open
+      // Use Visual Studio Code API to update config if folder is open
       for (const setting of settings) {
         await updateWorkspaceSetting(setting.key, setting.value, context.workspacePath, setting.prefix);
       }
@@ -353,7 +353,7 @@ export abstract class InitCodeProject extends AzureWizardExecuteStep<IProjectWiz
   private async writeExtensionsJson(context: IActionContext, vscodePath: string, language: ProjectLanguage): Promise<void> {
     const extensionsJsonPath: string = path.join(vscodePath, extensionsFileName);
     await confirmEditJsonFile(context, extensionsJsonPath, (data: IExtensionsJson): Record<string, any> => {
-      const recommendations: string[] = [functionsExtensionId];
+      const recommendations: string[] = [logicAppsStandardExtensionId];
       if (this.getRecommendedExtensions) {
         recommendations.push(...this.getRecommendedExtensions(language));
       }

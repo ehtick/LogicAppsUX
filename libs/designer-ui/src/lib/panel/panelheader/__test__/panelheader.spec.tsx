@@ -1,56 +1,60 @@
-import { MenuItemType } from '../../../card/types';
 import { PanelLocation, PanelScope } from '../../panelUtil';
 import type { PanelHeaderProps } from '../panelheader';
-import { PanelHeader, PanelHeaderControlType } from '../panelheader';
+import { PanelHeader } from '../panelheader';
 import { initializeIcons } from '@fluentui/react';
+import { MenuItem } from '@fluentui/react-components';
 import React from 'react';
 import renderer from 'react-test-renderer';
 import * as ReactShallowRenderer from 'react-test-renderer/shallow';
+import { describe, vi, beforeEach, afterEach, beforeAll, afterAll, it, test, expect } from 'vitest';
 
 describe('lib/panel/panelHeader/main', () => {
   let minimal: PanelHeaderProps;
   let minimalWithHeader: PanelHeaderProps;
+  let minimalWithButtons: PanelHeaderProps;
   let shallow: ReactShallowRenderer.ShallowRenderer;
 
   beforeEach(() => {
     minimal = {
+      nodeData: {
+        comment: undefined,
+        displayName: 'Node Title',
+        errorMessage: undefined,
+        iconUri: '',
+        isError: false,
+        isLoading: false,
+        nodeId: 'nodeId',
+        onSelectTab: vi.fn(),
+        runData: undefined,
+        selectedTab: undefined,
+        subgraphType: undefined,
+        tabs: [],
+      },
       isCollapsed: false,
-      panelHeaderMenu: [],
+      isOutermostPanel: true,
+      headerItems: [],
       headerLocation: PanelLocation.Right,
       panelScope: PanelScope.CardLevel,
-      includeTitle: true,
-      toggleCollapse: jest.fn(),
-      onTitleChange: jest.fn(),
-      commentChange: jest.fn(),
+      toggleCollapse: vi.fn(),
+      onTitleChange: vi.fn(),
+      commentChange: vi.fn(),
+      handleTitleUpdate: vi.fn(),
     };
     minimalWithHeader = {
-      isCollapsed: false,
-      onTitleChange: jest.fn(),
-      commentChange: jest.fn(),
-      panelHeaderMenu: [
-        {
-          disabled: false,
-          type: MenuItemType.Advanced,
-          disabledReason: 'Comments can only be added while editing the inputs of a step.',
-          iconName: 'Comment',
-          key: 'Comment',
-          title: 'Add a comment',
-          onClick: jest.fn(),
-        },
-        {
-          disabled: false,
-          type: MenuItemType.Advanced,
-          disabledReason: 'This operation has already been deleted.',
-          iconName: 'Delete',
-          key: 'Delete',
-          title: 'Delete',
-          onClick: jest.fn(),
-        },
+      ...minimal,
+      headerItems: [
+        <MenuItem key={'Comment'} disabled={false} icon={'Comment'} onClick={vi.fn()}>
+          Add a comment
+        </MenuItem>,
+        <MenuItem key={'Delete'} disabled={false} icon={'Delete'} onClick={vi.fn()}>
+          Delete
+        </MenuItem>,
       ],
-      headerLocation: PanelLocation.Right,
-      panelScope: PanelScope.CardLevel,
-      includeTitle: true,
-      toggleCollapse: jest.fn(),
+    };
+    minimalWithButtons = {
+      ...minimal,
+      canResubmit: true,
+      canShowLogicAppRun: true,
     };
     shallow = ReactShallowRenderer.createRenderer();
     initializeIcons();
@@ -75,86 +79,47 @@ describe('lib/panel/panelHeader/main', () => {
   });
 
   it('should have display header content with Menu', () => {
-    const props = {
+    const props: PanelHeaderProps = {
       ...minimalWithHeader,
-      isRight: false,
-      comment: 'sample comment',
-      titleId: 'title id',
-      panelHeaderControlType: PanelHeaderControlType.MENU,
+      nodeData: {
+        ...minimalWithHeader.nodeData,
+        comment: 'sample comment',
+        displayName: 'sample title',
+        iconUri: 'sample icon url',
+      },
       noNodeSelected: false,
       readOnlyMode: false,
       renameTitleDisabled: false,
-      showCommentBox: true,
-      title: 'sample title',
-      isLoading: false,
-      cardIcon: 'sample icon url',
+      isOutermostPanel: true,
     };
     shallow.render(<PanelHeader {...props} />);
-    const panelHeader = shallow.getRenderOutput();
+    const panelHeader = shallow.getRenderOutput().props.children[0];
+    const comment = shallow.getRenderOutput().props.children[1];
     expect(panelHeader.props.className).toBe('msla-panel-header');
 
-    const [collapseExpandWrapper, content]: any[] = React.Children.toArray(panelHeader.props.children);
-    const [cardHeader, comment]: any[] = React.Children.toArray(content.props.children);
-    expect(collapseExpandWrapper.props.className).toBe('collapse-toggle-right');
+    const [, fragment]: any[] = React.Children.toArray(panelHeader.props.children);
 
-    const collapseExpandTooltip = collapseExpandWrapper.props.children;
-    expect(collapseExpandTooltip.props.content).toBe('Collapse/Expand');
-
-    const collapseExpandButton = collapseExpandTooltip.props.children;
-    expect(collapseExpandButton.props.ariaLabel).toBe('Collapse/Expand');
-    expect(collapseExpandButton.props.disabled).toBeFalsy();
-    expect(collapseExpandButton.props.iconProps).toEqual({ iconName: 'DoubleChevronRight8' });
+    const [cardHeader]: any[] = React.Children.toArray(fragment.props.children);
 
     expect(cardHeader.props.className).toBe('msla-panel-card-header');
-    const [, titleContainer, panelControls]: any[] = React.Children.toArray(cardHeader.props.children);
+    const [, titleContainer]: any[] = React.Children.toArray(cardHeader.props.children);
 
     expect(titleContainer.props.className).toBe('msla-panel-card-title-container');
 
     const title = titleContainer.props.children;
-    expect(title.props.titleId).toBe(props.titleId);
+    expect(title.props.titleId).toBe('nodeId-title');
     expect(title.props.readOnlyMode).toBe(props.readOnlyMode);
     expect(title.props.renameTitleDisabled).toBe(props.renameTitleDisabled);
-    expect(title.props.titleValue).toBe(props.title);
+    expect(title.props.titleValue).toBe(props.nodeData.displayName);
 
-    expect(panelControls.props.className).toBe('msla-panel-header-controls');
-
-    const menu = panelControls.props.children[0];
-    // Using an empty overflow set to render menu items
-    expect(menu.props.items).toHaveLength(0);
-    expect(menu.props.overflowItems).toHaveLength(minimalWithHeader.panelHeaderMenu.length);
-    expect(comment.props.comment).toBe(props.comment);
+    expect(comment.props.comment).toBe(props.nodeData.comment);
     expect(comment.props.isCollapsed).toBe(props.isCollapsed);
     expect(comment.props.noNodeSelected).toBe(props.noNodeSelected);
     expect(comment.props.readOnlyMode).toBe(props.readOnlyMode);
   });
 
-  it('should have display header content with Dismiss', () => {
-    const props = {
-      ...minimalWithHeader,
-      isRight: false,
-      comment: 'sample comment',
-      titleId: 'title id',
-      panelHeaderControlType: PanelHeaderControlType.DISMISS_BUTTON,
-      noNodeSelected: false,
-      readOnlyMode: false,
-      renameTitleDisabled: false,
-      showCommentBox: true,
-      title: 'sample title',
-      isLoading: false,
-      cardIcon: 'sample icon url',
-    };
-    shallow.render(<PanelHeader {...props} />);
-    const panelHeader = shallow.getRenderOutput();
-    const [, content]: any[] = React.Children.toArray(panelHeader.props.children);
-    const [cardHeader]: any[] = React.Children.toArray(content.props.children);
-    const [, , panelControls]: any[] = React.Children.toArray(cardHeader.props.children);
-    expect(panelControls.props.className).toBe('msla-panel-header-controls');
-
-    const dismiss = panelControls.props.children[1];
-    expect(dismiss.props.content).toBe('Dismiss');
-
-    const button = dismiss.props.children;
-    expect(button.props).toHaveProperty('iconProps');
-    expect(button.props.iconProps).toEqual({ iconName: 'Clear' });
+  it('should render with panel header buttons', () => {
+    const panelHeader = renderer.create(<PanelHeader {...minimalWithButtons} />).toJSON();
+    expect(panelHeader).toMatchSnapshot();
   });
 });

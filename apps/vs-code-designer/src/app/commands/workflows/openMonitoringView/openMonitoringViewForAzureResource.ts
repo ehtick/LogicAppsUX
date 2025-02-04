@@ -2,6 +2,7 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+import path from 'path';
 import { workflowAppApiVersion } from '../../../../constants';
 import { ext } from '../../../../extensionVariables';
 import { localize } from '../../../../localize';
@@ -9,7 +10,6 @@ import type { RemoteWorkflowTreeItem } from '../../../tree/remoteWorkflowsTree/R
 import {
   removeWebviewPanelFromCache,
   cacheWebviewPanel,
-  getTriggerName,
   getWorkflowManagementBaseURI,
   getStandardAppData,
 } from '../../../utils/codeless/common';
@@ -17,14 +17,13 @@ import { getAuthorizationToken } from '../../../utils/codeless/getAuthorizationT
 import { sendAzureRequest } from '../../../utils/requestUtils';
 import type { IAzureConnectorsContext } from '../azureConnectorWizard';
 import { OpenMonitoringViewBase } from './openMonitoringViewBase';
-import type { ServiceClientCredentials } from '@azure/ms-rest-js';
-import { HTTP_METHODS } from '@microsoft/utils-logic-apps';
+import { getTriggerName, HTTP_METHODS } from '@microsoft/logic-apps-shared';
 import type { IActionContext } from '@microsoft/vscode-azext-utils';
-import type { IDesignerPanelMetadata, IWorkflowFileContent } from '@microsoft/vscode-extension';
-import { ExtensionCommand } from '@microsoft/vscode-extension';
+import type { IDesignerPanelMetadata, IWorkflowFileContent } from '@microsoft/vscode-extension-logic-apps';
+import { ExtensionCommand, ProjectName } from '@microsoft/vscode-extension-logic-apps';
 import * as vscode from 'vscode';
 import type { WebviewPanel } from 'vscode';
-import { ViewColumn } from 'vscode';
+import { Uri, ViewColumn } from 'vscode';
 
 export default class openMonitoringViewForAzureResource extends OpenMonitoringViewBase {
   private node: RemoteWorkflowTreeItem;
@@ -57,22 +56,24 @@ export default class openMonitoringViewForAzureResource extends OpenMonitoringVi
       ViewColumn.Active, // Editor column to show the new webview panel in.
       this.getPanelOptions()
     );
+    this.panel.iconPath = {
+      light: Uri.file(path.join(ext.context.extensionPath, 'assets', 'dark', 'workflow.svg')),
+      dark: Uri.file(path.join(ext.context.extensionPath, 'assets', 'light', 'workflow.svg')),
+    };
     this.panelMetadata = await this.getDesignerPanelMetadata();
 
     this.baseUrl = getWorkflowManagementBaseURI(this.node);
-    const accessToken = await getAuthorizationToken(this.node.credentials);
-    const connectionsData: string = await this.node.getConnectionsData();
-    const parametersData = await this.node.getParametersData();
+    const accessToken = await this.node.subscription.credentials.getToken();
 
     this.panel.webview.html = await this.getWebviewContent({
-      connectionsData: connectionsData,
-      parametersData: parametersData,
-      localSettings: {},
+      connectionsData: this.panelMetadata.connectionsData,
+      parametersData: this.panelMetadata.parametersData || {},
+      localSettings: this.panelMetadata.localSettings,
       azureDetails: {
         enabled: true,
         accessToken,
         subscriptionId: this.node.subscription.subscriptionId,
-        resourceGroupName: (this.context as IAzureConnectorsContext).resourceGroup,
+        resourceGroupName: this.node?.parent?.parent?.site.resourceGroup,
         location: this.normalizeLocation(this.node?.parent?.parent?.site.location),
         workflowManagementBaseUrl: this.node?.parent?.subscription?.environment?.resourceManagerEndpointUrl,
       },
@@ -106,6 +107,7 @@ export default class openMonitoringViewForAzureResource extends OpenMonitoringVi
         this.sendMsgToWebview({
           command: ExtensionCommand.initialize_frame,
           data: {
+            project: ProjectName.designer,
             panelMetadata: this.panelMetadata,
             connectionData: this.connectionData,
             workflowDetails: this.workflowDetails,
@@ -128,6 +130,11 @@ export default class openMonitoringViewForAzureResource extends OpenMonitoringVi
       }
       case ExtensionCommand.resubmitRun: {
         await this.resubmitRun();
+        break;
+      }
+      case ExtensionCommand.logTelemetry: {
+        const eventName = message.data.name ?? message.data.area;
+        ext.telemetryReporter.sendTelemetryEvent(eventName, { ...message.data });
         break;
       }
       default:
@@ -155,9 +162,7 @@ export default class openMonitoringViewForAzureResource extends OpenMonitoringVi
   }
 
   private async getDesignerPanelMetadata(): Promise<IDesignerPanelMetadata> {
-    const credentials: ServiceClientCredentials = this.node.credentials;
-    const accessToken: string = await getAuthorizationToken(credentials);
-    const parameters = await this.node.getParametersData();
+    const accessToken: string = await getAuthorizationToken();
 
     return {
       panelId: this.panelName,
@@ -165,7 +170,7 @@ export default class openMonitoringViewForAzureResource extends OpenMonitoringVi
       localSettings: await this.node.getAppSettings(),
       workflowDetails: await this.node.getChildWorkflows(this.context),
       artifacts: await this.node.getArtifacts(),
-      parametersData: parameters,
+      parametersData: await this.node.getParametersData(),
       accessToken,
       azureDetails: {
         enabled: true,
@@ -176,7 +181,7 @@ export default class openMonitoringViewForAzureResource extends OpenMonitoringVi
         tenantId: this.node?.parent?.subscription?.tenantId,
       },
       workflowName: this.workflowName,
-      standardApp: getStandardAppData(this.workflowName, { ...this.workflow, definition: {} }, parameters),
+      standardApp: getStandardAppData(this.workflowName, { ...this.workflow, definition: {} }),
       schemaArtifacts: this.schemaArtifacts,
       mapArtifacts: this.mapArtifacts,
     };

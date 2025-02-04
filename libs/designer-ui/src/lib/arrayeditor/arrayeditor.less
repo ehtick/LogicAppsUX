@@ -8,7 +8,6 @@
   display: flex;
 
   .msla-array-commands {
-    margin-top: @padding;
     vertical-align: top;
     display: inline-block;
     align-self: flex-start;
@@ -18,7 +17,7 @@
     flex: 1 1 100%;
 
     &.msla-array-editor-collapsed {
-      padding: 10px 0px 25px @padding;
+      padding: 10px 0px 10px @padding;
 
       .msla-input-parameter-label {
         align-self: center;
@@ -28,10 +27,6 @@
         display: inline-block;
         box-sizing: border-box;
         width: calc(100% - @command-icon-width - @parameter-label-inputbox-margin);
-
-        .msla-input-parameter-box {
-          width: calc(100% - @parameter-label-inputbox-margin);
-        }
 
         .msla-input-parameter-error {
           margin-left: 0;
@@ -180,12 +175,5 @@
       height: @parameter-inputbox-height;
       font-size: @card-label-font-size;
     }
-  }
-  .msla-collapsed-editor-validation {
-    width: 50%;
-    position: absolute;
-    color: rgb(224, 2, 2);
-    left: 4px;
-    font-size: 14px;
   }
 }

@@ -1,5 +1,6 @@
 import { mapNodeParams } from '../constants/MapDefinitionConstants';
-import { NormalizedDataType } from './Schema';
+import type { FunctionPositionMetadata, SchemaNodeExtended } from '@microsoft/logic-apps-shared';
+import { InputFormat as InputEntryType, NormalizedDataType } from '@microsoft/logic-apps-shared';
 
 export interface FunctionManifest {
   version: string;
@@ -9,6 +10,7 @@ export interface FunctionManifest {
 export interface FunctionData {
   key: string;
   functionName: string;
+  positions?: FunctionPositionMetadata[];
 
   maxNumberOfInputs: number; // -1 for unlimited
   inputs: FunctionInput[];
@@ -18,6 +20,7 @@ export interface FunctionData {
   category: FunctionCategory;
   description: string;
   tooltip?: string;
+  isNewNode?: boolean;
 }
 
 export interface FunctionInput {
@@ -25,24 +28,35 @@ export interface FunctionInput {
   allowedTypes: NormalizedDataType[];
   isOptional: boolean;
   allowCustomInput: boolean;
+  inputEntryType?: InputEntryType;
 
   tooltip?: string;
   placeHolder: string;
 }
 
-// NOTE: These values must be in alphabetical order (used in sorting within FunctionsList)
-export enum FunctionCategory {
-  Collection = 'Collection',
-  Conversion = 'Conversion',
-  DateTime = 'Date time',
-  Logical = 'Logical',
-  Math = 'Math',
-  String = 'String',
-  Utility = 'Utilities',
+// NOTE: These values must be in alphabetical order (used in sorting within FunctionsList) with the exception of 'Custom' which goes at the bottom
+export const FunctionCategory = {
+  Collection: 'Collection',
+  Conversion: 'Conversion',
+  DateTime: 'Date time',
+  Logical: 'Logical',
+  Math: 'Math',
+  String: 'String',
+  Utility: 'Utilities',
+  Custom: 'Custom',
+} as const;
+export type FunctionCategory = (typeof FunctionCategory)[keyof typeof FunctionCategory];
+
+export interface CreatedFunction {
+  // Should be the target schema to display this on
+  functionLocations: SchemaNodeExtended[];
+  functionData: FunctionData;
 }
 
-export type FunctionDictionary = { [key: string]: FunctionData };
+// The key is the function guid, also used in the connection dict
+export type FunctionDictionary = { [key: string]: CreatedFunction };
 
+//#region Pseudo Functions
 export const indexPseudoFunctionKey = 'index';
 export const indexPseudoFunction: FunctionData = {
   key: indexPseudoFunctionKey,
@@ -125,6 +139,7 @@ export const directAccessPseudoFunction: FunctionData = {
 };
 
 export const pseudoFunctions: FunctionData[] = [indexPseudoFunction, ifPseudoFunction, directAccessPseudoFunction];
+//#endregion
 
 // Used in Standalone when the function host isn't running, or for testing
 export const functionMock: FunctionData[] = [
@@ -476,6 +491,181 @@ export const functionMock: FunctionData[] = [
     displayName: 'If else',
     category: FunctionCategory.Logical,
     description: 'Evaluates the condition and returns corresponding value.',
+  },
+  {
+    key: 'sort',
+    maxNumberOfInputs: 2,
+    functionName: 'sort',
+    outputValueType: NormalizedDataType.Complex,
+    inputs: [
+      {
+        name: 'Scope',
+        allowedTypes: [NormalizedDataType.Complex, NormalizedDataType.Object],
+        isOptional: false,
+        allowCustomInput: false,
+        placeHolder: 'The source sequence',
+      },
+      {
+        name: 'Sort property',
+        allowedTypes: [NormalizedDataType.Any],
+        isOptional: false,
+        allowCustomInput: false,
+        placeHolder: 'The property to sort on',
+      },
+    ],
+    displayName: 'Sort',
+    category: FunctionCategory.Collection,
+    description: 'Sort the sequence by a given property',
+  },
+  {
+    key: 'sortcustom',
+    maxNumberOfInputs: 2,
+    functionName: 'sortcustom',
+    outputValueType: NormalizedDataType.Complex,
+    inputs: [
+      {
+        name: 'Scope',
+        allowedTypes: [NormalizedDataType.Complex, NormalizedDataType.Object],
+        isOptional: false,
+        allowCustomInput: false,
+        placeHolder: 'The source sequence',
+      },
+      {
+        name: 'Sort property',
+        allowedTypes: [NormalizedDataType.Any],
+        isOptional: false,
+        allowCustomInput: false,
+        placeHolder: 'The property to sort on',
+      },
+    ],
+    displayName: 'Sort Custom',
+    category: FunctionCategory.Custom,
+    description: 'Sort the sequence by a given property',
+  },
+  {
+    key: 'XPath',
+    maxNumberOfInputs: 1,
+    functionName: 'xpath',
+    outputValueType: NormalizedDataType.Any,
+    inputs: [
+      {
+        name: 'XPATH expression',
+        allowedTypes: [NormalizedDataType.String],
+        inputEntryType: InputEntryType.TextBox,
+        isOptional: false,
+        allowCustomInput: true,
+        placeHolder: 'expression',
+      },
+    ],
+    displayName: 'Execute XPath',
+    category: FunctionCategory.Utility,
+    description: 'Evaluates user supplied XPATH expression.',
+  },
+  {
+    key: 'InlineXslt',
+    maxNumberOfInputs: 1,
+    functionName: 'inline-xslt',
+    outputValueType: NormalizedDataType.Any,
+    inputs: [
+      {
+        name: 'XSLT File',
+        allowedTypes: [NormalizedDataType.String],
+        inputEntryType: InputEntryType.FilePicker,
+        isOptional: false,
+        allowCustomInput: true,
+        placeHolder: 'File name inside inlineXslt folder under artifacts',
+      },
+    ],
+    displayName: 'Execute XSLT',
+    category: FunctionCategory.Utility,
+    description: 'Inserts user supplied XSLT into map.',
+  },
+  {
+    key: 'Reverse',
+    maxNumberOfInputs: 1,
+    functionName: 'reverse',
+    outputValueType: NormalizedDataType.Any,
+    inputs: [
+      {
+        name: 'Collection',
+        allowedTypes: [NormalizedDataType.Any],
+        isOptional: false,
+        allowCustomInput: true,
+        tooltip: 'Sequence or collection of items to be reversed.',
+        placeHolder: 'Input Collection',
+        inputEntryType: undefined,
+      },
+    ],
+    displayName: 'Reverse',
+    category: FunctionCategory.Collection,
+    description: 'Reverses the order of items in a sequence or collection.',
+    tooltip: 'Reverses the order of items in a sequence or collection.',
+  },
+  {
+    key: 'DistinctValues',
+    maxNumberOfInputs: 2,
+    functionName: 'distinct-values',
+    outputValueType: NormalizedDataType.Any,
+    inputs: [
+      {
+        name: 'Collection',
+        allowedTypes: [NormalizedDataType.Any],
+        isOptional: false,
+        allowCustomInput: false,
+        tooltip: 'Sequence or collection of items to use as input for retrieving distinct values.',
+        placeHolder: 'Input Collection',
+      },
+      {
+        name: 'Collation',
+        allowedTypes: [NormalizedDataType.Any],
+        isOptional: false,
+        allowCustomInput: false,
+        tooltip: 'Collation to be used for string comparison or blank for default.',
+        placeHolder: 'http://www.w3.org/2013/collation/UCA?lang=se',
+      },
+    ],
+    displayName: 'Distinct Values',
+    category: FunctionCategory.Collection,
+    description: 'Returns the values that appear in a collection, with duplicates eliminated.',
+    tooltip: 'Returns the values that appear in a collection, with duplicates eliminated.',
+  },
+  {
+    key: 'Subsequence',
+    maxNumberOfInputs: 3,
+    functionName: 'sub-sequence',
+    outputValueType: NormalizedDataType.Any,
+    inputs: [
+      {
+        name: 'Collection',
+        allowedTypes: [NormalizedDataType.Any],
+        isOptional: false,
+        allowCustomInput: false,
+        tooltip: 'Sequence or collection of items to extract the sub sequence from.',
+        placeHolder: 'Input Collection',
+      },
+      {
+        name: 'Starting Index',
+        allowedTypes: [NormalizedDataType.Integer],
+        isOptional: false,
+        allowCustomInput: true,
+        tooltip: '1 based index in input sequence where the desired sub sequence starts.',
+        placeHolder: 'A Number',
+      },
+      {
+        name: 'Length',
+        allowedTypes: [NormalizedDataType.Integer],
+        isOptional: true,
+        allowCustomInput: true,
+        tooltip: 'Length of the desired sub sequence.',
+        placeHolder: 'A Number',
+      },
+    ],
+    displayName: 'Sub Sequence',
+    category: FunctionCategory.Collection,
+    description:
+      'Returns the contiguous sequence of items in the input collection beginning at the position indicated by the value of starting index and continuing for the number of items indicated by the value of length.',
+    tooltip:
+      'Returns the contiguous sequence of items in the input collection beginning at the position indicated by the value of starting index and continuing for the number of items indicated by the value of length.',
   },
   ...pseudoFunctions,
 ];

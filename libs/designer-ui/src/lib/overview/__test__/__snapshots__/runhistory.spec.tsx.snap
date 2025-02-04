@@ -1,10 +1,10 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`lib/overview/runhistory renders 1`] = `
+exports[`lib/overview/runhistory > renders 1`] = `
 <div
   className="ms-Viewport"
   style={
-    Object {
+    {
       "minHeight": 1,
       "minWidth": 1,
     }
@@ -30,6 +30,7 @@ exports[`lib/overview/runhistory renders 1`] = `
           className="ms-FocusZone css-128 ms-DetailsHeader root-112"
           data-automationid="DetailsHeader"
           data-focuszone-id="FocusZone2"
+          data-tabster="{"uncontrolled": {}}"
           onFocus={[Function]}
           onKeyDown={[Function]}
           onMouseDownCapture={[Function]}
@@ -47,7 +48,7 @@ exports[`lib/overview/runhistory renders 1`] = `
             draggable={false}
             role="columnheader"
             style={
-              Object {
+              {
                 "width": 120,
               }
             }
@@ -91,7 +92,7 @@ exports[`lib/overview/runhistory renders 1`] = `
             draggable={false}
             role="columnheader"
             style={
-              Object {
+              {
                 "width": 120,
               }
             }
@@ -125,17 +126,15 @@ exports[`lib/overview/runhistory renders 1`] = `
             role="button"
           />
           <div
-            aria-labelledby="header1-startTime-name"
             aria-sort="none"
             className="ms-DetailsHeader-cell is-actionable root-129"
             data-automationid="ColumnsHeaderColumn"
             data-is-draggable={false}
-            data-is-focusable="true"
             data-item-key="startTime"
             draggable={false}
             role="columnheader"
             style={
-              Object {
+              {
                 "width": 180,
               }
             }
@@ -144,16 +143,19 @@ exports[`lib/overview/runhistory renders 1`] = `
               className="cellTooltip-137"
             >
               <span
+                aria-labelledby="header1-startTime-name"
                 className="ms-DetailsHeader-cellTitle cellTitle-135"
+                data-is-focusable="true"
                 id="header1-startTime"
                 onClick={[Function]}
                 onContextMenu={[Function]}
+                role="button"
               >
                 <span
                   className="ms-DetailsHeader-cellName cellName-136"
                   id="header1-startTime-name"
                 >
-                  Start time
+                  Start time (Local time)
                 </span>
               </span>
             </span>
@@ -179,7 +181,7 @@ exports[`lib/overview/runhistory renders 1`] = `
             draggable={false}
             role="columnheader"
             style={
-              Object {
+              {
                 "width": 120,
               }
             }
@@ -223,7 +225,7 @@ exports[`lib/overview/runhistory renders 1`] = `
             draggable={false}
             role="columnheader"
             style={
-              Object {
+              {
                 "width": 120,
               }
             }
@@ -276,6 +278,7 @@ exports[`lib/overview/runhistory renders 1`] = `
           <div
             className="ms-FocusZone css-128 focusZone-111"
             data-focuszone-id="FocusZone3"
+            data-tabster="{"uncontrolled": {}}"
             onBlur={[Function]}
             onFocus={[Function]}
             onKeyDown={[Function]}
@@ -297,11 +300,11 @@ exports[`lib/overview/runhistory renders 1`] = `
 </div>
 `;
 
-exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
+exports[`lib/overview/runhistory > renders a shimmered details list 1`] = `
 <div
   className="ms-Viewport"
   style={
-    Object {
+    {
       "minHeight": 1,
       "minWidth": 1,
     }
@@ -327,6 +330,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
           className="ms-FocusZone css-128 ms-DetailsHeader root-112"
           data-automationid="DetailsHeader"
           data-focuszone-id="FocusZone6"
+          data-tabster="{"uncontrolled": {}}"
           onFocus={[Function]}
           onKeyDown={[Function]}
           onMouseDownCapture={[Function]}
@@ -344,7 +348,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
             draggable={false}
             role="columnheader"
             style={
-              Object {
+              {
                 "width": 120,
               }
             }
@@ -388,7 +392,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
             draggable={false}
             role="columnheader"
             style={
-              Object {
+              {
                 "width": 120,
               }
             }
@@ -422,17 +426,15 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
             role="button"
           />
           <div
-            aria-labelledby="header5-startTime-name"
             aria-sort="none"
             className="ms-DetailsHeader-cell is-actionable root-129"
             data-automationid="ColumnsHeaderColumn"
             data-is-draggable={false}
-            data-is-focusable="true"
             data-item-key="startTime"
             draggable={false}
             role="columnheader"
             style={
-              Object {
+              {
                 "width": 180,
               }
             }
@@ -441,16 +443,19 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
               className="cellTooltip-137"
             >
               <span
+                aria-labelledby="header5-startTime-name"
                 className="ms-DetailsHeader-cellTitle cellTitle-135"
+                data-is-focusable="true"
                 id="header5-startTime"
                 onClick={[Function]}
                 onContextMenu={[Function]}
+                role="button"
               >
                 <span
                   className="ms-DetailsHeader-cellName cellName-136"
                   id="header5-startTime-name"
                 >
-                  Start time
+                  Start time (Local time)
                 </span>
               </span>
             </span>
@@ -476,7 +481,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
             draggable={false}
             role="columnheader"
             style={
-              Object {
+              {
                 "width": 120,
               }
             }
@@ -520,7 +525,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
             draggable={false}
             role="columnheader"
             style={
-              Object {
+              {
                 "width": 120,
               }
             }
@@ -573,6 +578,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
           <div
             className="ms-FocusZone css-128 focusZone-111"
             data-focuszone-id="FocusZone7"
+            data-tabster="{"uncontrolled": {}}"
             onBlur={[Function]}
             onFocus={[Function]}
             onKeyDown={[Function]}
@@ -589,7 +595,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                 <div
                   className="ms-List-page"
                   role="presentation"
-                  style={Object {}}
+                  style={{}}
                 >
                   <div
                     className="ms-List-cell"
@@ -603,7 +609,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                       <div
                         className="ms-Shimmer-shimmerWrapper shimmerWrapper-145"
                         style={
-                          Object {
+                          {
                             "width": "100%",
                           }
                         }
@@ -613,7 +619,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                         />
                         <div
                           style={
-                            Object {
+                            {
                               "display": "flex",
                             }
                           }
@@ -621,7 +627,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "120px",
                               }
                             }
@@ -629,7 +635,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "12px",
                                   "width": 12,
                                 }
@@ -638,7 +644,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerLine-root root-151"
                               style={
-                                Object {
+                                {
                                   "minWidth": "95px",
                                   "width": 95,
                                 }
@@ -684,7 +690,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "13px",
                                   "width": 13,
                                 }
@@ -694,7 +700,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "120px",
                               }
                             }
@@ -702,7 +708,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "12px",
                                   "width": 12,
                                 }
@@ -711,7 +717,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerLine-root root-151"
                               style={
-                                Object {
+                                {
                                   "minWidth": "95px",
                                   "width": 95,
                                 }
@@ -757,7 +763,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "13px",
                                   "width": 13,
                                 }
@@ -767,7 +773,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "180px",
                               }
                             }
@@ -775,7 +781,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "12px",
                                   "width": 12,
                                 }
@@ -784,7 +790,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerLine-root root-151"
                               style={
-                                Object {
+                                {
                                   "minWidth": "152px",
                                   "width": 152,
                                 }
@@ -830,7 +836,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "16px",
                                   "width": 16,
                                 }
@@ -840,7 +846,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "120px",
                               }
                             }
@@ -848,7 +854,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "12px",
                                   "width": 12,
                                 }
@@ -857,7 +863,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerLine-root root-151"
                               style={
-                                Object {
+                                {
                                   "minWidth": "95px",
                                   "width": 95,
                                 }
@@ -903,7 +909,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "13px",
                                   "width": 13,
                                 }
@@ -913,7 +919,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "120px",
                               }
                             }
@@ -921,7 +927,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "12px",
                                   "width": 12,
                                 }
@@ -930,7 +936,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerLine-root root-151"
                               style={
-                                Object {
+                                {
                                   "minWidth": "95px",
                                   "width": 95,
                                 }
@@ -976,7 +982,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "13px",
                                   "width": 13,
                                 }
@@ -986,7 +992,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "100%",
                               }
                             }
@@ -994,7 +1000,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "auto",
                                   "width": "100%",
                                 }
@@ -1017,7 +1023,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                       <div
                         className="ms-Shimmer-shimmerWrapper shimmerWrapper-145"
                         style={
-                          Object {
+                          {
                             "width": "100%",
                           }
                         }
@@ -1027,7 +1033,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                         />
                         <div
                           style={
-                            Object {
+                            {
                               "display": "flex",
                             }
                           }
@@ -1035,7 +1041,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "120px",
                               }
                             }
@@ -1043,7 +1049,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "12px",
                                   "width": 12,
                                 }
@@ -1052,7 +1058,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerLine-root root-151"
                               style={
-                                Object {
+                                {
                                   "minWidth": "95px",
                                   "width": 95,
                                 }
@@ -1098,7 +1104,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "13px",
                                   "width": 13,
                                 }
@@ -1108,7 +1114,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "120px",
                               }
                             }
@@ -1116,7 +1122,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "12px",
                                   "width": 12,
                                 }
@@ -1125,7 +1131,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerLine-root root-151"
                               style={
-                                Object {
+                                {
                                   "minWidth": "95px",
                                   "width": 95,
                                 }
@@ -1171,7 +1177,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "13px",
                                   "width": 13,
                                 }
@@ -1181,7 +1187,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "180px",
                               }
                             }
@@ -1189,7 +1195,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "12px",
                                   "width": 12,
                                 }
@@ -1198,7 +1204,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerLine-root root-151"
                               style={
-                                Object {
+                                {
                                   "minWidth": "152px",
                                   "width": 152,
                                 }
@@ -1244,7 +1250,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "16px",
                                   "width": 16,
                                 }
@@ -1254,7 +1260,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "120px",
                               }
                             }
@@ -1262,7 +1268,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "12px",
                                   "width": 12,
                                 }
@@ -1271,7 +1277,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerLine-root root-151"
                               style={
-                                Object {
+                                {
                                   "minWidth": "95px",
                                   "width": 95,
                                 }
@@ -1317,7 +1323,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "13px",
                                   "width": 13,
                                 }
@@ -1327,7 +1333,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "120px",
                               }
                             }
@@ -1335,7 +1341,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "12px",
                                   "width": 12,
                                 }
@@ -1344,7 +1350,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerLine-root root-151"
                               style={
-                                Object {
+                                {
                                   "minWidth": "95px",
                                   "width": 95,
                                 }
@@ -1390,7 +1396,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "13px",
                                   "width": 13,
                                 }
@@ -1400,7 +1406,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "100%",
                               }
                             }
@@ -1408,7 +1414,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "auto",
                                   "width": "100%",
                                 }
@@ -1431,7 +1437,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                       <div
                         className="ms-Shimmer-shimmerWrapper shimmerWrapper-145"
                         style={
-                          Object {
+                          {
                             "width": "100%",
                           }
                         }
@@ -1441,7 +1447,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                         />
                         <div
                           style={
-                            Object {
+                            {
                               "display": "flex",
                             }
                           }
@@ -1449,7 +1455,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "120px",
                               }
                             }
@@ -1457,7 +1463,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "12px",
                                   "width": 12,
                                 }
@@ -1466,7 +1472,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerLine-root root-151"
                               style={
-                                Object {
+                                {
                                   "minWidth": "95px",
                                   "width": 95,
                                 }
@@ -1512,7 +1518,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "13px",
                                   "width": 13,
                                 }
@@ -1522,7 +1528,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "120px",
                               }
                             }
@@ -1530,7 +1536,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "12px",
                                   "width": 12,
                                 }
@@ -1539,7 +1545,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerLine-root root-151"
                               style={
-                                Object {
+                                {
                                   "minWidth": "95px",
                                   "width": 95,
                                 }
@@ -1585,7 +1591,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "13px",
                                   "width": 13,
                                 }
@@ -1595,7 +1601,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "180px",
                               }
                             }
@@ -1603,7 +1609,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "12px",
                                   "width": 12,
                                 }
@@ -1612,7 +1618,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerLine-root root-151"
                               style={
-                                Object {
+                                {
                                   "minWidth": "152px",
                                   "width": 152,
                                 }
@@ -1658,7 +1664,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "16px",
                                   "width": 16,
                                 }
@@ -1668,7 +1674,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "120px",
                               }
                             }
@@ -1676,7 +1682,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "12px",
                                   "width": 12,
                                 }
@@ -1685,7 +1691,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerLine-root root-151"
                               style={
-                                Object {
+                                {
                                   "minWidth": "95px",
                                   "width": 95,
                                 }
@@ -1731,7 +1737,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "13px",
                                   "width": 13,
                                 }
@@ -1741,7 +1747,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "120px",
                               }
                             }
@@ -1749,7 +1755,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "12px",
                                   "width": 12,
                                 }
@@ -1758,7 +1764,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerLine-root root-151"
                               style={
-                                Object {
+                                {
                                   "minWidth": "95px",
                                   "width": 95,
                                 }
@@ -1804,7 +1810,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "13px",
                                   "width": 13,
                                 }
@@ -1814,7 +1820,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "100%",
                               }
                             }
@@ -1822,7 +1828,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "auto",
                                   "width": "100%",
                                 }
@@ -1845,7 +1851,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                       <div
                         className="ms-Shimmer-shimmerWrapper shimmerWrapper-145"
                         style={
-                          Object {
+                          {
                             "width": "100%",
                           }
                         }
@@ -1855,7 +1861,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                         />
                         <div
                           style={
-                            Object {
+                            {
                               "display": "flex",
                             }
                           }
@@ -1863,7 +1869,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "120px",
                               }
                             }
@@ -1871,7 +1877,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "12px",
                                   "width": 12,
                                 }
@@ -1880,7 +1886,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerLine-root root-151"
                               style={
-                                Object {
+                                {
                                   "minWidth": "95px",
                                   "width": 95,
                                 }
@@ -1926,7 +1932,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "13px",
                                   "width": 13,
                                 }
@@ -1936,7 +1942,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "120px",
                               }
                             }
@@ -1944,7 +1950,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "12px",
                                   "width": 12,
                                 }
@@ -1953,7 +1959,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerLine-root root-151"
                               style={
-                                Object {
+                                {
                                   "minWidth": "95px",
                                   "width": 95,
                                 }
@@ -1999,7 +2005,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "13px",
                                   "width": 13,
                                 }
@@ -2009,7 +2015,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "180px",
                               }
                             }
@@ -2017,7 +2023,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "12px",
                                   "width": 12,
                                 }
@@ -2026,7 +2032,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerLine-root root-151"
                               style={
-                                Object {
+                                {
                                   "minWidth": "152px",
                                   "width": 152,
                                 }
@@ -2072,7 +2078,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "16px",
                                   "width": 16,
                                 }
@@ -2082,7 +2088,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "120px",
                               }
                             }
@@ -2090,7 +2096,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "12px",
                                   "width": 12,
                                 }
@@ -2099,7 +2105,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerLine-root root-151"
                               style={
-                                Object {
+                                {
                                   "minWidth": "95px",
                                   "width": 95,
                                 }
@@ -2145,7 +2151,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "13px",
                                   "width": 13,
                                 }
@@ -2155,7 +2161,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "120px",
                               }
                             }
@@ -2163,7 +2169,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "12px",
                                   "width": 12,
                                 }
@@ -2172,7 +2178,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerLine-root root-151"
                               style={
-                                Object {
+                                {
                                   "minWidth": "95px",
                                   "width": 95,
                                 }
@@ -2218,7 +2224,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "13px",
                                   "width": 13,
                                 }
@@ -2228,7 +2234,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "100%",
                               }
                             }
@@ -2236,7 +2242,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "auto",
                                   "width": "100%",
                                 }
@@ -2259,7 +2265,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                       <div
                         className="ms-Shimmer-shimmerWrapper shimmerWrapper-145"
                         style={
-                          Object {
+                          {
                             "width": "100%",
                           }
                         }
@@ -2269,7 +2275,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                         />
                         <div
                           style={
-                            Object {
+                            {
                               "display": "flex",
                             }
                           }
@@ -2277,7 +2283,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "120px",
                               }
                             }
@@ -2285,7 +2291,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "12px",
                                   "width": 12,
                                 }
@@ -2294,7 +2300,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerLine-root root-151"
                               style={
-                                Object {
+                                {
                                   "minWidth": "95px",
                                   "width": 95,
                                 }
@@ -2340,7 +2346,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "13px",
                                   "width": 13,
                                 }
@@ -2350,7 +2356,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "120px",
                               }
                             }
@@ -2358,7 +2364,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "12px",
                                   "width": 12,
                                 }
@@ -2367,7 +2373,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerLine-root root-151"
                               style={
-                                Object {
+                                {
                                   "minWidth": "95px",
                                   "width": 95,
                                 }
@@ -2413,7 +2419,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "13px",
                                   "width": 13,
                                 }
@@ -2423,7 +2429,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "180px",
                               }
                             }
@@ -2431,7 +2437,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "12px",
                                   "width": 12,
                                 }
@@ -2440,7 +2446,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerLine-root root-151"
                               style={
-                                Object {
+                                {
                                   "minWidth": "152px",
                                   "width": 152,
                                 }
@@ -2486,7 +2492,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "16px",
                                   "width": 16,
                                 }
@@ -2496,7 +2502,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "120px",
                               }
                             }
@@ -2504,7 +2510,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "12px",
                                   "width": 12,
                                 }
@@ -2513,7 +2519,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerLine-root root-151"
                               style={
-                                Object {
+                                {
                                   "minWidth": "95px",
                                   "width": 95,
                                 }
@@ -2559,7 +2565,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "13px",
                                   "width": 13,
                                 }
@@ -2569,7 +2575,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "120px",
                               }
                             }
@@ -2577,7 +2583,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "12px",
                                   "width": 12,
                                 }
@@ -2586,7 +2592,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerLine-root root-151"
                               style={
-                                Object {
+                                {
                                   "minWidth": "95px",
                                   "width": 95,
                                 }
@@ -2632,7 +2638,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "13px",
                                   "width": 13,
                                 }
@@ -2642,7 +2648,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                           <div
                             className="ms-ShimmerElementsGroup-root root-149"
                             style={
-                              Object {
+                              {
                                 "width": "100%",
                               }
                             }
@@ -2650,7 +2656,7 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
                             <div
                               className="ms-ShimmerGap-root root-150"
                               style={
-                                Object {
+                                {
                                   "minWidth": "auto",
                                   "width": "100%",
                                 }
@@ -2672,11 +2678,11 @@ exports[`lib/overview/runhistory renders a shimmered details list 1`] = `
 </div>
 `;
 
-exports[`lib/overview/runhistory renders with items 1`] = `
+exports[`lib/overview/runhistory > renders with items 1`] = `
 <div
   className="ms-Viewport"
   style={
-    Object {
+    {
       "minHeight": 1,
       "minWidth": 1,
     }
@@ -2702,6 +2708,7 @@ exports[`lib/overview/runhistory renders with items 1`] = `
           className="ms-FocusZone css-128 ms-DetailsHeader root-112"
           data-automationid="DetailsHeader"
           data-focuszone-id="FocusZone10"
+          data-tabster="{"uncontrolled": {}}"
           onFocus={[Function]}
           onKeyDown={[Function]}
           onMouseDownCapture={[Function]}
@@ -2719,7 +2726,7 @@ exports[`lib/overview/runhistory renders with items 1`] = `
             draggable={false}
             role="columnheader"
             style={
-              Object {
+              {
                 "width": 120,
               }
             }
@@ -2763,7 +2770,7 @@ exports[`lib/overview/runhistory renders with items 1`] = `
             draggable={false}
             role="columnheader"
             style={
-              Object {
+              {
                 "width": 120,
               }
             }
@@ -2797,17 +2804,15 @@ exports[`lib/overview/runhistory renders with items 1`] = `
             role="button"
           />
           <div
-            aria-labelledby="header9-startTime-name"
             aria-sort="none"
             className="ms-DetailsHeader-cell is-actionable root-129"
             data-automationid="ColumnsHeaderColumn"
             data-is-draggable={false}
-            data-is-focusable="true"
             data-item-key="startTime"
             draggable={false}
             role="columnheader"
             style={
-              Object {
+              {
                 "width": 180,
               }
             }
@@ -2816,16 +2821,19 @@ exports[`lib/overview/runhistory renders with items 1`] = `
               className="cellTooltip-137"
             >
               <span
+                aria-labelledby="header9-startTime-name"
                 className="ms-DetailsHeader-cellTitle cellTitle-135"
+                data-is-focusable="true"
                 id="header9-startTime"
                 onClick={[Function]}
                 onContextMenu={[Function]}
+                role="button"
               >
                 <span
                   className="ms-DetailsHeader-cellName cellName-136"
                   id="header9-startTime-name"
                 >
-                  Start time
+                  Start time (Local time)
                 </span>
               </span>
             </span>
@@ -2851,7 +2859,7 @@ exports[`lib/overview/runhistory renders with items 1`] = `
             draggable={false}
             role="columnheader"
             style={
-              Object {
+              {
                 "width": 120,
               }
             }
@@ -2895,7 +2903,7 @@ exports[`lib/overview/runhistory renders with items 1`] = `
             draggable={false}
             role="columnheader"
             style={
-              Object {
+              {
                 "width": 120,
               }
             }
@@ -2948,6 +2956,7 @@ exports[`lib/overview/runhistory renders with items 1`] = `
           <div
             className="ms-FocusZone css-128 focusZone-111"
             data-focuszone-id="FocusZone11"
+            data-tabster="{"uncontrolled": {}}"
             onBlur={[Function]}
             onFocus={[Function]}
             onKeyDown={[Function]}
@@ -2964,7 +2973,7 @@ exports[`lib/overview/runhistory renders with items 1`] = `
                 <div
                   className="ms-List-page"
                   role="presentation"
-                  style={Object {}}
+                  style={{}}
                 >
                   <div
                     className="ms-List-cell"
@@ -2981,6 +2990,7 @@ exports[`lib/overview/runhistory renders with items 1`] = `
                       data-item-index={0}
                       data-selection-index={0}
                       data-selection-touch-invoke={true}
+                      data-tabster="{"uncontrolled": {}}"
                       id="row8-0"
                       onFocus={[Function]}
                       onKeyDown={[Function]}
@@ -2998,7 +3008,7 @@ exports[`lib/overview/runhistory renders with items 1`] = `
                           data-automationid="DetailsRowCell"
                           role="gridcell"
                           style={
-                            Object {
+                            {
                               "width": 120,
                             }
                           }
@@ -3017,7 +3027,7 @@ exports[`lib/overview/runhistory renders with items 1`] = `
                           data-automationid="DetailsRowCell"
                           role="gridcell"
                           style={
-                            Object {
+                            {
                               "width": 120,
                             }
                           }
@@ -3030,12 +3040,14 @@ exports[`lib/overview/runhistory renders with items 1`] = `
                           data-automationid="DetailsRowCell"
                           role="gridcell"
                           style={
-                            Object {
+                            {
                               "width": 180,
                             }
                           }
                         >
-                          2/4/2022, 5:58:19 PM
+                          <span>
+                            2/4/2022, 12:58:19 PM
+                          </span>
                         </div>
                         <div
                           className="ms-DetailsRow-cell cell-160 cellUnpadded-158"
@@ -3043,7 +3055,7 @@ exports[`lib/overview/runhistory renders with items 1`] = `
                           data-automationid="DetailsRowCell"
                           role="gridcell"
                           style={
-                            Object {
+                            {
                               "width": 120,
                             }
                           }
@@ -3056,7 +3068,7 @@ exports[`lib/overview/runhistory renders with items 1`] = `
                           data-automationid="DetailsRowCell"
                           role="gridcell"
                           style={
-                            Object {
+                            {
                               "width": 120,
                             }
                           }
@@ -3095,8 +3107,8 @@ exports[`lib/overview/runhistory renders with items 1`] = `
                                 className="ms-Icon root-105 css-175 ms-Button-menuIcon menuIcon-172"
                                 data-icon-name="ChevronDown"
                                 style={
-                                  Object {
-                                    "fontFamily": "\\"FabricMDL2Icons\\"",
+                                  {
+                                    "fontFamily": ""FabricMDL2Icons"",
                                   }
                                 }
                               >

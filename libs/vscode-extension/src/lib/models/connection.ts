@@ -40,7 +40,7 @@ export interface ServiceProviderConnectionModel {
   displayName?: string;
 }
 
-interface APIManagementConnectionModel {
+export interface APIManagementConnectionModel {
   apiId: string;
   baseUrl: string;
   subscriptionKey: string;
@@ -71,10 +71,31 @@ export interface ConnectionAndSettings {
   settings: Record<string, string>;
 }
 
-export enum StorageOptions {
-  AzureStorage = 'Azure Storage',
-  SQL = 'SQL',
+export interface CustomCode {
+  nodeId: string;
+  fileExtension: string;
+  isModified?: boolean;
+  isDeleted?: boolean;
 }
+
+export interface CustomCodeWithData extends CustomCode {
+  fileData?: string;
+}
+
+export type CustomCodeFileNameMapping = Record<string, CustomCodeWithData>;
+
+export interface AllCustomCodeFiles {
+  customCodeFiles: CustomCodeFileNameMapping;
+  // appFiles will be stored as [fileName: fileData]
+  // note app files are stored at the app level and not the workflow level
+  appFiles: Record<string, string>;
+}
+
+export const StorageOptions = {
+  AzureStorage: 'Azure Storage',
+  SQL: 'SQL',
+} as const;
+export type StorageOptions = (typeof StorageOptions)[keyof typeof StorageOptions];
 
 export interface IConnectionsFileContent {
   name: string;

@@ -1,7 +1,7 @@
 import type { DictionaryEditorItemProps } from '.';
 import type { IIconProps } from '@fluentui/react';
 import { css, IconButton, TooltipHost } from '@fluentui/react';
-import { guid } from '@microsoft/utils-logic-apps';
+import { guid } from '@microsoft/logic-apps-shared';
 import { useIntl } from 'react-intl';
 
 const deleteButtonIconProps: IIconProps = {
@@ -9,16 +9,18 @@ const deleteButtonIconProps: IIconProps = {
 };
 
 interface DictionaryDeleteButtonProps {
+  disabled?: boolean;
   items: DictionaryEditorItemProps[];
   index: number;
   setItems: (items: DictionaryEditorItemProps[]) => void;
 }
 
-export const DictionaryDeleteButton = ({ items, index, setItems }: DictionaryDeleteButtonProps): JSX.Element => {
+export const DictionaryDeleteButton = ({ disabled, items, index, setItems }: DictionaryDeleteButtonProps): JSX.Element => {
   const intl = useIntl();
 
   const deleteLabel = intl.formatMessage({
     defaultMessage: 'Click to delete item',
+    id: 'wV3Lmd',
     description: 'Label to delete dictionary item',
   });
 
@@ -31,6 +33,7 @@ export const DictionaryDeleteButton = ({ items, index, setItems }: DictionaryDel
   return (
     <TooltipHost content={deleteLabel}>
       <IconButton
+        disabled={disabled}
         aria-label={deleteLabel}
         className={css('msla-button', 'msla-dictionary-item-delete', index === items.length - 1 ? 'msla-hidden' : undefined)}
         iconProps={deleteButtonIconProps}

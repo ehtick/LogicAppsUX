@@ -1,25 +1,30 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+import { dotnetExtensionId, functionsExtensionId, vscodeFolderName } from '../../../../../constants';
 import { AzureWizardPromptStep } from '@microsoft/vscode-azext-utils';
-import type { IProjectWizardContext } from '@microsoft/vscode-extension';
+import type { IProjectWizardContext } from '@microsoft/vscode-extension-logic-apps';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 
 /**
- * This class represents a prompt step that generates the VS Code configuration files in the specified folder.
+ * This class represents a prompt step that generates the Visual Studio Code configuration files in the specified folder.
  */
 export class FunctionConfigFile extends AzureWizardPromptStep<IProjectWizardContext> {
   // Hide the step count in the wizard UI
   public hideStepCount = true;
 
   /**
-   * Generates the VS Code configuration files in the specified folder.
+   * Generates the Visual Studio Code configuration files in the specified folder.
    * @param context The project wizard context.
    */
   public async prompt(context: IProjectWizardContext): Promise<void> {
     const folderPath = context.functionFolderPath;
 
-    // Create the necessary files and folders for VS Code under the Logic App folder path
+    // Create the necessary files and folders for Visual Studio Code under the logic app folder path.
     await fs.ensureDir(folderPath);
-    const vscodePath: string = path.join(folderPath, '.vscode');
+    const vscodePath: string = path.join(folderPath, vscodeFolderName);
     await fs.ensureDir(vscodePath);
 
     // Generate the extensions.json file
@@ -36,9 +41,9 @@ export class FunctionConfigFile extends AzureWizardPromptStep<IProjectWizardCont
   }
 
   /**
-   * Determines whether the user should be prompted to generate the VS Code configuration files.
+   * Determines whether the user should be prompted to generate the Visual Studio Code configuration files.
    * @param context The project wizard context.
-   * @returns True if the user has not yet generated the VS Code configuration files, false otherwise.
+   * @returns True if the user hasn't yet generated the Visual Studio Code configuration files. Otherwise, returns False.
    */
   public shouldPrompt(context: IProjectWizardContext): boolean {
     return !fs.existsSync(path.join(context.functionFolderPath, '.vscode'));
@@ -51,7 +56,7 @@ export class FunctionConfigFile extends AzureWizardPromptStep<IProjectWizardCont
   private async generateExtensionsJson(folderPath: string): Promise<void> {
     const filePath = path.join(folderPath, 'extensions.json');
     const content = {
-      recommendations: ['ms-azuretools.vscode-azurefunctions', 'ms-dotnettools.csharp'],
+      recommendations: [functionsExtensionId, dotnetExtensionId],
     };
     await fs.writeJson(filePath, content, { spaces: 2 });
   }
@@ -66,10 +71,10 @@ export class FunctionConfigFile extends AzureWizardPromptStep<IProjectWizardCont
       version: '0.2.0',
       configurations: [
         {
-          name: 'Attach to .NET Functions',
+          name: 'Run/Debug logic app',
           type: 'clr',
           request: 'attach',
-          processName: 'Microsoft.Azure.Workflows.Functions.NetFxWorker.exe',
+          processName: 'Microsoft.Azure.Workflows.Functions.CustomCodeNetFxWorker.exe',
         },
       ],
     };
@@ -106,7 +111,7 @@ export class FunctionConfigFile extends AzureWizardPromptStep<IProjectWizardCont
       tasks: [
         {
           label: 'build',
-          command: 'dotnet',
+          command: '${config:azureLogicAppsStandard.dotnetBinaryPath}',
           type: 'process',
           args: ['build', '${workspaceFolder}'],
           group: {

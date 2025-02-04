@@ -1,10 +1,27 @@
 import { getReactQueryClient } from '../ReactQueryProvider';
-import type { ListDynamicValue, ManagedIdentityRequestProperties, TreeDynamicValue } from '@microsoft/designer-client-services-logic-apps';
-import { ConnectorService } from '@microsoft/designer-client-services-logic-apps';
-import type { FilePickerInfo, LegacyDynamicSchemaExtension, LegacyDynamicValuesExtension } from '@microsoft/parsers-logic-apps';
-import { Types } from '@microsoft/parsers-logic-apps';
-import type { OpenAPIV2 } from '@microsoft/utils-logic-apps';
-import { getPropertyValue, equals, getJSONValue, getObjectPropertyValue, isNullOrUndefined } from '@microsoft/utils-logic-apps';
+import type {
+  ListDynamicValue,
+  ManagedIdentityRequestProperties,
+  TreeDynamicExtension,
+  TreeDynamicValue,
+  FilePickerInfo,
+  LegacyDynamicSchemaExtension,
+  LegacyDynamicValuesExtension,
+  OpenAPIV2,
+} from '@microsoft/logic-apps-shared';
+import {
+  ConnectorService,
+  Types,
+  getPropertyValue,
+  getJSONValue,
+  getObjectPropertyValue,
+  isNullOrUndefined,
+  LoggerService,
+  LogEntryLevel,
+  isObject,
+  isString,
+  guid,
+} from '@microsoft/logic-apps-shared';
 
 export const getLegacyDynamicValues = async (
   connectionId: string,
@@ -28,20 +45,46 @@ export const getLegacyDynamicValues = async (
     () => service.getLegacyDynamicContent(connectionId, connectorId, parameters, managedIdentityProperties)
   );
 
-  const values = getObjectPropertyValue(response, extension['value-collection'] ? extension['value-collection'].split('/') : []);
-  if (values && values.length) {
-    return values.map((property: any) => {
-      let value: any, displayName: any;
-      let isSelectable = true;
+  const values = Array.isArray(response)
+    ? response
+    : getObjectPropertyValue(response, extension['value-collection'] ? extension['value-collection'].split('/') : []);
+  let collectionData = values;
+  if (!values || !Array.isArray(values)) {
+    LoggerService().log({
+      level: LogEntryLevel.Warning,
+      area: 'getLegacyDynamicValues',
+      message: 'Values returned from Legacy dynamic call is not an array',
+      args: [
+        `connectorId: ${connectorId}`,
+        `operationId: ${extension.operationId}`,
+        `arrayType: ${parameterArrayType}`,
+        `collectionPath: ${extension['value-collection']}`,
+        response,
+      ],
+    });
 
-      if (parameterArrayType && parameterArrayType !== Types.Object) {
-        displayName = value = getJSONValue(property);
-      } else {
-        value = getObjectPropertyValue(property, extension['value-path'].split('/'));
-        displayName = extension['value-title'] ? getObjectPropertyValue(property, extension['value-title'].split('/')) : value;
-      }
+    if (isNullOrUndefined(response)) {
+      return [];
+    }
 
-      const description = extension['value-description']
+    const possibleCollectionData = values ?? response;
+    collectionData = typeof possibleCollectionData === Types.Object ? getFirstArrayProperty(possibleCollectionData) : [];
+  }
+
+  return collectionData.map((property: any) => {
+    let value: any;
+    let displayName: any;
+    let isSelectable = true;
+    let description: string | undefined;
+
+    if (parameterArrayType && parameterArrayType !== Types.Object) {
+      value = parameterArrayType === Types.String ? property.toString() : getJSONValue(property);
+      displayName = value.toString();
+    } else {
+      value = getObjectPropertyValue(property, extension['value-path'] ? extension['value-path'].split('/') : []);
+      displayName = (extension['value-title'] ? getObjectPropertyValue(property, extension['value-title'].split('/')) : value)?.toString();
+
+      description = extension['value-description']
         ? getObjectPropertyValue(property, extension['value-description'].split('/'))
         : undefined;
 
@@ -51,22 +94,18 @@ export const getLegacyDynamicValues = async (
           isSelectable = selectableValue;
         }
       }
+    }
 
-      return { value, displayName, description, disabled: !isSelectable };
-    });
-  }
-
-  return response;
+    return { value, displayName, description, disabled: !isSelectable };
+  });
 };
 
 export const getListDynamicValues = async (
   connectionId: string | undefined,
   connectorId: string,
   operationId: string,
-  parameterAlias: string | undefined,
   parameters: Record<string, any>,
-  dynamicState: any,
-  nodeMetadata: any
+  dynamicState: any
 ): Promise<ListDynamicValue[]> => {
   const queryClient = getReactQueryClient();
   const service = ConnectorService();
@@ -77,9 +116,10 @@ export const getListDynamicValues = async (
       (connectionId ?? '').toLowerCase(),
       connectorId.toLowerCase(),
       operationId.toLowerCase(),
+      dynamicState.operationId?.toLowerCase(),
       getParametersKey({ ...dynamicState.parameters, ...parameters }),
     ],
-    () => service.getListDynamicValues(connectionId, connectorId, operationId, parameterAlias, parameters, dynamicState, nodeMetadata)
+    () => service.getListDynamicValues(connectionId, connectorId, operationId, parameters, dynamicState)
   );
 };
 
@@ -108,23 +148,16 @@ export const getLegacyDynamicSchema = async (
     return null;
   }
 
-  const schemaPath = extension['value-path'] ? extension['value-path'].split('/') : undefined;
-  return schemaPath
-    ? getObjectPropertyValue(
-        response,
-        schemaPath.length && equals(schemaPath[schemaPath.length - 1], 'properties') ? schemaPath.splice(-1, 1) : schemaPath
-      ) ?? null
-    : { properties: response, type: Types.Object };
+  const schemaPath = extension['value-path'] ? extension['value-path'].split('/').filter((s) => s) : undefined;
+  return schemaPath ? (getObjectPropertyValue(response, schemaPath) ?? null) : { properties: response, type: Types.Object };
 };
 
 export const getDynamicSchemaProperties = async (
   connectionId: string | undefined,
   connectorId: string,
   operationId: string,
-  parameterAlias: string | undefined,
   parameters: Record<string, any>,
-  dynamicState: any,
-  nodeMetadata: any
+  dynamicState: any
 ): Promise<OpenAPIV2.SchemaObject> => {
   const queryClient = getReactQueryClient();
   const service = ConnectorService();
@@ -135,10 +168,11 @@ export const getDynamicSchemaProperties = async (
       (connectionId ?? '').toLowerCase(),
       connectorId.toLowerCase(),
       operationId.toLowerCase(),
+      dynamicState.extension.operationId?.toLowerCase(),
       getParametersKey({ ...dynamicState.parameters, ...parameters }),
       `isInput:${!!dynamicState?.isInput}`,
     ],
-    () => service.getDynamicSchema(connectionId, connectorId, operationId, parameterAlias, parameters, dynamicState, nodeMetadata)
+    () => service.getDynamicSchema(connectionId, connectorId, operationId, parameters, dynamicState)
   );
 };
 
@@ -165,29 +199,42 @@ export const getLegacyDynamicTreeItems = async (
   );
 
   const { collectionPath, titlePath, folderPropertyPath, mediaPropertyPath } = pickerInfo;
-  const values = collectionPath ? getPropertyValue(response, collectionPath) : response;
+  const values = Array.isArray(response) ? response : collectionPath ? getPropertyValue(response, collectionPath) : response;
+  let collectionData = values;
 
-  if (values && values.length) {
-    return values.map((value: any) => {
-      return {
-        value,
-        displayName: getPropertyValue(value, titlePath as string),
-        isParent: !!getPropertyValue(value, folderPropertyPath as string),
-        mediaType: mediaPropertyPath ? getPropertyValue(value, mediaPropertyPath) : undefined,
-      };
+  if (!values || !Array.isArray(values)) {
+    LoggerService().log({
+      level: LogEntryLevel.Warning,
+      area: 'getLegacyDynamicTreeItems',
+      message: 'Tree items returned from Legacy dynamic call is not an array',
+      args: [`connectorId: ${connectorId}`, `operationId: ${operationId}`, `collectionPath: ${collectionPath}`, response],
     });
+
+    if (isNullOrUndefined(response)) {
+      return [];
+    }
+
+    const possibleCollectionData = values ?? response;
+    collectionData = typeof possibleCollectionData === Types.Object ? getFirstArrayProperty(possibleCollectionData) : [];
   }
 
-  return response;
+  return collectionData.map((value: any): TreeDynamicValue => {
+    return {
+      value,
+      displayName: (getPropertyValue(value, titlePath as string) ?? '').toString(),
+      id: getDynamicTreeValueIdFromCollectionDataValue(value),
+      isParent: !!getPropertyValue(value, folderPropertyPath as string),
+      mediaType: mediaPropertyPath ? getPropertyValue(value, mediaPropertyPath) : undefined,
+    };
+  });
 };
 
 export const getDynamicTreeItems = async (
   connectionId: string,
   connectorId: string,
   operationId: string,
-  parameterAlias: string | undefined,
   parameters: Record<string, any>,
-  dynamicState: any
+  dynamicExtension: TreeDynamicExtension
 ): Promise<TreeDynamicValue[]> => {
   const queryClient = getReactQueryClient();
   const service = ConnectorService();
@@ -199,8 +246,10 @@ export const getDynamicTreeItems = async (
       connectorId.toLowerCase(),
       operationId?.toLowerCase(),
       getParametersKey(parameters).toLowerCase(),
+      `selectionState:${dynamicExtension.selectionState ? JSON.stringify(dynamicExtension.selectionState) : ''}`,
     ],
-    () => service.getTreeDynamicValues(connectionId, connectorId, operationId, parameterAlias, parameters, dynamicState)
+    () => service.getTreeDynamicValues(connectionId, connectorId, operationId, parameters, dynamicExtension),
+    { cacheTime: 0, staleTime: 0 }
   );
 
   return values;
@@ -211,4 +260,23 @@ const getParametersKey = (parameters: Record<string, any>): string => {
     (result: string, parameterKey: string) => `${result}, ${parameterKey}-${JSON.stringify(parameters[parameterKey])}`,
     ''
   );
+};
+
+const getFirstArrayProperty = (value: any): any[] => {
+  for (const key of Object.keys(value)) {
+    if (Array.isArray(value[key])) {
+      return value[key];
+    }
+  }
+
+  return [];
+};
+
+const getDynamicTreeValueIdFromCollectionDataValue = (value: any): string => {
+  const valueId = value && isObject(value) && 'Id' in value && value.Id;
+  if (isString(valueId) && valueId.length > 0) {
+    return valueId;
+  }
+
+  return guid();
 };

@@ -1,11 +1,12 @@
 import { mapNodeParams, reservedMapDefinitionKeysArray } from '../constants/MapDefinitionConstants';
 import { sourcePrefix, targetPrefix } from '../constants/ReactFlowConstants';
 import { addParentConnectionForRepeatingElements, deleteConnectionFromConnections } from '../core/state/DataMapSlice';
-import type { FunctionData, MapDefinitionEntry, SchemaExtended, SchemaNodeDictionary, SchemaNodeExtended } from '../models';
-import { SchemaType, ifPseudoFunction, ifPseudoFunctionKey, indexPseudoFunction, indexPseudoFunctionKey } from '../models';
+import type { FunctionData } from '../models';
+import { ifPseudoFunction, ifPseudoFunctionKey, indexPseudoFunction, indexPseudoFunctionKey } from '../models';
 import type { ConnectionDictionary } from '../models/Connection';
 import { applyConnectionValue, isConnectionUnit } from '../utils/Connection.Utils';
 import {
+  ReservedToken,
   amendSourceKeyForDirectAccessIfNeeded,
   flattenMapDefinitionValues,
   getDestinationNode,
@@ -13,14 +14,18 @@ import {
   getSourceNode,
   getSourceValueFromLoop,
   getTargetValueWithoutLoops,
+  getTargetValueWithoutLoopsSchemaSpecific,
+  lexThisThing,
   qualifyLoopRelativeSourceKeys,
+  removeSequenceFunction,
   splitKeyIntoChildren,
 } from '../utils/DataMap.Utils';
 import { isFunctionData, isKeyAnIndexValue } from '../utils/Function.Utils';
 import { LogCategory, LogService } from '../utils/Logging.Utils';
 import { createReactFlowFunctionKey } from '../utils/ReactFlow.Util';
 import { findNodeForKey, flattenSchemaIntoDictionary } from '../utils/Schema.Utils';
-import { isAGuid } from '@microsoft/utils-logic-apps';
+import type { MapDefinitionEntry, SchemaExtended, SchemaNodeDictionary, SchemaNodeExtended } from '@microsoft/logic-apps-shared';
+import { isAGuid, SchemaType } from '@microsoft/logic-apps-shared';
 
 export class MapDefinitionDeserializer {
   private readonly _mapDefinition: MapDefinitionEntry;
@@ -90,13 +95,13 @@ export class MapDefinitionDeserializer {
   ) => {
     if (Array.isArray(sourceNodeObject)) {
       // TODO Support for multiple array entries
-      for (let index = 0; index < sourceNodeObject.length; index++) {
-        const element = sourceNodeObject[index];
+      for (const element of sourceNodeObject) {
         this._parseDefinitionToConnection(element, targetKey, targetArrayDepth + 1, connections);
       }
 
       return;
-    } else if (typeof sourceNodeObject === 'string') {
+    }
+    if (typeof sourceNodeObject === 'string') {
       this._createConnections(sourceNodeObject, targetKey, targetArrayDepth, connections);
 
       return;
@@ -197,8 +202,8 @@ export class MapDefinitionDeserializer {
               flattenedChildValueParents.length > 1
                 ? flattenedChildValueParents.reduce((a, b) => (a.lastIndexOf('/') <= b.lastIndexOf('/') ? a : b))
                 : flattenedChildValueParents.length === 1
-                ? flattenedChildValueParents[0]
-                : undefined;
+                  ? flattenedChildValueParents[0]
+                  : undefined;
             const ifConnectionEntry = Object.entries(connections).find(
               ([_connectionKey, connectionValue]) =>
                 connectionValue.self.node.key === ifPseudoFunctionKey &&
@@ -240,11 +245,12 @@ export class MapDefinitionDeserializer {
   ) => {
     const isLoop: boolean = targetKey.includes(mapNodeParams.for);
     const isConditional: boolean = targetKey.startsWith(mapNodeParams.if);
-    const sourceEndOfFunctionName = sourceNodeString.indexOf('(');
-    const amendedTargetKey = isLoop ? qualifyLoopRelativeSourceKeys(targetKey) : targetKey;
+    const sequencesRemovedTargetKey: string = isLoop ? removeSequenceFunction(lexThisThing(targetKey)) : targetKey;
+    const amendedTargetKey = isLoop ? qualifyLoopRelativeSourceKeys(sequencesRemovedTargetKey) : targetKey;
     let amendedSourceKey = isLoop
       ? getSourceValueFromLoop(sourceNodeString, amendedTargetKey, this._sourceSchemaFlattened)
       : sourceNodeString;
+    const sourceEndOfFunctionName = amendedSourceKey.indexOf('(');
 
     let mockDirectAccessFnKey = '';
     [amendedSourceKey, mockDirectAccessFnKey] = amendSourceKeyForDirectAccessIfNeeded(amendedSourceKey);
@@ -308,7 +314,7 @@ export class MapDefinitionDeserializer {
       // Handle loops in targetKey by back-tracking
       while (startIdxOfCurLoop > -1) {
         const srcLoopNodeKey = getSourceKeyOfLastLoop(loopKey.substring(0, startIdxOfPrevLoop));
-        const srcLoopNode = findNodeForKey(srcLoopNodeKey, this._sourceSchema.schemaTreeRoot);
+        const srcLoopNode = findNodeForKey(srcLoopNodeKey, this._sourceSchema.schemaTreeRoot, false);
 
         const idxOfIndexVariable = loopKey.substring(0, startIdxOfPrevLoop).indexOf('$', startIdxOfCurLoop + 1);
         let indexFnRfKey: string | undefined = undefined;
@@ -322,11 +328,11 @@ export class MapDefinitionDeserializer {
         if (!tgtLoopNodeKeyChunk.startsWith(mapNodeParams.for)) {
           // Gets tgtKey for current loop (which will be the single key chunk immediately following the loop path chunk)
           const startIdxOfNextPathChunk = loopKey.indexOf('/', endOfForIdx + 2);
-          tgtLoopNodeKey = getTargetValueWithoutLoops(
+          tgtLoopNodeKey = getTargetValueWithoutLoopsSchemaSpecific(
             startIdxOfNextPathChunk > -1 ? loopKey.substring(0, startIdxOfNextPathChunk) : loopKey,
-            targetArrayDepth
+            loopKey.indexOf('*') > -1
           );
-          tgtLoopNode = findNodeForKey(tgtLoopNodeKey, this._targetSchema.schemaTreeRoot);
+          tgtLoopNode = findNodeForKey(tgtLoopNodeKey, this._targetSchema.schemaTreeRoot, true);
         }
 
         // Handle index variables
@@ -355,6 +361,30 @@ export class MapDefinitionDeserializer {
 
           if (mockDirectAccessFnKey) {
             mockDirectAccessFnKey = mockDirectAccessFnKey.replaceAll(`$${idxVariable}`, indexFnRfKey);
+          }
+        }
+
+        const targetTokens = lexThisThing(targetKey);
+        let lookForSequence = false;
+        for (const token of targetTokens) {
+          if (token === ReservedToken.for) {
+            lookForSequence = true;
+          }
+          if (lookForSequence && targetKey !== sequencesRemovedTargetKey) {
+            const remainingFn = splitKeyIntoChildren(targetKey);
+            if (!remainingFn[0].includes('(')) {
+              // no sequence functions
+              break;
+            }
+
+            const targetEnding = targetTokens[targetTokens.length - 1];
+            const loopTarget = targetEnding.split('/')[1];
+            const loopTargetKey = targetTokens[0] + loopTarget;
+
+            remainingFn.forEach((fnInputKey) => {
+              this._parseDefinitionToConnection(fnInputKey, loopTargetKey, targetArrayDepth, connections);
+            });
+            break;
           }
         }
 
@@ -428,3 +458,36 @@ export class MapDefinitionDeserializer {
     }
   };
 }
+
+export const getLoopTargetNodeWithJson = (targetKey: string, targetSchemaRoot: SchemaNodeExtended) => {
+  let trimmedTargetKey = targetKey;
+  if (!targetKey.includes('/')) {
+    // excludes custom values and others that aren't schema nodes
+    return undefined;
+  }
+  if (targetKey[0] === '/') {
+    trimmedTargetKey = targetKey.substring(1);
+  }
+  const targetKeyPath = trimmedTargetKey.split('/');
+  const matchingSchemaNode = getLoopTargetNode(targetKeyPath, 1, targetSchemaRoot);
+  return matchingSchemaNode;
+};
+
+const getLoopTargetNode = (targetKeyPath: string[], ind: number, parentNode: SchemaNodeExtended) => {
+  if (ind === targetKeyPath.length) {
+    return parentNode;
+  }
+
+  const possibleNodes: (SchemaNodeExtended | SchemaExtended | undefined)[] = [];
+
+  parentNode.children.forEach((child) => {
+    if (child.name === targetKeyPath[ind]) {
+      possibleNodes.push(getLoopTargetNode(targetKeyPath, ind + 1, child));
+    }
+    if (child.name === '<ArrayItem>') {
+      possibleNodes.push(getLoopTargetNode(targetKeyPath, ind, child));
+    }
+  });
+
+  return possibleNodes.find((node) => node !== null);
+};

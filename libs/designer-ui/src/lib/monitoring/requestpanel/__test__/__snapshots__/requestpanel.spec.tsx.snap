@@ -1,154 +1,156 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`lib/monitoring/requestpanel should render 1`] = `
-Array [
+exports[`lib/monitoring/requestpanel > should render 1`] = `
+[
   <div
     className="msla-retrypanel-callout-pager"
   >
-    <div
-      className="msla-pager-v2"
-      onClick={[Function]}
-    >
+    <div>
       <div
-        className="msla-pager-failed-container"
+        className="msla-pager-v2"
+        onClick={[Function]}
       >
         <div
-          className="ms-TooltipHost root-109"
-          onBlurCapture={[Function]}
-          onFocusCapture={[Function]}
-          onKeyDown={[Function]}
-          onMouseEnter={[Function]}
-          onMouseLeave={[Function]}
-          role="none"
+          className="msla-pager-failed-container"
         >
-          <button
-            aria-disabled={true}
-            aria-label="Previous"
-            className="ms-Button ms-Button--icon is-disabled root-110"
-            data-is-focusable={false}
-            disabled={true}
-            onClick={[Function]}
-            onKeyDown={[Function]}
-            onKeyPress={[Function]}
-            onKeyUp={[Function]}
-            onMouseDown={[Function]}
-            onMouseUp={[Function]}
-            type="button"
-          >
-            <span
-              className="ms-Button-flexContainer flexContainer-111"
-              data-automationid="splitbuttonprimary"
-            >
-              <i
-                aria-hidden={true}
-                className="ms-Icon root-105 css-119 ms-Button-icon icon-113"
-                data-icon-name="ChevronLeft"
-                style={
-                  Object {
-                    "fontFamily": "\\"FabricMDL2Icons\\"",
-                  }
-                }
-              >
-                
-              </i>
-              <span
-                className="ms-Button-textContainer textContainer-112"
-              />
-            </span>
-          </button>
           <div
-            hidden={true}
-            id="tooltip0"
-            style={
-              Object {
-                "border": 0,
-                "height": 1,
-                "margin": -1,
-                "overflow": "hidden",
-                "padding": 0,
-                "position": "absolute",
-                "whiteSpace": "nowrap",
-                "width": 1,
-              }
-            }
+            className="ms-TooltipHost root-109"
+            onBlurCapture={[Function]}
+            onFocusCapture={[Function]}
+            onKeyDown={[Function]}
+            onMouseEnter={[Function]}
+            onMouseLeave={[Function]}
+            role="none"
           >
-            Previous
+            <button
+              aria-disabled={true}
+              aria-label="Previous"
+              className="ms-Button ms-Button--icon is-disabled root-110"
+              data-is-focusable={false}
+              disabled={true}
+              onClick={[Function]}
+              onKeyDown={[Function]}
+              onKeyPress={[Function]}
+              onKeyUp={[Function]}
+              onMouseDown={[Function]}
+              onMouseUp={[Function]}
+              type="button"
+            >
+              <span
+                className="ms-Button-flexContainer flexContainer-111"
+                data-automationid="splitbuttonprimary"
+              >
+                <i
+                  aria-hidden={true}
+                  className="ms-Icon root-105 css-119 ms-Button-icon icon-113"
+                  data-icon-name="ChevronLeft"
+                  style={
+                    {
+                      "fontFamily": ""FabricMDL2Icons"",
+                    }
+                  }
+                >
+                  
+                </i>
+                <span
+                  className="ms-Button-textContainer textContainer-112"
+                />
+              </span>
+            </button>
+            <div
+              hidden={true}
+              id="tooltip0"
+              style={
+                {
+                  "border": 0,
+                  "height": 1,
+                  "margin": -1,
+                  "overflow": "hidden",
+                  "padding": 0,
+                  "position": "absolute",
+                  "whiteSpace": "nowrap",
+                  "width": 1,
+                }
+              }
+            >
+              Previous
+            </div>
           </div>
         </div>
-      </div>
-      <div
-        className="msla-pager-v2--inner"
-      >
-        <span
-          className="css-120"
-        >
-          1 of 1
-        </span>
-      </div>
-      <div
-        className="msla-pager-failed-container"
-      >
         <div
-          className="ms-TooltipHost root-109"
-          onBlurCapture={[Function]}
-          onFocusCapture={[Function]}
-          onKeyDown={[Function]}
-          onMouseEnter={[Function]}
-          onMouseLeave={[Function]}
-          role="none"
+          className="msla-pager-v2--inner"
         >
-          <button
-            aria-disabled={true}
-            aria-label="Next"
-            className="ms-Button ms-Button--icon is-disabled root-110"
-            data-is-focusable={false}
-            disabled={true}
-            onClick={[Function]}
-            onKeyDown={[Function]}
-            onKeyPress={[Function]}
-            onKeyUp={[Function]}
-            onMouseDown={[Function]}
-            onMouseUp={[Function]}
-            type="button"
+          <span
+            className="fui-Text ___c56hd20_1xy0w11 fk6fouc fkhj508 f1i3iumi figsok6 fpgzoln f1w7gpdv f6juhto f1gl81tg f2jf649"
           >
-            <span
-              className="ms-Button-flexContainer flexContainer-111"
-              data-automationid="splitbuttonprimary"
-            >
-              <i
-                aria-hidden={true}
-                className="ms-Icon root-105 css-119 ms-Button-icon icon-113"
-                data-icon-name="ChevronRight"
-                style={
-                  Object {
-                    "fontFamily": "\\"FabricMDL2Icons\\"",
-                  }
-                }
-              >
-                
-              </i>
-              <span
-                className="ms-Button-textContainer textContainer-112"
-              />
-            </span>
-          </button>
+            1 of 1
+          </span>
+        </div>
+        <div
+          className="msla-pager-failed-container"
+        >
           <div
-            hidden={true}
-            id="tooltip4"
-            style={
-              Object {
-                "border": 0,
-                "height": 1,
-                "margin": -1,
-                "overflow": "hidden",
-                "padding": 0,
-                "position": "absolute",
-                "whiteSpace": "nowrap",
-                "width": 1,
-              }
-            }
+            className="ms-TooltipHost root-109"
+            onBlurCapture={[Function]}
+            onFocusCapture={[Function]}
+            onKeyDown={[Function]}
+            onMouseEnter={[Function]}
+            onMouseLeave={[Function]}
+            role="none"
           >
-            Next
+            <button
+              aria-disabled={true}
+              aria-label="Next"
+              className="ms-Button ms-Button--icon is-disabled root-110"
+              data-is-focusable={false}
+              disabled={true}
+              onClick={[Function]}
+              onKeyDown={[Function]}
+              onKeyPress={[Function]}
+              onKeyUp={[Function]}
+              onMouseDown={[Function]}
+              onMouseUp={[Function]}
+              type="button"
+            >
+              <span
+                className="ms-Button-flexContainer flexContainer-111"
+                data-automationid="splitbuttonprimary"
+              >
+                <i
+                  aria-hidden={true}
+                  className="ms-Icon root-105 css-119 ms-Button-icon icon-113"
+                  data-icon-name="ChevronRight"
+                  style={
+                    {
+                      "fontFamily": ""FabricMDL2Icons"",
+                    }
+                  }
+                >
+                  
+                </i>
+                <span
+                  className="ms-Button-textContainer textContainer-112"
+                />
+              </span>
+            </button>
+            <div
+              hidden={true}
+              id="tooltip4"
+              style={
+                {
+                  "border": 0,
+                  "height": 1,
+                  "margin": -1,
+                  "overflow": "hidden",
+                  "padding": 0,
+                  "position": "absolute",
+                  "whiteSpace": "nowrap",
+                  "width": 1,
+                }
+              }
+            >
+              Next
+            </div>
           </div>
         </div>
       </div>
@@ -190,10 +192,76 @@ Array [
               role="textbox"
               tabIndex={0}
             >
+              <div
+                className="buttons"
+              >
+                <button
+                  aria-label="Select all text in 'Duration'"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Select all text in 'Duration'"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-124 ms-Button-icon icon-121"
+                      data-icon-name="SelectAll"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-1"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Copy the value of 'Duration' to the clipboard"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Copy the value of 'Duration' to the clipboard"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-126 ms-Button-icon icon-121"
+                      data-icon-name="Copy"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-2"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+              </div>
               <pre
                 className="prism-code language-json"
                 style={
-                  Object {
+                  {
                     "backgroundColor": "#ffffff",
                     "color": "#000000",
                   }
@@ -202,26 +270,16 @@ Array [
                 <div
                   className="token-line"
                   style={
-                    Object {
-                      "backgroundColor": null,
+                    {
+                      "backgroundColor": undefined,
                       "color": "#000000",
                     }
                   }
                 >
                   <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    1
-                  </span>
-                  <span
                     className="token plain"
                   >
-                     minute
+                    1 minute
                   </span>
                 </div>
               </pre>
@@ -242,14 +300,111 @@ Array [
             <div
               aria-label="Start time"
               aria-readonly={true}
-              className="msla-colorizer-wrapper"
+              className="msla-colorizer-wrapper date-time"
               role="textbox"
               tabIndex={0}
             >
+              <div
+                className="buttons"
+              >
+                <button
+                  aria-label="Switch 'Start time' to the UTC time format"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Switch 'Start time' to the UTC time format"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-128 ms-Button-icon icon-121"
+                      data-icon-name="DateTime"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-5"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Select all text in 'Start time'"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Select all text in 'Start time'"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-124 ms-Button-icon icon-121"
+                      data-icon-name="SelectAll"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-1"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Copy the value of 'Start time' to the clipboard"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Copy the value of 'Start time' to the clipboard"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-126 ms-Button-icon icon-121"
+                      data-icon-name="Copy"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-2"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+              </div>
               <pre
                 className="prism-code language-json"
                 style={
-                  Object {
+                  {
                     "backgroundColor": "#ffffff",
                     "color": "#000000",
                   }
@@ -258,121 +413,16 @@ Array [
                 <div
                   className="token-line"
                   style={
-                    Object {
-                      "backgroundColor": null,
+                    {
+                      "backgroundColor": undefined,
                       "color": "#000000",
                     }
                   }
                 >
                   <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    2
-                  </span>
-                  <span
                     className="token plain"
                   >
-                    /
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    9
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                    /
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    2022
-                  </span>
-                  <span
-                    className="token punctuation"
-                    style={
-                      Object {
-                        "color": "rgb(4, 81, 165)",
-                      }
-                    }
-                  >
-                    ,
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                     
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    1
-                  </span>
-                  <span
-                    className="token operator"
-                    style={
-                      Object {
-                        "color": "rgb(0, 0, 0)",
-                      }
-                    }
-                  >
-                    :
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    52
-                  </span>
-                  <span
-                    className="token operator"
-                    style={
-                      Object {
-                        "color": "rgb(0, 0, 0)",
-                      }
-                    }
-                  >
-                    :
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    00
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                     PM
+                    2/9/2022, 8:52:00 AM (Local time)
                   </span>
                 </div>
               </pre>
@@ -393,14 +443,111 @@ Array [
             <div
               aria-label="End time"
               aria-readonly={true}
-              className="msla-colorizer-wrapper"
+              className="msla-colorizer-wrapper date-time"
               role="textbox"
               tabIndex={0}
             >
+              <div
+                className="buttons"
+              >
+                <button
+                  aria-label="Switch 'End time' to the UTC time format"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Switch 'End time' to the UTC time format"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-128 ms-Button-icon icon-121"
+                      data-icon-name="DateTime"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-5"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Select all text in 'End time'"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Select all text in 'End time'"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-124 ms-Button-icon icon-121"
+                      data-icon-name="SelectAll"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-1"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Copy the value of 'End time' to the clipboard"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Copy the value of 'End time' to the clipboard"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-126 ms-Button-icon icon-121"
+                      data-icon-name="Copy"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-2"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+              </div>
               <pre
                 className="prism-code language-json"
                 style={
-                  Object {
+                  {
                     "backgroundColor": "#ffffff",
                     "color": "#000000",
                   }
@@ -409,121 +556,16 @@ Array [
                 <div
                   className="token-line"
                   style={
-                    Object {
-                      "backgroundColor": null,
+                    {
+                      "backgroundColor": undefined,
                       "color": "#000000",
                     }
                   }
                 >
                   <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    2
-                  </span>
-                  <span
                     className="token plain"
                   >
-                    /
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    9
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                    /
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    2022
-                  </span>
-                  <span
-                    className="token punctuation"
-                    style={
-                      Object {
-                        "color": "rgb(4, 81, 165)",
-                      }
-                    }
-                  >
-                    ,
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                     
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    1
-                  </span>
-                  <span
-                    className="token operator"
-                    style={
-                      Object {
-                        "color": "rgb(0, 0, 0)",
-                      }
-                    }
-                  >
-                    :
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    53
-                  </span>
-                  <span
-                    className="token operator"
-                    style={
-                      Object {
-                        "color": "rgb(0, 0, 0)",
-                      }
-                    }
-                  >
-                    :
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    00
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                     PM
+                    2/9/2022, 8:53:00 AM (Local time)
                   </span>
                 </div>
               </pre>
@@ -536,155 +578,157 @@ Array [
 ]
 `;
 
-exports[`lib/monitoring/requestpanel should render with a request 1`] = `
-Array [
+exports[`lib/monitoring/requestpanel > should render with a request 1`] = `
+[
   <div
     className="msla-retrypanel-callout-pager"
   >
-    <div
-      className="msla-pager-v2"
-      onClick={[Function]}
-    >
+    <div>
       <div
-        className="msla-pager-failed-container"
+        className="msla-pager-v2"
+        onClick={[Function]}
       >
         <div
-          className="ms-TooltipHost root-109"
-          onBlurCapture={[Function]}
-          onFocusCapture={[Function]}
-          onKeyDown={[Function]}
-          onMouseEnter={[Function]}
-          onMouseLeave={[Function]}
-          role="none"
+          className="msla-pager-failed-container"
         >
-          <button
-            aria-disabled={true}
-            aria-label="Previous"
-            className="ms-Button ms-Button--icon is-disabled root-110"
-            data-is-focusable={false}
-            disabled={true}
-            onClick={[Function]}
-            onKeyDown={[Function]}
-            onKeyPress={[Function]}
-            onKeyUp={[Function]}
-            onMouseDown={[Function]}
-            onMouseUp={[Function]}
-            type="button"
-          >
-            <span
-              className="ms-Button-flexContainer flexContainer-111"
-              data-automationid="splitbuttonprimary"
-            >
-              <i
-                aria-hidden={true}
-                className="ms-Icon root-105 css-119 ms-Button-icon icon-113"
-                data-icon-name="ChevronLeft"
-                style={
-                  Object {
-                    "fontFamily": "\\"FabricMDL2Icons\\"",
-                  }
-                }
-              >
-                
-              </i>
-              <span
-                className="ms-Button-textContainer textContainer-112"
-              />
-            </span>
-          </button>
           <div
-            hidden={true}
-            id="tooltip8"
-            style={
-              Object {
-                "border": 0,
-                "height": 1,
-                "margin": -1,
-                "overflow": "hidden",
-                "padding": 0,
-                "position": "absolute",
-                "whiteSpace": "nowrap",
-                "width": 1,
-              }
-            }
+            className="ms-TooltipHost root-109"
+            onBlurCapture={[Function]}
+            onFocusCapture={[Function]}
+            onKeyDown={[Function]}
+            onMouseEnter={[Function]}
+            onMouseLeave={[Function]}
+            role="none"
           >
-            Previous
+            <button
+              aria-disabled={true}
+              aria-label="Previous"
+              className="ms-Button ms-Button--icon is-disabled root-110"
+              data-is-focusable={false}
+              disabled={true}
+              onClick={[Function]}
+              onKeyDown={[Function]}
+              onKeyPress={[Function]}
+              onKeyUp={[Function]}
+              onMouseDown={[Function]}
+              onMouseUp={[Function]}
+              type="button"
+            >
+              <span
+                className="ms-Button-flexContainer flexContainer-111"
+                data-automationid="splitbuttonprimary"
+              >
+                <i
+                  aria-hidden={true}
+                  className="ms-Icon root-105 css-119 ms-Button-icon icon-113"
+                  data-icon-name="ChevronLeft"
+                  style={
+                    {
+                      "fontFamily": ""FabricMDL2Icons"",
+                    }
+                  }
+                >
+                  
+                </i>
+                <span
+                  className="ms-Button-textContainer textContainer-112"
+                />
+              </span>
+            </button>
+            <div
+              hidden={true}
+              id="tooltip32"
+              style={
+                {
+                  "border": 0,
+                  "height": 1,
+                  "margin": -1,
+                  "overflow": "hidden",
+                  "padding": 0,
+                  "position": "absolute",
+                  "whiteSpace": "nowrap",
+                  "width": 1,
+                }
+              }
+            >
+              Previous
+            </div>
           </div>
         </div>
-      </div>
-      <div
-        className="msla-pager-v2--inner"
-      >
-        <span
-          className="css-120"
-        >
-          1 of 1
-        </span>
-      </div>
-      <div
-        className="msla-pager-failed-container"
-      >
         <div
-          className="ms-TooltipHost root-109"
-          onBlurCapture={[Function]}
-          onFocusCapture={[Function]}
-          onKeyDown={[Function]}
-          onMouseEnter={[Function]}
-          onMouseLeave={[Function]}
-          role="none"
+          className="msla-pager-v2--inner"
         >
-          <button
-            aria-disabled={true}
-            aria-label="Next"
-            className="ms-Button ms-Button--icon is-disabled root-110"
-            data-is-focusable={false}
-            disabled={true}
-            onClick={[Function]}
-            onKeyDown={[Function]}
-            onKeyPress={[Function]}
-            onKeyUp={[Function]}
-            onMouseDown={[Function]}
-            onMouseUp={[Function]}
-            type="button"
+          <span
+            className="fui-Text ___c56hd20_1xy0w11 fk6fouc fkhj508 f1i3iumi figsok6 fpgzoln f1w7gpdv f6juhto f1gl81tg f2jf649"
           >
-            <span
-              className="ms-Button-flexContainer flexContainer-111"
-              data-automationid="splitbuttonprimary"
-            >
-              <i
-                aria-hidden={true}
-                className="ms-Icon root-105 css-119 ms-Button-icon icon-113"
-                data-icon-name="ChevronRight"
-                style={
-                  Object {
-                    "fontFamily": "\\"FabricMDL2Icons\\"",
-                  }
-                }
-              >
-                
-              </i>
-              <span
-                className="ms-Button-textContainer textContainer-112"
-              />
-            </span>
-          </button>
+            1 of 1
+          </span>
+        </div>
+        <div
+          className="msla-pager-failed-container"
+        >
           <div
-            hidden={true}
-            id="tooltip12"
-            style={
-              Object {
-                "border": 0,
-                "height": 1,
-                "margin": -1,
-                "overflow": "hidden",
-                "padding": 0,
-                "position": "absolute",
-                "whiteSpace": "nowrap",
-                "width": 1,
-              }
-            }
+            className="ms-TooltipHost root-109"
+            onBlurCapture={[Function]}
+            onFocusCapture={[Function]}
+            onKeyDown={[Function]}
+            onMouseEnter={[Function]}
+            onMouseLeave={[Function]}
+            role="none"
           >
-            Next
+            <button
+              aria-disabled={true}
+              aria-label="Next"
+              className="ms-Button ms-Button--icon is-disabled root-110"
+              data-is-focusable={false}
+              disabled={true}
+              onClick={[Function]}
+              onKeyDown={[Function]}
+              onKeyPress={[Function]}
+              onKeyUp={[Function]}
+              onMouseDown={[Function]}
+              onMouseUp={[Function]}
+              type="button"
+            >
+              <span
+                className="ms-Button-flexContainer flexContainer-111"
+                data-automationid="splitbuttonprimary"
+              >
+                <i
+                  aria-hidden={true}
+                  className="ms-Icon root-105 css-119 ms-Button-icon icon-113"
+                  data-icon-name="ChevronRight"
+                  style={
+                    {
+                      "fontFamily": ""FabricMDL2Icons"",
+                    }
+                  }
+                >
+                  
+                </i>
+                <span
+                  className="ms-Button-textContainer textContainer-112"
+                />
+              </span>
+            </button>
+            <div
+              hidden={true}
+              id="tooltip36"
+              style={
+                {
+                  "border": 0,
+                  "height": 1,
+                  "margin": -1,
+                  "overflow": "hidden",
+                  "padding": 0,
+                  "position": "absolute",
+                  "whiteSpace": "nowrap",
+                  "width": 1,
+                }
+              }
+            >
+              Next
+            </div>
           </div>
         </div>
       </div>
@@ -726,10 +770,76 @@ Array [
               role="textbox"
               tabIndex={0}
             >
+              <div
+                className="buttons"
+              >
+                <button
+                  aria-label="Select all text in 'Duration'"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Select all text in 'Duration'"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-124 ms-Button-icon icon-121"
+                      data-icon-name="SelectAll"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-1"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Copy the value of 'Duration' to the clipboard"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Copy the value of 'Duration' to the clipboard"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-126 ms-Button-icon icon-121"
+                      data-icon-name="Copy"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-2"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+              </div>
               <pre
                 className="prism-code language-json"
                 style={
-                  Object {
+                  {
                     "backgroundColor": "#ffffff",
                     "color": "#000000",
                   }
@@ -738,26 +848,16 @@ Array [
                 <div
                   className="token-line"
                   style={
-                    Object {
-                      "backgroundColor": null,
+                    {
+                      "backgroundColor": undefined,
                       "color": "#000000",
                     }
                   }
                 >
                   <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    1
-                  </span>
-                  <span
                     className="token plain"
                   >
-                     minute
+                    1 minute
                   </span>
                 </div>
               </pre>
@@ -778,14 +878,111 @@ Array [
             <div
               aria-label="Start time"
               aria-readonly={true}
-              className="msla-colorizer-wrapper"
+              className="msla-colorizer-wrapper date-time"
               role="textbox"
               tabIndex={0}
             >
+              <div
+                className="buttons"
+              >
+                <button
+                  aria-label="Switch 'Start time' to the UTC time format"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Switch 'Start time' to the UTC time format"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-128 ms-Button-icon icon-121"
+                      data-icon-name="DateTime"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-5"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Select all text in 'Start time'"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Select all text in 'Start time'"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-124 ms-Button-icon icon-121"
+                      data-icon-name="SelectAll"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-1"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Copy the value of 'Start time' to the clipboard"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Copy the value of 'Start time' to the clipboard"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-126 ms-Button-icon icon-121"
+                      data-icon-name="Copy"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-2"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+              </div>
               <pre
                 className="prism-code language-json"
                 style={
-                  Object {
+                  {
                     "backgroundColor": "#ffffff",
                     "color": "#000000",
                   }
@@ -794,121 +991,16 @@ Array [
                 <div
                   className="token-line"
                   style={
-                    Object {
-                      "backgroundColor": null,
+                    {
+                      "backgroundColor": undefined,
                       "color": "#000000",
                     }
                   }
                 >
                   <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    2
-                  </span>
-                  <span
                     className="token plain"
                   >
-                    /
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    9
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                    /
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    2022
-                  </span>
-                  <span
-                    className="token punctuation"
-                    style={
-                      Object {
-                        "color": "rgb(4, 81, 165)",
-                      }
-                    }
-                  >
-                    ,
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                     
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    1
-                  </span>
-                  <span
-                    className="token operator"
-                    style={
-                      Object {
-                        "color": "rgb(0, 0, 0)",
-                      }
-                    }
-                  >
-                    :
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    52
-                  </span>
-                  <span
-                    className="token operator"
-                    style={
-                      Object {
-                        "color": "rgb(0, 0, 0)",
-                      }
-                    }
-                  >
-                    :
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    00
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                     PM
+                    2/9/2022, 8:52:00 AM (Local time)
                   </span>
                 </div>
               </pre>
@@ -929,14 +1021,111 @@ Array [
             <div
               aria-label="End time"
               aria-readonly={true}
-              className="msla-colorizer-wrapper"
+              className="msla-colorizer-wrapper date-time"
               role="textbox"
               tabIndex={0}
             >
+              <div
+                className="buttons"
+              >
+                <button
+                  aria-label="Switch 'End time' to the UTC time format"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Switch 'End time' to the UTC time format"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-128 ms-Button-icon icon-121"
+                      data-icon-name="DateTime"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-5"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Select all text in 'End time'"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Select all text in 'End time'"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-124 ms-Button-icon icon-121"
+                      data-icon-name="SelectAll"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-1"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Copy the value of 'End time' to the clipboard"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Copy the value of 'End time' to the clipboard"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-126 ms-Button-icon icon-121"
+                      data-icon-name="Copy"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-2"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+              </div>
               <pre
                 className="prism-code language-json"
                 style={
-                  Object {
+                  {
                     "backgroundColor": "#ffffff",
                     "color": "#000000",
                   }
@@ -945,121 +1134,16 @@ Array [
                 <div
                   className="token-line"
                   style={
-                    Object {
-                      "backgroundColor": null,
+                    {
+                      "backgroundColor": undefined,
                       "color": "#000000",
                     }
                   }
                 >
                   <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    2
-                  </span>
-                  <span
                     className="token plain"
                   >
-                    /
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    9
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                    /
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    2022
-                  </span>
-                  <span
-                    className="token punctuation"
-                    style={
-                      Object {
-                        "color": "rgb(4, 81, 165)",
-                      }
-                    }
-                  >
-                    ,
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                     
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    1
-                  </span>
-                  <span
-                    className="token operator"
-                    style={
-                      Object {
-                        "color": "rgb(0, 0, 0)",
-                      }
-                    }
-                  >
-                    :
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    53
-                  </span>
-                  <span
-                    className="token operator"
-                    style={
-                      Object {
-                        "color": "rgb(0, 0, 0)",
-                      }
-                    }
-                  >
-                    :
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    00
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                     PM
+                    2/9/2022, 8:53:00 AM (Local time)
                   </span>
                 </div>
               </pre>
@@ -1101,10 +1185,76 @@ Array [
               role="textbox"
               tabIndex={0}
             >
+              <div
+                className="buttons"
+              >
+                <button
+                  aria-label="Select all text in 'Method'"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Select all text in 'Method'"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-124 ms-Button-icon icon-121"
+                      data-icon-name="SelectAll"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-1"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Copy the value of 'Method' to the clipboard"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Copy the value of 'Method' to the clipboard"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-126 ms-Button-icon icon-121"
+                      data-icon-name="Copy"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-2"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+              </div>
               <pre
                 className="prism-code language-json"
                 style={
-                  Object {
+                  {
                     "backgroundColor": "#ffffff",
                     "color": "#000000",
                   }
@@ -1113,8 +1263,8 @@ Array [
                 <div
                   className="token-line"
                   style={
-                    Object {
-                      "backgroundColor": null,
+                    {
+                      "backgroundColor": undefined,
                       "color": "#000000",
                     }
                   }
@@ -1147,10 +1297,76 @@ Array [
               role="textbox"
               tabIndex={0}
             >
+              <div
+                className="buttons"
+              >
+                <button
+                  aria-label="Select all text in 'URI'"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Select all text in 'URI'"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-124 ms-Button-icon icon-121"
+                      data-icon-name="SelectAll"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-1"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Copy the value of 'URI' to the clipboard"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Copy the value of 'URI' to the clipboard"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-126 ms-Button-icon icon-121"
+                      data-icon-name="Copy"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-2"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+              </div>
               <pre
                 className="prism-code language-json"
                 style={
-                  Object {
+                  {
                     "backgroundColor": "#ffffff",
                     "color": "#000000",
                   }
@@ -1159,8 +1375,8 @@ Array [
                 <div
                   className="token-line"
                   style={
-                    Object {
-                      "backgroundColor": null,
+                    {
+                      "backgroundColor": undefined,
                       "color": "#000000",
                     }
                   }
@@ -1168,27 +1384,7 @@ Array [
                   <span
                     className="token plain"
                   >
-                    https
-                  </span>
-                  <span
-                    className="token operator"
-                    style={
-                      Object {
-                        "color": "rgb(0, 0, 0)",
-                      }
-                    }
-                  >
-                    :
-                  </span>
-                  <span
-                    className="token comment"
-                    style={
-                      Object {
-                        "color": "rgb(0, 128, 0)",
-                      }
-                    }
-                  >
-                    //httpbin.org/get
+                    https://httpbin.org/get
                   </span>
                 </div>
               </pre>
@@ -1209,14 +1405,14 @@ Array [
             <div
               className="ms-Viewport"
               style={
-                Object {
+                {
                   "minHeight": 1,
                   "minWidth": 1,
                 }
               }
             >
               <div
-                className="ms-DetailsList ms-DetailsList--Compact is-horizontalConstrained root-121"
+                className="ms-DetailsList is-fixed ms-DetailsList--Compact is-horizontalConstrained root-129"
                 data-automationid="DetailsList"
                 data-is-scrollable="false"
               >
@@ -1233,9 +1429,10 @@ Array [
                   >
                     <div
                       aria-label="Headers"
-                      className="ms-FocusZone css-139 ms-DetailsHeader root-123"
+                      className="ms-FocusZone css-147 ms-DetailsHeader root-131"
                       data-automationid="DetailsHeader"
-                      data-focuszone-id="FocusZone18"
+                      data-focuszone-id="FocusZone78"
+                      data-tabster="{"uncontrolled": {}}"
                       onFocus={[Function]}
                       onKeyDown={[Function]}
                       onMouseDownCapture={[Function]}
@@ -1245,7 +1442,7 @@ Array [
                       <div
                         aria-label="Key"
                         aria-sort="none"
-                        className="ms-DetailsHeader-cell is-actionable root-140"
+                        className="ms-DetailsHeader-cell is-actionable root-148"
                         data-automationid="ColumnsHeaderColumn"
                         data-is-draggable={false}
                         data-is-focusable="true"
@@ -1253,23 +1450,23 @@ Array [
                         draggable={false}
                         role="columnheader"
                         style={
-                          Object {
-                            "width": 120,
+                          {
+                            "width": NaN,
                           }
                         }
                       >
                         <span
-                          className="cellTooltip-148"
+                          className="cellTooltip-156"
                         >
                           <span
-                            className="ms-DetailsHeader-cellTitle cellTitle-146"
-                            id="header17-$key"
+                            className="ms-DetailsHeader-cellTitle cellTitle-154"
+                            id="header77-$key"
                             onClick={[Function]}
                             onContextMenu={[Function]}
                           >
                             <span
-                              className="ms-DetailsHeader-cellName cellName-147"
-                              id="header17-$key-name"
+                              className="ms-DetailsHeader-cellName cellName-155"
+                              id="header77-$key-name"
                             >
                               Key
                             </span>
@@ -1278,7 +1475,7 @@ Array [
                       </div>
                       <div
                         aria-hidden={true}
-                        className="ms-DetailsHeader-cellSizer cellSizer-130 cellSizerStart-131"
+                        className="ms-DetailsHeader-cellSizer cellSizer-138 cellSizerStart-139"
                         data-is-focusable={false}
                         data-sizer-index={0}
                         onBlur={[Function]}
@@ -1289,7 +1486,7 @@ Array [
                       <div
                         aria-label="Value"
                         aria-sort="none"
-                        className="ms-DetailsHeader-cell is-actionable root-140"
+                        className="ms-DetailsHeader-cell is-actionable root-148"
                         data-automationid="ColumnsHeaderColumn"
                         data-is-draggable={false}
                         data-is-focusable="true"
@@ -1297,23 +1494,23 @@ Array [
                         draggable={false}
                         role="columnheader"
                         style={
-                          Object {
-                            "width": 120,
+                          {
+                            "width": NaN,
                           }
                         }
                       >
                         <span
-                          className="cellTooltip-148"
+                          className="cellTooltip-156"
                         >
                           <span
-                            className="ms-DetailsHeader-cellTitle cellTitle-146"
-                            id="header17-$value"
+                            className="ms-DetailsHeader-cellTitle cellTitle-154"
+                            id="header77-$value"
                             onClick={[Function]}
                             onContextMenu={[Function]}
                           >
                             <span
-                              className="ms-DetailsHeader-cellName cellName-147"
-                              id="header17-$value-name"
+                              className="ms-DetailsHeader-cellName cellName-155"
+                              id="header77-$value-name"
                             >
                               Value
                             </span>
@@ -1322,7 +1519,7 @@ Array [
                       </div>
                       <div
                         aria-hidden={true}
-                        className="ms-DetailsHeader-cellSizer cellSizer-130 cellSizerEnd-132"
+                        className="ms-DetailsHeader-cellSizer cellSizer-138 cellSizerEnd-140"
                         data-is-focusable={false}
                         data-sizer-index={1}
                         onBlur={[Function]}
@@ -1350,8 +1547,9 @@ Array [
                       role="presentation"
                     >
                       <div
-                        className="ms-FocusZone css-139 focusZone-122"
-                        data-focuszone-id="FocusZone19"
+                        className="ms-FocusZone css-147 focusZone-130"
+                        data-focuszone-id="FocusZone79"
+                        data-tabster="{"uncontrolled": {}}"
                         onBlur={[Function]}
                         onFocus={[Function]}
                         onKeyDown={[Function]}
@@ -1379,155 +1577,157 @@ Array [
 ]
 `;
 
-exports[`lib/monitoring/requestpanel should render with a response 1`] = `
-Array [
+exports[`lib/monitoring/requestpanel > should render with a response 1`] = `
+[
   <div
     className="msla-retrypanel-callout-pager"
   >
-    <div
-      className="msla-pager-v2"
-      onClick={[Function]}
-    >
+    <div>
       <div
-        className="msla-pager-failed-container"
+        className="msla-pager-v2"
+        onClick={[Function]}
       >
         <div
-          className="ms-TooltipHost root-109"
-          onBlurCapture={[Function]}
-          onFocusCapture={[Function]}
-          onKeyDown={[Function]}
-          onMouseEnter={[Function]}
-          onMouseLeave={[Function]}
-          role="none"
+          className="msla-pager-failed-container"
         >
-          <button
-            aria-disabled={true}
-            aria-label="Previous"
-            className="ms-Button ms-Button--icon is-disabled root-110"
-            data-is-focusable={false}
-            disabled={true}
-            onClick={[Function]}
-            onKeyDown={[Function]}
-            onKeyPress={[Function]}
-            onKeyUp={[Function]}
-            onMouseDown={[Function]}
-            onMouseUp={[Function]}
-            type="button"
-          >
-            <span
-              className="ms-Button-flexContainer flexContainer-111"
-              data-automationid="splitbuttonprimary"
-            >
-              <i
-                aria-hidden={true}
-                className="ms-Icon root-105 css-119 ms-Button-icon icon-113"
-                data-icon-name="ChevronLeft"
-                style={
-                  Object {
-                    "fontFamily": "\\"FabricMDL2Icons\\"",
-                  }
-                }
-              >
-                
-              </i>
-              <span
-                className="ms-Button-textContainer textContainer-112"
-              />
-            </span>
-          </button>
           <div
-            hidden={true}
-            id="tooltip28"
-            style={
-              Object {
-                "border": 0,
-                "height": 1,
-                "margin": -1,
-                "overflow": "hidden",
-                "padding": 0,
-                "position": "absolute",
-                "whiteSpace": "nowrap",
-                "width": 1,
-              }
-            }
+            className="ms-TooltipHost root-109"
+            onBlurCapture={[Function]}
+            onFocusCapture={[Function]}
+            onKeyDown={[Function]}
+            onMouseEnter={[Function]}
+            onMouseLeave={[Function]}
+            role="none"
           >
-            Previous
+            <button
+              aria-disabled={true}
+              aria-label="Previous"
+              className="ms-Button ms-Button--icon is-disabled root-110"
+              data-is-focusable={false}
+              disabled={true}
+              onClick={[Function]}
+              onKeyDown={[Function]}
+              onKeyPress={[Function]}
+              onKeyUp={[Function]}
+              onMouseDown={[Function]}
+              onMouseUp={[Function]}
+              type="button"
+            >
+              <span
+                className="ms-Button-flexContainer flexContainer-111"
+                data-automationid="splitbuttonprimary"
+              >
+                <i
+                  aria-hidden={true}
+                  className="ms-Icon root-105 css-119 ms-Button-icon icon-113"
+                  data-icon-name="ChevronLeft"
+                  style={
+                    {
+                      "fontFamily": ""FabricMDL2Icons"",
+                    }
+                  }
+                >
+                  
+                </i>
+                <span
+                  className="ms-Button-textContainer textContainer-112"
+                />
+              </span>
+            </button>
+            <div
+              hidden={true}
+              id="tooltip112"
+              style={
+                {
+                  "border": 0,
+                  "height": 1,
+                  "margin": -1,
+                  "overflow": "hidden",
+                  "padding": 0,
+                  "position": "absolute",
+                  "whiteSpace": "nowrap",
+                  "width": 1,
+                }
+              }
+            >
+              Previous
+            </div>
           </div>
         </div>
-      </div>
-      <div
-        className="msla-pager-v2--inner"
-      >
-        <span
-          className="css-120"
-        >
-          1 of 1
-        </span>
-      </div>
-      <div
-        className="msla-pager-failed-container"
-      >
         <div
-          className="ms-TooltipHost root-109"
-          onBlurCapture={[Function]}
-          onFocusCapture={[Function]}
-          onKeyDown={[Function]}
-          onMouseEnter={[Function]}
-          onMouseLeave={[Function]}
-          role="none"
+          className="msla-pager-v2--inner"
         >
-          <button
-            aria-disabled={true}
-            aria-label="Next"
-            className="ms-Button ms-Button--icon is-disabled root-110"
-            data-is-focusable={false}
-            disabled={true}
-            onClick={[Function]}
-            onKeyDown={[Function]}
-            onKeyPress={[Function]}
-            onKeyUp={[Function]}
-            onMouseDown={[Function]}
-            onMouseUp={[Function]}
-            type="button"
+          <span
+            className="fui-Text ___c56hd20_1xy0w11 fk6fouc fkhj508 f1i3iumi figsok6 fpgzoln f1w7gpdv f6juhto f1gl81tg f2jf649"
           >
-            <span
-              className="ms-Button-flexContainer flexContainer-111"
-              data-automationid="splitbuttonprimary"
-            >
-              <i
-                aria-hidden={true}
-                className="ms-Icon root-105 css-119 ms-Button-icon icon-113"
-                data-icon-name="ChevronRight"
-                style={
-                  Object {
-                    "fontFamily": "\\"FabricMDL2Icons\\"",
-                  }
-                }
-              >
-                
-              </i>
-              <span
-                className="ms-Button-textContainer textContainer-112"
-              />
-            </span>
-          </button>
+            1 of 1
+          </span>
+        </div>
+        <div
+          className="msla-pager-failed-container"
+        >
           <div
-            hidden={true}
-            id="tooltip32"
-            style={
-              Object {
-                "border": 0,
-                "height": 1,
-                "margin": -1,
-                "overflow": "hidden",
-                "padding": 0,
-                "position": "absolute",
-                "whiteSpace": "nowrap",
-                "width": 1,
-              }
-            }
+            className="ms-TooltipHost root-109"
+            onBlurCapture={[Function]}
+            onFocusCapture={[Function]}
+            onKeyDown={[Function]}
+            onMouseEnter={[Function]}
+            onMouseLeave={[Function]}
+            role="none"
           >
-            Next
+            <button
+              aria-disabled={true}
+              aria-label="Next"
+              className="ms-Button ms-Button--icon is-disabled root-110"
+              data-is-focusable={false}
+              disabled={true}
+              onClick={[Function]}
+              onKeyDown={[Function]}
+              onKeyPress={[Function]}
+              onKeyUp={[Function]}
+              onMouseDown={[Function]}
+              onMouseUp={[Function]}
+              type="button"
+            >
+              <span
+                className="ms-Button-flexContainer flexContainer-111"
+                data-automationid="splitbuttonprimary"
+              >
+                <i
+                  aria-hidden={true}
+                  className="ms-Icon root-105 css-119 ms-Button-icon icon-113"
+                  data-icon-name="ChevronRight"
+                  style={
+                    {
+                      "fontFamily": ""FabricMDL2Icons"",
+                    }
+                  }
+                >
+                  
+                </i>
+                <span
+                  className="ms-Button-textContainer textContainer-112"
+                />
+              </span>
+            </button>
+            <div
+              hidden={true}
+              id="tooltip116"
+              style={
+                {
+                  "border": 0,
+                  "height": 1,
+                  "margin": -1,
+                  "overflow": "hidden",
+                  "padding": 0,
+                  "position": "absolute",
+                  "whiteSpace": "nowrap",
+                  "width": 1,
+                }
+              }
+            >
+              Next
+            </div>
           </div>
         </div>
       </div>
@@ -1569,10 +1769,76 @@ Array [
               role="textbox"
               tabIndex={0}
             >
+              <div
+                className="buttons"
+              >
+                <button
+                  aria-label="Select all text in 'Duration'"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Select all text in 'Duration'"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-124 ms-Button-icon icon-121"
+                      data-icon-name="SelectAll"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-1"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Copy the value of 'Duration' to the clipboard"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Copy the value of 'Duration' to the clipboard"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-126 ms-Button-icon icon-121"
+                      data-icon-name="Copy"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-2"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+              </div>
               <pre
                 className="prism-code language-json"
                 style={
-                  Object {
+                  {
                     "backgroundColor": "#ffffff",
                     "color": "#000000",
                   }
@@ -1581,26 +1847,16 @@ Array [
                 <div
                   className="token-line"
                   style={
-                    Object {
-                      "backgroundColor": null,
+                    {
+                      "backgroundColor": undefined,
                       "color": "#000000",
                     }
                   }
                 >
                   <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    1
-                  </span>
-                  <span
                     className="token plain"
                   >
-                     minute
+                    1 minute
                   </span>
                 </div>
               </pre>
@@ -1621,14 +1877,111 @@ Array [
             <div
               aria-label="Start time"
               aria-readonly={true}
-              className="msla-colorizer-wrapper"
+              className="msla-colorizer-wrapper date-time"
               role="textbox"
               tabIndex={0}
             >
+              <div
+                className="buttons"
+              >
+                <button
+                  aria-label="Switch 'Start time' to the UTC time format"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Switch 'Start time' to the UTC time format"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-128 ms-Button-icon icon-121"
+                      data-icon-name="DateTime"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-5"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Select all text in 'Start time'"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Select all text in 'Start time'"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-124 ms-Button-icon icon-121"
+                      data-icon-name="SelectAll"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-1"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Copy the value of 'Start time' to the clipboard"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Copy the value of 'Start time' to the clipboard"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-126 ms-Button-icon icon-121"
+                      data-icon-name="Copy"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-2"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+              </div>
               <pre
                 className="prism-code language-json"
                 style={
-                  Object {
+                  {
                     "backgroundColor": "#ffffff",
                     "color": "#000000",
                   }
@@ -1637,121 +1990,16 @@ Array [
                 <div
                   className="token-line"
                   style={
-                    Object {
-                      "backgroundColor": null,
+                    {
+                      "backgroundColor": undefined,
                       "color": "#000000",
                     }
                   }
                 >
                   <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    2
-                  </span>
-                  <span
                     className="token plain"
                   >
-                    /
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    9
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                    /
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    2022
-                  </span>
-                  <span
-                    className="token punctuation"
-                    style={
-                      Object {
-                        "color": "rgb(4, 81, 165)",
-                      }
-                    }
-                  >
-                    ,
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                     
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    1
-                  </span>
-                  <span
-                    className="token operator"
-                    style={
-                      Object {
-                        "color": "rgb(0, 0, 0)",
-                      }
-                    }
-                  >
-                    :
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    52
-                  </span>
-                  <span
-                    className="token operator"
-                    style={
-                      Object {
-                        "color": "rgb(0, 0, 0)",
-                      }
-                    }
-                  >
-                    :
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    00
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                     PM
+                    2/9/2022, 8:52:00 AM (Local time)
                   </span>
                 </div>
               </pre>
@@ -1772,14 +2020,111 @@ Array [
             <div
               aria-label="End time"
               aria-readonly={true}
-              className="msla-colorizer-wrapper"
+              className="msla-colorizer-wrapper date-time"
               role="textbox"
               tabIndex={0}
             >
+              <div
+                className="buttons"
+              >
+                <button
+                  aria-label="Switch 'End time' to the UTC time format"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Switch 'End time' to the UTC time format"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-128 ms-Button-icon icon-121"
+                      data-icon-name="DateTime"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-5"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Select all text in 'End time'"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Select all text in 'End time'"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-124 ms-Button-icon icon-121"
+                      data-icon-name="SelectAll"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-1"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Copy the value of 'End time' to the clipboard"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Copy the value of 'End time' to the clipboard"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-126 ms-Button-icon icon-121"
+                      data-icon-name="Copy"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-2"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+              </div>
               <pre
                 className="prism-code language-json"
                 style={
-                  Object {
+                  {
                     "backgroundColor": "#ffffff",
                     "color": "#000000",
                   }
@@ -1788,121 +2133,16 @@ Array [
                 <div
                   className="token-line"
                   style={
-                    Object {
-                      "backgroundColor": null,
+                    {
+                      "backgroundColor": undefined,
                       "color": "#000000",
                     }
                   }
                 >
                   <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    2
-                  </span>
-                  <span
                     className="token plain"
                   >
-                    /
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    9
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                    /
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    2022
-                  </span>
-                  <span
-                    className="token punctuation"
-                    style={
-                      Object {
-                        "color": "rgb(4, 81, 165)",
-                      }
-                    }
-                  >
-                    ,
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                     
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    1
-                  </span>
-                  <span
-                    className="token operator"
-                    style={
-                      Object {
-                        "color": "rgb(0, 0, 0)",
-                      }
-                    }
-                  >
-                    :
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    53
-                  </span>
-                  <span
-                    className="token operator"
-                    style={
-                      Object {
-                        "color": "rgb(0, 0, 0)",
-                      }
-                    }
-                  >
-                    :
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    00
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                     PM
+                    2/9/2022, 8:53:00 AM (Local time)
                   </span>
                 </div>
               </pre>
@@ -1944,10 +2184,76 @@ Array [
               role="textbox"
               tabIndex={0}
             >
+              <div
+                className="buttons"
+              >
+                <button
+                  aria-label="Select all text in 'Status code'"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Select all text in 'Status code'"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-124 ms-Button-icon icon-121"
+                      data-icon-name="SelectAll"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-1"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Copy the value of 'Status code' to the clipboard"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Copy the value of 'Status code' to the clipboard"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-126 ms-Button-icon icon-121"
+                      data-icon-name="Copy"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-2"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+              </div>
               <pre
                 className="prism-code language-json"
                 style={
-                  Object {
+                  {
                     "backgroundColor": "#ffffff",
                     "color": "#000000",
                   }
@@ -1956,19 +2262,14 @@ Array [
                 <div
                   className="token-line"
                   style={
-                    Object {
-                      "backgroundColor": null,
+                    {
+                      "backgroundColor": undefined,
                       "color": "#000000",
                     }
                   }
                 >
                   <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
+                    className="token plain"
                   >
                     200
                   </span>
@@ -1991,14 +2292,14 @@ Array [
             <div
               className="ms-Viewport"
               style={
-                Object {
+                {
                   "minHeight": 1,
                   "minWidth": 1,
                 }
               }
             >
               <div
-                className="ms-DetailsList ms-DetailsList--Compact is-horizontalConstrained root-121"
+                className="ms-DetailsList is-fixed ms-DetailsList--Compact is-horizontalConstrained root-129"
                 data-automationid="DetailsList"
                 data-is-scrollable="false"
               >
@@ -2015,9 +2316,10 @@ Array [
                   >
                     <div
                       aria-label="Headers"
-                      className="ms-FocusZone css-139 ms-DetailsHeader root-123"
+                      className="ms-FocusZone css-147 ms-DetailsHeader root-131"
                       data-automationid="DetailsHeader"
-                      data-focuszone-id="FocusZone38"
+                      data-focuszone-id="FocusZone152"
+                      data-tabster="{"uncontrolled": {}}"
                       onFocus={[Function]}
                       onKeyDown={[Function]}
                       onMouseDownCapture={[Function]}
@@ -2027,7 +2329,7 @@ Array [
                       <div
                         aria-label="Key"
                         aria-sort="none"
-                        className="ms-DetailsHeader-cell is-actionable root-140"
+                        className="ms-DetailsHeader-cell is-actionable root-148"
                         data-automationid="ColumnsHeaderColumn"
                         data-is-draggable={false}
                         data-is-focusable="true"
@@ -2035,23 +2337,23 @@ Array [
                         draggable={false}
                         role="columnheader"
                         style={
-                          Object {
-                            "width": 120,
+                          {
+                            "width": NaN,
                           }
                         }
                       >
                         <span
-                          className="cellTooltip-148"
+                          className="cellTooltip-156"
                         >
                           <span
-                            className="ms-DetailsHeader-cellTitle cellTitle-146"
-                            id="header37-$key"
+                            className="ms-DetailsHeader-cellTitle cellTitle-154"
+                            id="header151-$key"
                             onClick={[Function]}
                             onContextMenu={[Function]}
                           >
                             <span
-                              className="ms-DetailsHeader-cellName cellName-147"
-                              id="header37-$key-name"
+                              className="ms-DetailsHeader-cellName cellName-155"
+                              id="header151-$key-name"
                             >
                               Key
                             </span>
@@ -2060,7 +2362,7 @@ Array [
                       </div>
                       <div
                         aria-hidden={true}
-                        className="ms-DetailsHeader-cellSizer cellSizer-130 cellSizerStart-131"
+                        className="ms-DetailsHeader-cellSizer cellSizer-138 cellSizerStart-139"
                         data-is-focusable={false}
                         data-sizer-index={0}
                         onBlur={[Function]}
@@ -2071,7 +2373,7 @@ Array [
                       <div
                         aria-label="Value"
                         aria-sort="none"
-                        className="ms-DetailsHeader-cell is-actionable root-140"
+                        className="ms-DetailsHeader-cell is-actionable root-148"
                         data-automationid="ColumnsHeaderColumn"
                         data-is-draggable={false}
                         data-is-focusable="true"
@@ -2079,23 +2381,23 @@ Array [
                         draggable={false}
                         role="columnheader"
                         style={
-                          Object {
-                            "width": 120,
+                          {
+                            "width": NaN,
                           }
                         }
                       >
                         <span
-                          className="cellTooltip-148"
+                          className="cellTooltip-156"
                         >
                           <span
-                            className="ms-DetailsHeader-cellTitle cellTitle-146"
-                            id="header37-$value"
+                            className="ms-DetailsHeader-cellTitle cellTitle-154"
+                            id="header151-$value"
                             onClick={[Function]}
                             onContextMenu={[Function]}
                           >
                             <span
-                              className="ms-DetailsHeader-cellName cellName-147"
-                              id="header37-$value-name"
+                              className="ms-DetailsHeader-cellName cellName-155"
+                              id="header151-$value-name"
                             >
                               Value
                             </span>
@@ -2104,7 +2406,7 @@ Array [
                       </div>
                       <div
                         aria-hidden={true}
-                        className="ms-DetailsHeader-cellSizer cellSizer-130 cellSizerEnd-132"
+                        className="ms-DetailsHeader-cellSizer cellSizer-138 cellSizerEnd-140"
                         data-is-focusable={false}
                         data-sizer-index={1}
                         onBlur={[Function]}
@@ -2132,8 +2434,9 @@ Array [
                       role="presentation"
                     >
                       <div
-                        className="ms-FocusZone css-139 focusZone-122"
-                        data-focuszone-id="FocusZone39"
+                        className="ms-FocusZone css-147 focusZone-130"
+                        data-focuszone-id="FocusZone153"
+                        data-tabster="{"uncontrolled": {}}"
                         onBlur={[Function]}
                         onFocus={[Function]}
                         onKeyDown={[Function]}
@@ -2173,10 +2476,76 @@ Array [
               role="textbox"
               tabIndex={0}
             >
+              <div
+                className="buttons"
+              >
+                <button
+                  aria-label="Select all text in 'Body'"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Select all text in 'Body'"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-124 ms-Button-icon icon-121"
+                      data-icon-name="SelectAll"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-1"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Copy the value of 'Body' to the clipboard"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Copy the value of 'Body' to the clipboard"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-126 ms-Button-icon icon-121"
+                      data-icon-name="Copy"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-2"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+              </div>
               <pre
                 className="prism-code language-json"
                 style={
-                  Object {
+                  {
                     "backgroundColor": "#ffffff",
                     "color": "#000000",
                   }
@@ -2185,31 +2554,16 @@ Array [
                 <div
                   className="token-line"
                   style={
-                    Object {
-                      "backgroundColor": null,
+                    {
+                      "backgroundColor": undefined,
                       "color": "#000000",
                     }
                   }
                 >
                   <span
-                    className="token punctuation"
-                    style={
-                      Object {
-                        "color": "rgb(4, 81, 165)",
-                      }
-                    }
+                    className="token plain"
                   >
-                    {
-                  </span>
-                  <span
-                    className="token punctuation"
-                    style={
-                      Object {
-                        "color": "rgb(4, 81, 165)",
-                      }
-                    }
-                  >
-                    }
+                    {}
                   </span>
                 </div>
               </pre>
@@ -2222,155 +2576,157 @@ Array [
 ]
 `;
 
-exports[`lib/monitoring/requestpanel should render with a secured request 1`] = `
-Array [
+exports[`lib/monitoring/requestpanel > should render with a secured request 1`] = `
+[
   <div
     className="msla-retrypanel-callout-pager"
   >
-    <div
-      className="msla-pager-v2"
-      onClick={[Function]}
-    >
+    <div>
       <div
-        className="msla-pager-failed-container"
+        className="msla-pager-v2"
+        onClick={[Function]}
       >
         <div
-          className="ms-TooltipHost root-109"
-          onBlurCapture={[Function]}
-          onFocusCapture={[Function]}
-          onKeyDown={[Function]}
-          onMouseEnter={[Function]}
-          onMouseLeave={[Function]}
-          role="none"
+          className="msla-pager-failed-container"
         >
-          <button
-            aria-disabled={true}
-            aria-label="Previous"
-            className="ms-Button ms-Button--icon is-disabled root-110"
-            data-is-focusable={false}
-            disabled={true}
-            onClick={[Function]}
-            onKeyDown={[Function]}
-            onKeyPress={[Function]}
-            onKeyUp={[Function]}
-            onMouseDown={[Function]}
-            onMouseUp={[Function]}
-            type="button"
-          >
-            <span
-              className="ms-Button-flexContainer flexContainer-111"
-              data-automationid="splitbuttonprimary"
-            >
-              <i
-                aria-hidden={true}
-                className="ms-Icon root-105 css-119 ms-Button-icon icon-113"
-                data-icon-name="ChevronLeft"
-                style={
-                  Object {
-                    "fontFamily": "\\"FabricMDL2Icons\\"",
-                  }
-                }
-              >
-                
-              </i>
-              <span
-                className="ms-Button-textContainer textContainer-112"
-              />
-            </span>
-          </button>
           <div
-            hidden={true}
-            id="tooltip20"
-            style={
-              Object {
-                "border": 0,
-                "height": 1,
-                "margin": -1,
-                "overflow": "hidden",
-                "padding": 0,
-                "position": "absolute",
-                "whiteSpace": "nowrap",
-                "width": 1,
-              }
-            }
+            className="ms-TooltipHost root-109"
+            onBlurCapture={[Function]}
+            onFocusCapture={[Function]}
+            onKeyDown={[Function]}
+            onMouseEnter={[Function]}
+            onMouseLeave={[Function]}
+            role="none"
           >
-            Previous
+            <button
+              aria-disabled={true}
+              aria-label="Previous"
+              className="ms-Button ms-Button--icon is-disabled root-110"
+              data-is-focusable={false}
+              disabled={true}
+              onClick={[Function]}
+              onKeyDown={[Function]}
+              onKeyPress={[Function]}
+              onKeyUp={[Function]}
+              onMouseDown={[Function]}
+              onMouseUp={[Function]}
+              type="button"
+            >
+              <span
+                className="ms-Button-flexContainer flexContainer-111"
+                data-automationid="splitbuttonprimary"
+              >
+                <i
+                  aria-hidden={true}
+                  className="ms-Icon root-105 css-119 ms-Button-icon icon-113"
+                  data-icon-name="ChevronLeft"
+                  style={
+                    {
+                      "fontFamily": ""FabricMDL2Icons"",
+                    }
+                  }
+                >
+                  
+                </i>
+                <span
+                  className="ms-Button-textContainer textContainer-112"
+                />
+              </span>
+            </button>
+            <div
+              hidden={true}
+              id="tooltip80"
+              style={
+                {
+                  "border": 0,
+                  "height": 1,
+                  "margin": -1,
+                  "overflow": "hidden",
+                  "padding": 0,
+                  "position": "absolute",
+                  "whiteSpace": "nowrap",
+                  "width": 1,
+                }
+              }
+            >
+              Previous
+            </div>
           </div>
         </div>
-      </div>
-      <div
-        className="msla-pager-v2--inner"
-      >
-        <span
-          className="css-120"
-        >
-          1 of 1
-        </span>
-      </div>
-      <div
-        className="msla-pager-failed-container"
-      >
         <div
-          className="ms-TooltipHost root-109"
-          onBlurCapture={[Function]}
-          onFocusCapture={[Function]}
-          onKeyDown={[Function]}
-          onMouseEnter={[Function]}
-          onMouseLeave={[Function]}
-          role="none"
+          className="msla-pager-v2--inner"
         >
-          <button
-            aria-disabled={true}
-            aria-label="Next"
-            className="ms-Button ms-Button--icon is-disabled root-110"
-            data-is-focusable={false}
-            disabled={true}
-            onClick={[Function]}
-            onKeyDown={[Function]}
-            onKeyPress={[Function]}
-            onKeyUp={[Function]}
-            onMouseDown={[Function]}
-            onMouseUp={[Function]}
-            type="button"
+          <span
+            className="fui-Text ___c56hd20_1xy0w11 fk6fouc fkhj508 f1i3iumi figsok6 fpgzoln f1w7gpdv f6juhto f1gl81tg f2jf649"
           >
-            <span
-              className="ms-Button-flexContainer flexContainer-111"
-              data-automationid="splitbuttonprimary"
-            >
-              <i
-                aria-hidden={true}
-                className="ms-Icon root-105 css-119 ms-Button-icon icon-113"
-                data-icon-name="ChevronRight"
-                style={
-                  Object {
-                    "fontFamily": "\\"FabricMDL2Icons\\"",
-                  }
-                }
-              >
-                
-              </i>
-              <span
-                className="ms-Button-textContainer textContainer-112"
-              />
-            </span>
-          </button>
+            1 of 1
+          </span>
+        </div>
+        <div
+          className="msla-pager-failed-container"
+        >
           <div
-            hidden={true}
-            id="tooltip24"
-            style={
-              Object {
-                "border": 0,
-                "height": 1,
-                "margin": -1,
-                "overflow": "hidden",
-                "padding": 0,
-                "position": "absolute",
-                "whiteSpace": "nowrap",
-                "width": 1,
-              }
-            }
+            className="ms-TooltipHost root-109"
+            onBlurCapture={[Function]}
+            onFocusCapture={[Function]}
+            onKeyDown={[Function]}
+            onMouseEnter={[Function]}
+            onMouseLeave={[Function]}
+            role="none"
           >
-            Next
+            <button
+              aria-disabled={true}
+              aria-label="Next"
+              className="ms-Button ms-Button--icon is-disabled root-110"
+              data-is-focusable={false}
+              disabled={true}
+              onClick={[Function]}
+              onKeyDown={[Function]}
+              onKeyPress={[Function]}
+              onKeyUp={[Function]}
+              onMouseDown={[Function]}
+              onMouseUp={[Function]}
+              type="button"
+            >
+              <span
+                className="ms-Button-flexContainer flexContainer-111"
+                data-automationid="splitbuttonprimary"
+              >
+                <i
+                  aria-hidden={true}
+                  className="ms-Icon root-105 css-119 ms-Button-icon icon-113"
+                  data-icon-name="ChevronRight"
+                  style={
+                    {
+                      "fontFamily": ""FabricMDL2Icons"",
+                    }
+                  }
+                >
+                  
+                </i>
+                <span
+                  className="ms-Button-textContainer textContainer-112"
+                />
+              </span>
+            </button>
+            <div
+              hidden={true}
+              id="tooltip84"
+              style={
+                {
+                  "border": 0,
+                  "height": 1,
+                  "margin": -1,
+                  "overflow": "hidden",
+                  "padding": 0,
+                  "position": "absolute",
+                  "whiteSpace": "nowrap",
+                  "width": 1,
+                }
+              }
+            >
+              Next
+            </div>
           </div>
         </div>
       </div>
@@ -2412,10 +2768,76 @@ Array [
               role="textbox"
               tabIndex={0}
             >
+              <div
+                className="buttons"
+              >
+                <button
+                  aria-label="Select all text in 'Duration'"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Select all text in 'Duration'"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-124 ms-Button-icon icon-121"
+                      data-icon-name="SelectAll"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-1"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Copy the value of 'Duration' to the clipboard"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Copy the value of 'Duration' to the clipboard"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-126 ms-Button-icon icon-121"
+                      data-icon-name="Copy"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-2"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+              </div>
               <pre
                 className="prism-code language-json"
                 style={
-                  Object {
+                  {
                     "backgroundColor": "#ffffff",
                     "color": "#000000",
                   }
@@ -2424,26 +2846,16 @@ Array [
                 <div
                   className="token-line"
                   style={
-                    Object {
-                      "backgroundColor": null,
+                    {
+                      "backgroundColor": undefined,
                       "color": "#000000",
                     }
                   }
                 >
                   <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    1
-                  </span>
-                  <span
                     className="token plain"
                   >
-                     minute
+                    1 minute
                   </span>
                 </div>
               </pre>
@@ -2464,14 +2876,111 @@ Array [
             <div
               aria-label="Start time"
               aria-readonly={true}
-              className="msla-colorizer-wrapper"
+              className="msla-colorizer-wrapper date-time"
               role="textbox"
               tabIndex={0}
             >
+              <div
+                className="buttons"
+              >
+                <button
+                  aria-label="Switch 'Start time' to the UTC time format"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Switch 'Start time' to the UTC time format"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-128 ms-Button-icon icon-121"
+                      data-icon-name="DateTime"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-5"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Select all text in 'Start time'"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Select all text in 'Start time'"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-124 ms-Button-icon icon-121"
+                      data-icon-name="SelectAll"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-1"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Copy the value of 'Start time' to the clipboard"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Copy the value of 'Start time' to the clipboard"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-126 ms-Button-icon icon-121"
+                      data-icon-name="Copy"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-2"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+              </div>
               <pre
                 className="prism-code language-json"
                 style={
-                  Object {
+                  {
                     "backgroundColor": "#ffffff",
                     "color": "#000000",
                   }
@@ -2480,121 +2989,16 @@ Array [
                 <div
                   className="token-line"
                   style={
-                    Object {
-                      "backgroundColor": null,
+                    {
+                      "backgroundColor": undefined,
                       "color": "#000000",
                     }
                   }
                 >
                   <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    2
-                  </span>
-                  <span
                     className="token plain"
                   >
-                    /
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    9
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                    /
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    2022
-                  </span>
-                  <span
-                    className="token punctuation"
-                    style={
-                      Object {
-                        "color": "rgb(4, 81, 165)",
-                      }
-                    }
-                  >
-                    ,
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                     
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    1
-                  </span>
-                  <span
-                    className="token operator"
-                    style={
-                      Object {
-                        "color": "rgb(0, 0, 0)",
-                      }
-                    }
-                  >
-                    :
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    52
-                  </span>
-                  <span
-                    className="token operator"
-                    style={
-                      Object {
-                        "color": "rgb(0, 0, 0)",
-                      }
-                    }
-                  >
-                    :
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    00
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                     PM
+                    2/9/2022, 8:52:00 AM (Local time)
                   </span>
                 </div>
               </pre>
@@ -2615,14 +3019,111 @@ Array [
             <div
               aria-label="End time"
               aria-readonly={true}
-              className="msla-colorizer-wrapper"
+              className="msla-colorizer-wrapper date-time"
               role="textbox"
               tabIndex={0}
             >
+              <div
+                className="buttons"
+              >
+                <button
+                  aria-label="Switch 'End time' to the UTC time format"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Switch 'End time' to the UTC time format"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-128 ms-Button-icon icon-121"
+                      data-icon-name="DateTime"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-5"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Select all text in 'End time'"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Select all text in 'End time'"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-124 ms-Button-icon icon-121"
+                      data-icon-name="SelectAll"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-1"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Copy the value of 'End time' to the clipboard"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Copy the value of 'End time' to the clipboard"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-126 ms-Button-icon icon-121"
+                      data-icon-name="Copy"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-2"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+              </div>
               <pre
                 className="prism-code language-json"
                 style={
-                  Object {
+                  {
                     "backgroundColor": "#ffffff",
                     "color": "#000000",
                   }
@@ -2631,121 +3132,16 @@ Array [
                 <div
                   className="token-line"
                   style={
-                    Object {
-                      "backgroundColor": null,
+                    {
+                      "backgroundColor": undefined,
                       "color": "#000000",
                     }
                   }
                 >
                   <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    2
-                  </span>
-                  <span
                     className="token plain"
                   >
-                    /
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    9
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                    /
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    2022
-                  </span>
-                  <span
-                    className="token punctuation"
-                    style={
-                      Object {
-                        "color": "rgb(4, 81, 165)",
-                      }
-                    }
-                  >
-                    ,
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                     
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    1
-                  </span>
-                  <span
-                    className="token operator"
-                    style={
-                      Object {
-                        "color": "rgb(0, 0, 0)",
-                      }
-                    }
-                  >
-                    :
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    53
-                  </span>
-                  <span
-                    className="token operator"
-                    style={
-                      Object {
-                        "color": "rgb(0, 0, 0)",
-                      }
-                    }
-                  >
-                    :
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    00
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                     PM
+                    2/9/2022, 8:53:00 AM (Local time)
                   </span>
                 </div>
               </pre>
@@ -2763,8 +3159,8 @@ Array [
         <div
           className="msla-trace-inputs-outputs-header-text"
           style={
-            Object {
-              "borderColor": "rgba(71,71,71, 0.7)",
+            {
+              "borderColor": "#474747B3",
             }
           }
         >
@@ -2789,155 +3185,157 @@ Array [
 ]
 `;
 
-exports[`lib/monitoring/requestpanel should render with a secured response 1`] = `
-Array [
+exports[`lib/monitoring/requestpanel > should render with a secured response 1`] = `
+[
   <div
     className="msla-retrypanel-callout-pager"
   >
-    <div
-      className="msla-pager-v2"
-      onClick={[Function]}
-    >
+    <div>
       <div
-        className="msla-pager-failed-container"
+        className="msla-pager-v2"
+        onClick={[Function]}
       >
         <div
-          className="ms-TooltipHost root-109"
-          onBlurCapture={[Function]}
-          onFocusCapture={[Function]}
-          onKeyDown={[Function]}
-          onMouseEnter={[Function]}
-          onMouseLeave={[Function]}
-          role="none"
+          className="msla-pager-failed-container"
         >
-          <button
-            aria-disabled={true}
-            aria-label="Previous"
-            className="ms-Button ms-Button--icon is-disabled root-110"
-            data-is-focusable={false}
-            disabled={true}
-            onClick={[Function]}
-            onKeyDown={[Function]}
-            onKeyPress={[Function]}
-            onKeyUp={[Function]}
-            onMouseDown={[Function]}
-            onMouseUp={[Function]}
-            type="button"
-          >
-            <span
-              className="ms-Button-flexContainer flexContainer-111"
-              data-automationid="splitbuttonprimary"
-            >
-              <i
-                aria-hidden={true}
-                className="ms-Icon root-105 css-119 ms-Button-icon icon-113"
-                data-icon-name="ChevronLeft"
-                style={
-                  Object {
-                    "fontFamily": "\\"FabricMDL2Icons\\"",
-                  }
-                }
-              >
-                
-              </i>
-              <span
-                className="ms-Button-textContainer textContainer-112"
-              />
-            </span>
-          </button>
           <div
-            hidden={true}
-            id="tooltip40"
-            style={
-              Object {
-                "border": 0,
-                "height": 1,
-                "margin": -1,
-                "overflow": "hidden",
-                "padding": 0,
-                "position": "absolute",
-                "whiteSpace": "nowrap",
-                "width": 1,
-              }
-            }
+            className="ms-TooltipHost root-109"
+            onBlurCapture={[Function]}
+            onFocusCapture={[Function]}
+            onKeyDown={[Function]}
+            onMouseEnter={[Function]}
+            onMouseLeave={[Function]}
+            role="none"
           >
-            Previous
+            <button
+              aria-disabled={true}
+              aria-label="Previous"
+              className="ms-Button ms-Button--icon is-disabled root-110"
+              data-is-focusable={false}
+              disabled={true}
+              onClick={[Function]}
+              onKeyDown={[Function]}
+              onKeyPress={[Function]}
+              onKeyUp={[Function]}
+              onMouseDown={[Function]}
+              onMouseUp={[Function]}
+              type="button"
+            >
+              <span
+                className="ms-Button-flexContainer flexContainer-111"
+                data-automationid="splitbuttonprimary"
+              >
+                <i
+                  aria-hidden={true}
+                  className="ms-Icon root-105 css-119 ms-Button-icon icon-113"
+                  data-icon-name="ChevronLeft"
+                  style={
+                    {
+                      "fontFamily": ""FabricMDL2Icons"",
+                    }
+                  }
+                >
+                  
+                </i>
+                <span
+                  className="ms-Button-textContainer textContainer-112"
+                />
+              </span>
+            </button>
+            <div
+              hidden={true}
+              id="tooltip160"
+              style={
+                {
+                  "border": 0,
+                  "height": 1,
+                  "margin": -1,
+                  "overflow": "hidden",
+                  "padding": 0,
+                  "position": "absolute",
+                  "whiteSpace": "nowrap",
+                  "width": 1,
+                }
+              }
+            >
+              Previous
+            </div>
           </div>
         </div>
-      </div>
-      <div
-        className="msla-pager-v2--inner"
-      >
-        <span
-          className="css-120"
-        >
-          1 of 1
-        </span>
-      </div>
-      <div
-        className="msla-pager-failed-container"
-      >
         <div
-          className="ms-TooltipHost root-109"
-          onBlurCapture={[Function]}
-          onFocusCapture={[Function]}
-          onKeyDown={[Function]}
-          onMouseEnter={[Function]}
-          onMouseLeave={[Function]}
-          role="none"
+          className="msla-pager-v2--inner"
         >
-          <button
-            aria-disabled={true}
-            aria-label="Next"
-            className="ms-Button ms-Button--icon is-disabled root-110"
-            data-is-focusable={false}
-            disabled={true}
-            onClick={[Function]}
-            onKeyDown={[Function]}
-            onKeyPress={[Function]}
-            onKeyUp={[Function]}
-            onMouseDown={[Function]}
-            onMouseUp={[Function]}
-            type="button"
+          <span
+            className="fui-Text ___c56hd20_1xy0w11 fk6fouc fkhj508 f1i3iumi figsok6 fpgzoln f1w7gpdv f6juhto f1gl81tg f2jf649"
           >
-            <span
-              className="ms-Button-flexContainer flexContainer-111"
-              data-automationid="splitbuttonprimary"
-            >
-              <i
-                aria-hidden={true}
-                className="ms-Icon root-105 css-119 ms-Button-icon icon-113"
-                data-icon-name="ChevronRight"
-                style={
-                  Object {
-                    "fontFamily": "\\"FabricMDL2Icons\\"",
-                  }
-                }
-              >
-                
-              </i>
-              <span
-                className="ms-Button-textContainer textContainer-112"
-              />
-            </span>
-          </button>
+            1 of 1
+          </span>
+        </div>
+        <div
+          className="msla-pager-failed-container"
+        >
           <div
-            hidden={true}
-            id="tooltip44"
-            style={
-              Object {
-                "border": 0,
-                "height": 1,
-                "margin": -1,
-                "overflow": "hidden",
-                "padding": 0,
-                "position": "absolute",
-                "whiteSpace": "nowrap",
-                "width": 1,
-              }
-            }
+            className="ms-TooltipHost root-109"
+            onBlurCapture={[Function]}
+            onFocusCapture={[Function]}
+            onKeyDown={[Function]}
+            onMouseEnter={[Function]}
+            onMouseLeave={[Function]}
+            role="none"
           >
-            Next
+            <button
+              aria-disabled={true}
+              aria-label="Next"
+              className="ms-Button ms-Button--icon is-disabled root-110"
+              data-is-focusable={false}
+              disabled={true}
+              onClick={[Function]}
+              onKeyDown={[Function]}
+              onKeyPress={[Function]}
+              onKeyUp={[Function]}
+              onMouseDown={[Function]}
+              onMouseUp={[Function]}
+              type="button"
+            >
+              <span
+                className="ms-Button-flexContainer flexContainer-111"
+                data-automationid="splitbuttonprimary"
+              >
+                <i
+                  aria-hidden={true}
+                  className="ms-Icon root-105 css-119 ms-Button-icon icon-113"
+                  data-icon-name="ChevronRight"
+                  style={
+                    {
+                      "fontFamily": ""FabricMDL2Icons"",
+                    }
+                  }
+                >
+                  
+                </i>
+                <span
+                  className="ms-Button-textContainer textContainer-112"
+                />
+              </span>
+            </button>
+            <div
+              hidden={true}
+              id="tooltip164"
+              style={
+                {
+                  "border": 0,
+                  "height": 1,
+                  "margin": -1,
+                  "overflow": "hidden",
+                  "padding": 0,
+                  "position": "absolute",
+                  "whiteSpace": "nowrap",
+                  "width": 1,
+                }
+              }
+            >
+              Next
+            </div>
           </div>
         </div>
       </div>
@@ -2979,10 +3377,76 @@ Array [
               role="textbox"
               tabIndex={0}
             >
+              <div
+                className="buttons"
+              >
+                <button
+                  aria-label="Select all text in 'Duration'"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Select all text in 'Duration'"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-124 ms-Button-icon icon-121"
+                      data-icon-name="SelectAll"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-1"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Copy the value of 'Duration' to the clipboard"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Copy the value of 'Duration' to the clipboard"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-126 ms-Button-icon icon-121"
+                      data-icon-name="Copy"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-2"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+              </div>
               <pre
                 className="prism-code language-json"
                 style={
-                  Object {
+                  {
                     "backgroundColor": "#ffffff",
                     "color": "#000000",
                   }
@@ -2991,26 +3455,16 @@ Array [
                 <div
                   className="token-line"
                   style={
-                    Object {
-                      "backgroundColor": null,
+                    {
+                      "backgroundColor": undefined,
                       "color": "#000000",
                     }
                   }
                 >
                   <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    1
-                  </span>
-                  <span
                     className="token plain"
                   >
-                     minute
+                    1 minute
                   </span>
                 </div>
               </pre>
@@ -3031,14 +3485,111 @@ Array [
             <div
               aria-label="Start time"
               aria-readonly={true}
-              className="msla-colorizer-wrapper"
+              className="msla-colorizer-wrapper date-time"
               role="textbox"
               tabIndex={0}
             >
+              <div
+                className="buttons"
+              >
+                <button
+                  aria-label="Switch 'Start time' to the UTC time format"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Switch 'Start time' to the UTC time format"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-128 ms-Button-icon icon-121"
+                      data-icon-name="DateTime"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-5"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Select all text in 'Start time'"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Select all text in 'Start time'"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-124 ms-Button-icon icon-121"
+                      data-icon-name="SelectAll"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-1"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Copy the value of 'Start time' to the clipboard"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Copy the value of 'Start time' to the clipboard"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-126 ms-Button-icon icon-121"
+                      data-icon-name="Copy"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-2"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+              </div>
               <pre
                 className="prism-code language-json"
                 style={
-                  Object {
+                  {
                     "backgroundColor": "#ffffff",
                     "color": "#000000",
                   }
@@ -3047,121 +3598,16 @@ Array [
                 <div
                   className="token-line"
                   style={
-                    Object {
-                      "backgroundColor": null,
+                    {
+                      "backgroundColor": undefined,
                       "color": "#000000",
                     }
                   }
                 >
                   <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    2
-                  </span>
-                  <span
                     className="token plain"
                   >
-                    /
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    9
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                    /
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    2022
-                  </span>
-                  <span
-                    className="token punctuation"
-                    style={
-                      Object {
-                        "color": "rgb(4, 81, 165)",
-                      }
-                    }
-                  >
-                    ,
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                     
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    1
-                  </span>
-                  <span
-                    className="token operator"
-                    style={
-                      Object {
-                        "color": "rgb(0, 0, 0)",
-                      }
-                    }
-                  >
-                    :
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    52
-                  </span>
-                  <span
-                    className="token operator"
-                    style={
-                      Object {
-                        "color": "rgb(0, 0, 0)",
-                      }
-                    }
-                  >
-                    :
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    00
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                     PM
+                    2/9/2022, 8:52:00 AM (Local time)
                   </span>
                 </div>
               </pre>
@@ -3182,14 +3628,111 @@ Array [
             <div
               aria-label="End time"
               aria-readonly={true}
-              className="msla-colorizer-wrapper"
+              className="msla-colorizer-wrapper date-time"
               role="textbox"
               tabIndex={0}
             >
+              <div
+                className="buttons"
+              >
+                <button
+                  aria-label="Switch 'End time' to the UTC time format"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Switch 'End time' to the UTC time format"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-128 ms-Button-icon icon-121"
+                      data-icon-name="DateTime"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-5"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Select all text in 'End time'"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Select all text in 'End time'"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-124 ms-Button-icon icon-121"
+                      data-icon-name="SelectAll"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-1"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+                <button
+                  aria-label="Copy the value of 'End time' to the clipboard"
+                  className="ms-Button ms-Button--icon root-120"
+                  data-is-focusable={true}
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  onKeyPress={[Function]}
+                  onKeyUp={[Function]}
+                  onMouseDown={[Function]}
+                  onMouseUp={[Function]}
+                  title="Copy the value of 'End time' to the clipboard"
+                  type="button"
+                >
+                  <span
+                    className="ms-Button-flexContainer flexContainer-111"
+                    data-automationid="splitbuttonprimary"
+                  >
+                    <i
+                      aria-hidden={true}
+                      className="ms-Icon root-105 css-126 ms-Button-icon icon-121"
+                      data-icon-name="Copy"
+                      style={
+                        {
+                          "fontFamily": ""FabricMDL2Icons-2"",
+                        }
+                      }
+                    >
+                      
+                    </i>
+                  </span>
+                </button>
+              </div>
               <pre
                 className="prism-code language-json"
                 style={
-                  Object {
+                  {
                     "backgroundColor": "#ffffff",
                     "color": "#000000",
                   }
@@ -3198,121 +3741,16 @@ Array [
                 <div
                   className="token-line"
                   style={
-                    Object {
-                      "backgroundColor": null,
+                    {
+                      "backgroundColor": undefined,
                       "color": "#000000",
                     }
                   }
                 >
                   <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    2
-                  </span>
-                  <span
                     className="token plain"
                   >
-                    /
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    9
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                    /
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    2022
-                  </span>
-                  <span
-                    className="token punctuation"
-                    style={
-                      Object {
-                        "color": "rgb(4, 81, 165)",
-                      }
-                    }
-                  >
-                    ,
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                     
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    1
-                  </span>
-                  <span
-                    className="token operator"
-                    style={
-                      Object {
-                        "color": "rgb(0, 0, 0)",
-                      }
-                    }
-                  >
-                    :
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    53
-                  </span>
-                  <span
-                    className="token operator"
-                    style={
-                      Object {
-                        "color": "rgb(0, 0, 0)",
-                      }
-                    }
-                  >
-                    :
-                  </span>
-                  <span
-                    className="token number"
-                    style={
-                      Object {
-                        "color": "rgb(9, 134, 88)",
-                      }
-                    }
-                  >
-                    00
-                  </span>
-                  <span
-                    className="token plain"
-                  >
-                     PM
+                    2/9/2022, 8:53:00 AM (Local time)
                   </span>
                 </div>
               </pre>
@@ -3330,8 +3768,8 @@ Array [
         <div
           className="msla-trace-inputs-outputs-header-text"
           style={
-            Object {
-              "borderColor": "rgba(71,71,71, 0.7)",
+            {
+              "borderColor": "#474747B3",
             }
           }
         >

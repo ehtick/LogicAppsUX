@@ -1,19 +1,23 @@
-import { getInputDependencies } from '../../actions/bjsworkflow/initialize';
 import type { Settings } from '../../actions/bjsworkflow/settings';
 import type { NodeStaticResults } from '../../actions/bjsworkflow/staticresults';
 import { StaticResultOption } from '../../actions/bjsworkflow/staticresults';
 import type { RepetitionContext } from '../../utils/parameters/helper';
-import { resetWorkflowState } from '../global';
+import { createTokenValueSegment, isTokenValueSegment } from '../../utils/parameters/segment';
+import { getTokenTitle, normalizeKey } from '../../utils/tokens';
+import { resetNodesLoadStatus, resetWorkflowState, setStateAfterUndoRedo } from '../global';
+import { LogEntryLevel, LoggerService, filterRecord, getRecordEntry } from '@microsoft/logic-apps-shared';
 import type { ParameterInfo } from '@microsoft/designer-ui';
-import type { FilePickerInfo, InputParameter, OutputParameter, SwaggerParser } from '@microsoft/parsers-logic-apps';
-import type { OpenAPIV2, OperationInfo } from '@microsoft/utils-logic-apps';
+import type { FilePickerInfo, InputParameter, OutputParameter, OpenAPIV2, OperationInfo } from '@microsoft/logic-apps-shared';
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
+import type { WritableDraft } from 'immer/dist/internal';
+import type { UndoRedoPartialRootState } from '../undoRedo/undoRedoTypes';
 
 export interface ParameterGroup {
   id: string;
   description?: string;
   parameters: ParameterInfo[];
+  rawInputs: InputParameter[];
   showAdvancedParameters?: boolean;
   hasAdvancedParameters?: boolean;
 }
@@ -37,12 +41,13 @@ export interface OutputInfo {
   alias?: string;
 }
 
-export enum DynamicLoadStatus {
-  NOTSTARTED,
-  STARTED,
-  FAILED,
-  SUCCEEDED,
-}
+export const DynamicLoadStatus = {
+  NOTSTARTED: 'notstarted',
+  LOADING: 'loading',
+  FAILED: 'failed',
+  SUCCEEDED: 'succeeded',
+} as const;
+export type DynamicLoadStatus = (typeof DynamicLoadStatus)[keyof typeof DynamicLoadStatus];
 
 export interface NodeInputs {
   dynamicLoadStatus?: DynamicLoadStatus;
@@ -80,13 +85,14 @@ export interface OperationMetadata {
   brandColor: string;
 }
 
-export enum ErrorLevel {
-  Critical = 0,
-  Connection = 1,
-  DynamicInputs = 2,
-  DynamicOutputs = 3,
-  Default = 4,
-}
+export const ErrorLevel = {
+  Critical: 0,
+  Connection: 1,
+  DynamicInputs: 2,
+  DynamicOutputs: 3,
+  Default: 4,
+} as const;
+export type ErrorLevel = (typeof ErrorLevel)[keyof typeof ErrorLevel];
 
 export interface ErrorInfo {
   error?: any;
@@ -106,9 +112,15 @@ export interface OperationMetadataState {
   staticResults: Record<string, NodeStaticResults>;
   repetitionInfos: Record<string, RepetitionContext>;
   errors: Record<string, Record<ErrorLevel, ErrorInfo | undefined>>;
+  loadStatus: OperationMetadataLoadStatus;
 }
 
-const initialState: OperationMetadataState = {
+interface OperationMetadataLoadStatus {
+  nodesInitialized: boolean;
+  nodesAndDynamicDataInitialized: boolean;
+}
+
+export const initialState: OperationMetadataState = {
   operationInfo: {},
   inputParameters: {},
   outputParameters: {},
@@ -119,6 +131,10 @@ const initialState: OperationMetadataState = {
   staticResults: {},
   repetitionInfos: {},
   errors: {},
+  loadStatus: {
+    nodesInitialized: false,
+    nodesAndDynamicDataInitialized: false,
+  },
 };
 
 export interface AddNodeOperationPayload extends NodeOperation {
@@ -142,9 +158,10 @@ export interface NodeData {
   repetitionInfo?: RepetitionContext;
 }
 
-interface AddSettingsPayload {
+export interface AddSettingsPayload {
   id: string;
   settings: Settings;
+  ignoreDirty?: boolean;
 }
 
 interface AddStaticResultsPayload {
@@ -157,12 +174,20 @@ interface AddDynamicOutputsPayload {
   outputs: Record<string, OutputInfo>;
 }
 
+export interface ClearDynamicIOPayload {
+  nodeId?: string;
+  nodeIds?: string[];
+  inputs?: boolean;
+  outputs?: boolean;
+  dynamicParameterKeys?: string[];
+}
+
 interface AddDynamicInputsPayload {
   nodeId: string;
   groupId: string;
   inputs: ParameterInfo[];
-  newInputs: InputParameter[];
-  swagger?: SwaggerParser;
+  rawInputs: InputParameter[];
+  dependencies?: Record<string, DependencyInfo>;
 }
 
 export interface UpdateParametersPayload {
@@ -176,17 +201,35 @@ export interface UpdateParametersPayload {
   isUserAction?: boolean;
 }
 
+export interface InitializeNodesPayload {
+  nodes: (NodeData | undefined)[];
+  clearExisting?: boolean; // Optional flag to clear the existing nodes
+}
+
 export const operationMetadataSlice = createSlice({
   name: 'operationMetadata',
-  initialState,
+  initialState: initialState,
   reducers: {
     initializeOperationInfo: (state, action: PayloadAction<AddNodeOperationPayload>) => {
       const { id, connectorId, operationId, type, kind } = action.payload;
       state.operationInfo[id] = { connectorId, operationId, type, kind };
     },
-    initializeNodes: (state, action: PayloadAction<(NodeData | undefined)[]>) => {
-      for (const nodeData of action.payload) {
-        if (!nodeData) return;
+    initializeNodes: (state, action: PayloadAction<InitializeNodesPayload>) => {
+      const { nodes, clearExisting = false } = action.payload;
+      if (clearExisting) {
+        state.inputParameters = {};
+        state.outputParameters = {};
+        state.dependencies = {};
+        state.operationMetadata = {};
+        state.settings = {};
+        state.staticResults = {};
+        state.actionMetadata = {};
+        state.repetitionInfos = {};
+      }
+      for (const nodeData of nodes) {
+        if (!nodeData) {
+          return;
+        }
 
         const { id, nodeInputs, nodeOutputs, nodeDependencies, settings, operationMetadata, actionMetadata, staticResult, repetitionInfo } =
           nodeData;
@@ -207,186 +250,291 @@ export const operationMetadataSlice = createSlice({
           state.actionMetadata[id] = actionMetadata;
         }
 
-        if (settings) {
-          state.settings[id] = settings;
-        }
-
         if (repetitionInfo) {
           state.repetitionInfos[id] = repetitionInfo;
         }
       }
+      state.loadStatus.nodesInitialized = true;
+
+      LoggerService().log({
+        level: LogEntryLevel.Verbose,
+        area: 'Designer:Operation Metadata Slice',
+        message: action.type,
+      });
     },
     addDynamicInputs: (state, action: PayloadAction<AddDynamicInputsPayload>) => {
-      const { nodeId, groupId, inputs, newInputs: rawInputs, swagger } = action.payload;
-      if (state.inputParameters[nodeId] && state.inputParameters[nodeId].parameterGroups[groupId]) {
-        const { parameters } = state.inputParameters[nodeId].parameterGroups[groupId];
-        const newParameters = [...parameters];
-        for (const input of inputs) {
-          const index = newParameters.findIndex((parameter) => parameter.parameterKey === input.parameterKey);
-          if (index > -1) {
-            newParameters.splice(index, 1, input);
-          } else {
-            newParameters.push(input);
-          }
-        }
-        state.inputParameters[nodeId].parameterGroups[groupId].parameters = newParameters;
+      const { nodeId, groupId, inputs, rawInputs, dependencies } = action.payload;
+      const inputParameters = getRecordEntry(state.inputParameters, nodeId) ?? {
+        parameterGroups: {},
+      };
+      const parameterGroup = getRecordEntry(inputParameters?.parameterGroups, groupId);
+      if (parameterGroup) {
+        parameterGroup.parameters = inputs;
+        parameterGroup.rawInputs = rawInputs;
       }
 
-      const dependencies = getInputDependencies(state.inputParameters[nodeId], rawInputs, swagger);
       if (dependencies) {
-        state.dependencies[nodeId].inputs = { ...state.dependencies[nodeId].inputs, ...dependencies };
+        state.dependencies[nodeId].inputs = {
+          ...state.dependencies[nodeId].inputs,
+          ...dependencies,
+        };
       }
     },
     addDynamicOutputs: (state, action: PayloadAction<AddDynamicOutputsPayload>) => {
       const { nodeId, outputs } = action.payload;
-      if (state.outputParameters[nodeId]) {
-        state.outputParameters[nodeId].outputs = { ...state.outputParameters[nodeId].outputs, ...outputs };
-      }
-    },
-    clearDynamicInputs: (state, action: PayloadAction<string>) => {
-      const nodeId = action.payload;
-      if (state.inputParameters[nodeId]) {
-        for (const groupId of Object.keys(state.inputParameters[nodeId].parameterGroups)) {
-          state.inputParameters[nodeId].parameterGroups[groupId].parameters = state.inputParameters[nodeId].parameterGroups[
-            groupId
-          ].parameters.filter((parameter) => !parameter.info.isDynamic);
-        }
+      const outputParameters = getRecordEntry(state.outputParameters, nodeId);
+      if (outputParameters) {
+        outputParameters.outputs = { ...outputParameters.outputs, ...outputs };
       }
 
-      const inputDependencies = state.dependencies[nodeId]?.inputs;
-      for (const inputKey of Object.keys(inputDependencies ?? {})) {
-        if (inputDependencies[inputKey].parameter?.isDynamic && inputDependencies[inputKey].dependencyType !== 'ApiSchema') {
-          delete state.dependencies[nodeId].inputs[inputKey];
-        }
-      }
-
-      if (state.errors[nodeId]?.[ErrorLevel.DynamicInputs]) {
-        delete state.errors[nodeId][ErrorLevel.DynamicInputs];
-      }
+      updateExistingInputTokenTitles(state, action.payload);
     },
-    clearDynamicOutputs: (state, action: PayloadAction<string>) => {
-      const nodeId = action.payload;
-      if (state.outputParameters[nodeId]) {
-        state.outputParameters[nodeId].outputs = Object.keys(state.outputParameters[nodeId].outputs).reduce(
-          (result: Record<string, OutputInfo>, outputKey: string) => {
-            if (!state.outputParameters[nodeId].outputs[outputKey].isDynamic) {
-              return { [outputKey]: state.outputParameters[nodeId].outputs[outputKey] };
+    clearDynamicIO: (state, action: PayloadAction<ClearDynamicIOPayload>) => {
+      const { nodeId, nodeIds: _nodeIds, inputs = true, outputs = true, dynamicParameterKeys = [] } = action.payload;
+      const nodeIds = _nodeIds ?? [nodeId];
+      for (const nodeId of nodeIds) {
+        const nodeErrors = getRecordEntry(state.errors, nodeId);
+
+        if (inputs) {
+          delete nodeErrors?.[ErrorLevel.DynamicInputs];
+
+          const inputParameters = getRecordEntry(state.inputParameters, nodeId);
+          const deletedDynamicParameters: string[] = [];
+          if (inputParameters) {
+            for (const group of Object.values(inputParameters.parameterGroups)) {
+              group.parameters = group.parameters.filter((parameter) => {
+                const shouldDelete =
+                  parameter.info.isDynamic &&
+                  (!dynamicParameterKeys.length || dynamicParameterKeys.includes(parameter.info.dynamicParameterReference ?? ''));
+                if (shouldDelete) {
+                  deletedDynamicParameters.push(parameter.parameterKey);
+                  return false;
+                }
+
+                return true;
+              });
             }
+          }
 
-            return result;
-          },
-          {}
-        ) as Record<string, OutputInfo>;
-      }
+          const inputDependencies = getRecordEntry(state.dependencies, nodeId)?.inputs as WritableDraft<Record<string, DependencyInfo>>;
+          for (const inputKey of Object.keys(inputDependencies ?? {})) {
+            if (inputDependencies[inputKey].parameter?.isDynamic && deletedDynamicParameters.includes(inputKey)) {
+              delete getRecordEntry(state.dependencies, nodeId)?.inputs[inputKey];
+            }
+          }
+        }
 
-      if (state.errors[nodeId]?.[ErrorLevel.DynamicOutputs]) {
-        delete state.errors[nodeId][ErrorLevel.DynamicOutputs];
+        if (outputs) {
+          delete nodeErrors?.[ErrorLevel.DynamicOutputs];
+
+          const outputParameters = getRecordEntry(state.outputParameters, nodeId);
+          if (outputParameters) {
+            outputParameters.outputs = filterRecord(outputParameters.outputs, (_key, value) => !value.isDynamic);
+          }
+        }
       }
     },
     updateNodeSettings: (state, action: PayloadAction<AddSettingsPayload>) => {
       const { id, settings } = action.payload;
-      if (!state.settings[id]) {
+      const nodeSettings = getRecordEntry(state.settings, id);
+      if (!nodeSettings) {
         state.settings[id] = {};
       }
+      state.settings[id] = { ...nodeSettings, ...settings };
 
-      state.settings[id] = { ...state.settings[id], ...settings };
+      LoggerService().log({
+        level: LogEntryLevel.Verbose,
+        area: 'Designer:Operation Metadata Slice',
+        message: action.type,
+        args: [action.payload.id],
+      });
     },
     updateStaticResults: (state, action: PayloadAction<AddStaticResultsPayload>) => {
       const { id, staticResults } = action.payload;
-      if (!state.staticResults[id]) {
-        state.staticResults[id] = { name: '', staticResultOptions: StaticResultOption.DISABLED };
+      const nodeStaticResults = getRecordEntry(state.staticResults, id);
+      if (!nodeStaticResults) {
+        state.staticResults[id] = {
+          name: '',
+          staticResultOptions: StaticResultOption.DISABLED,
+        };
       }
+      state.staticResults[id] = { ...nodeStaticResults, ...staticResults };
 
-      state.staticResults[id] = { ...state.staticResults[id], ...staticResults };
+      LoggerService().log({
+        level: LogEntryLevel.Verbose,
+        area: 'Designer:Operation Metadata Slice',
+        message: action.type,
+        args: [action.payload.id],
+      });
+    },
+    deleteStaticResult: (state, action: PayloadAction<{ id: string }>) => {
+      const { id } = action.payload;
+      delete state.staticResults[id];
+
+      LoggerService().log({
+        level: LogEntryLevel.Verbose,
+        area: 'Designer:Operation Metadata Slice',
+        message: action.type,
+        args: [action.payload.id],
+      });
     },
     updateNodeParameters: (state, action: PayloadAction<UpdateParametersPayload>) => {
       const { nodeId, dependencies, parameters } = action.payload;
-      for (const payload of parameters) {
-        const { groupId, parameterId, propertiesToUpdate } = payload;
-        const nodeInputs = state.inputParameters[nodeId];
+      const nodeInputs = getRecordEntry(state.inputParameters, nodeId);
+      if (nodeInputs) {
+        for (const payload of parameters) {
+          const { groupId, parameterId, propertiesToUpdate } = payload;
 
-        if (nodeInputs) {
           const parameterGroup = nodeInputs.parameterGroups[groupId];
           const index = parameterGroup.parameters.findIndex((parameter) => parameter.id === parameterId);
           if (index > -1) {
-            parameterGroup.parameters[index] = { ...parameterGroup.parameters[index], ...propertiesToUpdate };
-            state.inputParameters[nodeId].parameterGroups[groupId] = parameterGroup;
+            parameterGroup.parameters[index] = {
+              ...parameterGroup.parameters[index],
+              ...propertiesToUpdate,
+            };
+            nodeInputs.parameterGroups[groupId] = parameterGroup;
           }
         }
       }
 
-      if (dependencies?.inputs) {
-        state.dependencies[nodeId].inputs = { ...state.dependencies[nodeId].inputs, ...dependencies.inputs };
+      const nodeDependencies = getRecordEntry(state.dependencies, nodeId);
+      if (nodeDependencies && dependencies?.inputs) {
+        nodeDependencies.inputs = {
+          ...nodeDependencies.inputs,
+          ...dependencies.inputs,
+        };
       }
-
-      if (dependencies?.outputs) {
-        state.dependencies[nodeId].outputs = { ...state.dependencies[nodeId].outputs, ...dependencies.outputs };
+      if (nodeDependencies && dependencies?.outputs) {
+        nodeDependencies.outputs = {
+          ...nodeDependencies.outputs,
+          ...dependencies.outputs,
+        };
       }
     },
     updateParameterConditionalVisibility: (
       state,
-      action: PayloadAction<{ nodeId: string; groupId: string; parameterId: string; value?: boolean }>
+      action: PayloadAction<{
+        nodeId: string;
+        groupId: string;
+        parameterId: string;
+        value?: boolean;
+      }>
     ) => {
       const { nodeId, groupId, parameterId, value } = action.payload;
-      const index = state.inputParameters[nodeId].parameterGroups[groupId].parameters.findIndex(
-        (parameter) => parameter.id === parameterId
-      );
+      const inputParameters = getRecordEntry(state.inputParameters, nodeId);
+      const parameterGroup = getRecordEntry(inputParameters?.parameterGroups, groupId);
+      if (!inputParameters || !parameterGroup) {
+        return;
+      }
+      const index = parameterGroup.parameters.findIndex((parameter) => parameter.id === parameterId);
       if (index > -1) {
-        state.inputParameters[nodeId].parameterGroups[groupId].parameters[index].conditionalVisibility = value;
+        parameterGroup.parameters[index].conditionalVisibility = value;
         if (value === false) {
-          state.inputParameters[nodeId].parameterGroups[groupId].parameters[index].value = [];
-          state.inputParameters[nodeId].parameterGroups[groupId].parameters[index].preservedValue = undefined;
+          parameterGroup.parameters[index].value = [];
+          parameterGroup.parameters[index].preservedValue = undefined;
         }
+      }
+
+      LoggerService().log({
+        level: LogEntryLevel.Verbose,
+        area: 'Designer:Operation Metadata Slice',
+        message: action.type,
+        args: [action.payload],
+      });
+    },
+    updateParameterEditorViewModel: (
+      state,
+      action: PayloadAction<{
+        nodeId: string;
+        groupId: string;
+        parameterId: string;
+        editorViewModel: any;
+      }>
+    ) => {
+      const { nodeId, groupId, parameterId, editorViewModel } = action.payload;
+      const inputParameters = getRecordEntry(state.inputParameters, nodeId);
+      const parameterGroup = getRecordEntry(inputParameters?.parameterGroups, groupId);
+      if (!inputParameters || !parameterGroup) {
+        return;
+      }
+      const index = parameterGroup.parameters.findIndex((parameter) => parameter.id === parameterId);
+      if (index > -1) {
+        parameterGroup.parameters[index].editorViewModel = editorViewModel;
       }
     },
     updateParameterValidation: (
       state,
-      action: PayloadAction<{ nodeId: string; groupId: string; parameterId: string; validationErrors: string[] | undefined }>
+      action: PayloadAction<{
+        nodeId: string;
+        groupId: string;
+        parameterId: string;
+        validationErrors: string[] | undefined;
+      }>
     ) => {
       const { nodeId, groupId, parameterId, validationErrors } = action.payload;
-      const index = state.inputParameters[nodeId].parameterGroups[groupId].parameters.findIndex(
-        (parameter) => parameter.id === parameterId
-      );
+      const inputParameters = getRecordEntry(state.inputParameters, nodeId);
+      const parameterGroup = getRecordEntry(inputParameters?.parameterGroups, groupId);
+      if (!inputParameters || !parameterGroup) {
+        return;
+      }
+      const index = parameterGroup.parameters.findIndex((parameter) => parameter.id === parameterId);
       if (index > -1) {
-        state.inputParameters[nodeId].parameterGroups[groupId].parameters[index].validationErrors = validationErrors;
+        parameterGroup.parameters[index].validationErrors = validationErrors;
       }
     },
     removeParameterValidationError: (
       state,
-      action: PayloadAction<{ nodeId: string; groupId: string; parameterId: string; validationError: string }>
+      action: PayloadAction<{
+        nodeId: string;
+        groupId: string;
+        parameterId: string;
+        validationError: string;
+      }>
     ) => {
       const { nodeId, groupId, parameterId, validationError } = action.payload;
-      const index = state.inputParameters[nodeId].parameterGroups[groupId].parameters.findIndex(
-        (parameter) => parameter.id === parameterId
-      );
+      const inputParameters = getRecordEntry(state.inputParameters, nodeId);
+      const parameterGroup = getRecordEntry(inputParameters?.parameterGroups, groupId);
+      if (!inputParameters || !parameterGroup) {
+        return;
+      }
+      const index = parameterGroup.parameters.findIndex((parameter) => parameter.id === parameterId);
       if (index > -1) {
-        state.inputParameters[nodeId].parameterGroups[groupId].parameters[index].validationErrors = state.inputParameters[
-          nodeId
-        ].parameterGroups[groupId].parameters[index].validationErrors?.filter((error) => error !== validationError);
+        parameterGroup.parameters[index].validationErrors = parameterGroup.parameters[index].validationErrors?.filter(
+          (error) => error !== validationError
+        );
       }
     },
     updateOutputs: (state, action: PayloadAction<{ id: string; nodeOutputs: NodeOutputs }>) => {
       const { id, nodeOutputs } = action.payload;
-      if (state.outputParameters[id]) state.outputParameters[id] = nodeOutputs;
+      const outputParameters = getRecordEntry(state.outputParameters, id);
+      if (outputParameters) {
+        state.outputParameters[id] = nodeOutputs;
+      }
     },
     updateActionMetadata: (state, action: PayloadAction<{ id: string; actionMetadata: Record<string, any> }>) => {
       const { id, actionMetadata } = action.payload;
-      state.actionMetadata[id] = {
-        ...state.actionMetadata[id],
-        ...actionMetadata,
-      };
+      const nodeMetadata = getRecordEntry(state.actionMetadata, id);
+      state.actionMetadata[id] = { ...nodeMetadata, ...actionMetadata };
     },
     updateRepetitionContext: (state, action: PayloadAction<{ id: string; repetition: RepetitionContext }>) => {
       const { id, repetition } = action.payload;
-      state.repetitionInfos[id] = {
-        ...state.repetitionInfos[id],
-        ...repetition,
-      };
+      const nodeRepetition = getRecordEntry(state.repetitionInfos, id);
+      state.repetitionInfos[id] = { ...nodeRepetition, ...repetition };
     },
-    updateErrorDetails: (state, action: PayloadAction<{ id: string; errorInfo?: ErrorInfo; clear?: boolean }>) => {
+    updateErrorDetails: (
+      state,
+      action: PayloadAction<{
+        id: string;
+        errorInfo?: ErrorInfo;
+        clear?: boolean;
+      }>
+    ) => {
       const { id, errorInfo, clear } = action.payload;
       if (errorInfo) {
-        state.errors[id] = { ...state.errors[id], [errorInfo.level]: errorInfo };
+        state.errors[id] = {
+          ...(getRecordEntry(state.errors, id) as any),
+          [errorInfo.level]: errorInfo,
+        };
       } else if (clear) {
         delete state.errors[id];
       }
@@ -408,11 +556,45 @@ export const operationMetadataSlice = createSlice({
         delete state.errors[id];
       }
     },
+    updateDynamicDataLoadStatus: (state, action: PayloadAction<boolean>) => {
+      state.loadStatus.nodesAndDynamicDataInitialized = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(resetWorkflowState, () => initialState);
+    builder.addCase(resetNodesLoadStatus, (state) => {
+      state.loadStatus.nodesInitialized = false;
+      state.loadStatus.nodesAndDynamicDataInitialized = false;
+    });
+    builder.addCase(setStateAfterUndoRedo, (_, action: PayloadAction<UndoRedoPartialRootState>) => action.payload.operations);
   },
 });
+
+const updateExistingInputTokenTitles = (state: OperationMetadataState, actionPayload: AddDynamicOutputsPayload) => {
+  const { outputs } = actionPayload;
+
+  const tokenTitles: Record<string, string> = {};
+  for (const outputValue of Object.values(outputs)) {
+    const normalizedKey = normalizeKey(outputValue.key);
+    tokenTitles[normalizedKey] = getTokenTitle(outputValue);
+  }
+
+  Object.entries(state.inputParameters).forEach(([nodeId, nodeInputs]) => {
+    Object.entries(nodeInputs.parameterGroups).forEach(([parameterId, parameterGroup]) => {
+      parameterGroup.parameters.forEach((parameter, parameterIndex) => {
+        parameter.value.forEach((segment, segmentIndex) => {
+          if (isTokenValueSegment(segment) && segment.token?.key) {
+            const normalizedKey = normalizeKey(segment.token.key);
+            if (normalizedKey in tokenTitles) {
+              state.inputParameters[nodeId].parameterGroups[parameterId].parameters[parameterIndex].value[segmentIndex] =
+                createTokenValueSegment({ ...segment.token, title: tokenTitles[normalizedKey] }, segment.value, segment.type);
+            }
+          }
+        });
+      });
+    });
+  });
+};
 
 // Action creators are generated for each case reducer function
 export const {
@@ -421,12 +603,13 @@ export const {
   updateNodeParameters,
   addDynamicInputs,
   addDynamicOutputs,
-  clearDynamicInputs,
-  clearDynamicOutputs,
+  clearDynamicIO,
   updateNodeSettings,
   updateStaticResults,
+  deleteStaticResult,
   updateParameterConditionalVisibility,
   updateParameterValidation,
+  updateParameterEditorViewModel,
   removeParameterValidationError,
   updateOutputs,
   updateActionMetadata,
@@ -434,6 +617,7 @@ export const {
   updateErrorDetails,
   deinitializeOperationInfo,
   deinitializeNodes,
+  updateDynamicDataLoadStatus,
 } = operationMetadataSlice.actions;
 
 export default operationMetadataSlice.reducer;

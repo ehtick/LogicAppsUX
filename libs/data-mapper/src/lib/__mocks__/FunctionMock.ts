@@ -1,6 +1,6 @@
-import { NormalizedDataType } from '../models';
 import type { FunctionData } from '../models/Function';
 import { FunctionCategory } from '../models/Function';
+import { NormalizedDataType } from '@microsoft/logic-apps-shared';
 
 export const addFunction: FunctionData = {
   key: 'Add',
@@ -19,6 +19,35 @@ export const addFunction: FunctionData = {
   displayName: 'Add',
   category: FunctionCategory.Math,
   description: 'Returns the result from adding two or more numbers.',
+};
+
+export const minFunction: FunctionData = {
+  key: 'Minimum',
+  maxNumberOfInputs: 2,
+  functionName: 'min',
+  outputValueType: NormalizedDataType.Number,
+  inputs: [
+    {
+      name: 'Value',
+      allowedTypes: [NormalizedDataType.Decimal],
+      isOptional: false,
+      allowCustomInput: false,
+      tooltip: 'The value to use',
+      placeHolder: 'The value',
+    },
+    {
+      name: 'Scope',
+      allowedTypes: [NormalizedDataType.Any],
+      isOptional: true,
+      allowCustomInput: false,
+      tooltip: 'The scope to use',
+      placeHolder: 'The scope',
+    },
+  ],
+  displayName: 'Min',
+  category: FunctionCategory.Math,
+  description: 'The min between 2 numbers',
+  tooltip: 'The min',
 };
 
 export const concatFunction: FunctionData = {
@@ -85,4 +114,30 @@ export const conditionalFunction: FunctionData = {
       placeHolder: 'The condition to evaluate.',
     },
   ],
+};
+
+export const sortFunction: FunctionData = {
+  key: 'sort',
+  maxNumberOfInputs: 2,
+  functionName: 'sort',
+  outputValueType: NormalizedDataType.Complex,
+  inputs: [
+    {
+      name: 'Scope',
+      allowedTypes: [NormalizedDataType.Complex, NormalizedDataType.Object],
+      isOptional: false,
+      allowCustomInput: false,
+      placeHolder: 'The source sequence',
+    },
+    {
+      name: 'Sort property',
+      allowedTypes: [NormalizedDataType.Any],
+      isOptional: false,
+      allowCustomInput: false,
+      placeHolder: 'The property to sort on',
+    },
+  ],
+  displayName: 'Sort',
+  category: FunctionCategory.Collection,
+  description: 'Sort the sequence by a given property',
 };

@@ -1,12 +1,14 @@
 import type { AuthProps, MSIProps } from '..';
-import type { ChangeState, GetTokenPickerHandler } from '../../editor/base';
+import type { ValueSegment } from '../../editor';
+import type { ChangeState, GetTokenPickerHandler, loadParameterValueFromStringHandler } from '../../editor/base';
+import type { TokenPickerButtonEditorProps } from '../../editor/base/plugins/tokenpickerbutton';
 import { AuthenticationDropdown } from '../AuthenticationDropdown';
 import { AuthenticationProperty } from '../AuthenticationProperty';
 import { AUTHENTICATION_PROPERTIES, containsUserAssignedIdentities } from '../util';
 import { MSIAuthenticationDefault } from './MSIAuthDefault';
 import type { IDropdownOption } from '@fluentui/react';
-import type { ManagedIdentity } from '@microsoft/utils-logic-apps';
-import { ResourceIdentityType, equals } from '@microsoft/utils-logic-apps';
+import { isTemplateExpression, ResourceIdentityType, equals } from '@microsoft/logic-apps-shared';
+import type { ManagedIdentity } from '@microsoft/logic-apps-shared';
 import type { Dispatch, SetStateAction } from 'react';
 import { useState } from 'react';
 import type { IntlShape } from 'react-intl';
@@ -15,14 +17,18 @@ import { useIntl } from 'react-intl';
 interface MSIAuthenticationProps {
   msiProps: MSIProps;
   identity?: ManagedIdentity;
-  getTokenPicker: GetTokenPickerHandler;
+  readonly?: boolean;
+  tokenPickerButtonProps?: TokenPickerButtonEditorProps;
   setCurrentProps: Dispatch<SetStateAction<AuthProps>>;
+  getTokenPicker: GetTokenPickerHandler;
+  tokenMapping?: Record<string, ValueSegment>;
+  loadParameterValueFromString?: loadParameterValueFromStringHandler;
 }
 
-export const MSIAuthentication = ({ identity, msiProps, getTokenPicker, setCurrentProps }: MSIAuthenticationProps): JSX.Element => {
+export const MSIAuthentication = ({ identity, msiProps, setCurrentProps, ...props }: MSIAuthenticationProps): JSX.Element => {
   const intl = useIntl();
   const { options, errorMessage: error } = getManagedIdentityData(identity, msiProps.msiIdentity, intl);
-  const [errorMessage] = useState(error);
+  const [errorMessage, setErrorMessage] = useState(error);
   const [managedIdentityDropdownOptions] = useState<IDropdownOption[]>(options);
 
   const onManagedIdentityChange = (_event: React.FormEvent<HTMLDivElement>, item: IDropdownOption): void => {
@@ -32,6 +38,7 @@ export const MSIAuthentication = ({ identity, msiProps, getTokenPicker, setCurre
         msiIdentity: item.key === ResourceIdentityType.SYSTEM_ASSIGNED ? undefined : (item.key as ResourceIdentityType),
       },
     }));
+    setErrorMessage(getManagedIdentityData(identity, item.key as string | undefined, intl).errorMessage);
   };
 
   const updateMsiAudience = (newState: ChangeState) => {
@@ -43,10 +50,12 @@ export const MSIAuthentication = ({ identity, msiProps, getTokenPicker, setCurre
 
   const MSIAuthLabel = intl.formatMessage({
     defaultMessage: 'Managed identity',
+    id: '2TMGk7',
     description: 'Managed Identity Label',
   });
   const MSIAuthPlaceholder = intl.formatMessage({
-    defaultMessage: 'Please select an identity',
+    defaultMessage: 'select an identity',
+    id: 'tGSsgZ',
     description: 'Placehodler text for dropdown',
   });
 
@@ -57,6 +66,7 @@ export const MSIAuthentication = ({ identity, msiProps, getTokenPicker, setCurre
       {identity?.type ? (
         <>
           <AuthenticationDropdown
+            readonly={props.readonly}
             dropdownLabel={MSIAuthLabel}
             dropdownPlaceholder={MSIAuthPlaceholder}
             errorMessage={errorMessage}
@@ -65,16 +75,16 @@ export const MSIAuthentication = ({ identity, msiProps, getTokenPicker, setCurre
             onChange={onManagedIdentityChange}
           />
           <AuthenticationProperty
+            {...props}
             initialValue={msiAudience}
             AuthProperty={AUTHENTICATION_PROPERTIES.MSI_AUDIENCE}
-            getTokenPicker={getTokenPicker}
             onBlur={updateMsiAudience}
           />
         </>
       ) : (
         <MSIAuthenticationDefault
+          {...props}
           msiProps={msiProps}
-          getTokenPicker={getTokenPicker}
           onManagedIdentityChange={onManagedIdentityChange}
           onBlur={updateMsiAudience}
         />
@@ -92,44 +102,52 @@ const getManagedIdentityData = (
   let errorMessage: string | undefined;
 
   const invalidUserAssignedManagedIdentity = intl.formatMessage({
-    defaultMessage: 'The entered identity is not associated with this Logic App.',
+    defaultMessage: 'The entered identity is not associated with this logic app.',
+    id: 'UPsZSw',
     description: 'error message for invalid user',
   });
   const systemAssignedManagedIdentity = intl.formatMessage({
     defaultMessage: 'System-assigned managed identity',
+    id: 'i/SguY',
     description: 'Text for dropdown of system-assigned managed identity',
   });
-  const userIdentityNotSupported = intl.formatMessage({
-    defaultMessage: 'User identity is not supported when Logic App has system assigned managed identity enabled.',
-    description: 'error message for unspported identity',
+  const systemIdentityNotSupported = intl.formatMessage({
+    defaultMessage: "The system-assigned identity is unavailable because it's not enabled.",
+    id: '8KpZmj',
+    description: 'error message for unsupported system-assigned managed identity',
   });
   const userAssignedIdentities = containsUserAssignedIdentities(identity) ? getUserAssignedIdentities(identity) : undefined;
   if (identity?.type) {
-    const supportsUserAssignedIdentity =
-      equals(identity.type, ResourceIdentityType.USER_ASSIGNED) ||
-      equals(identity.type, ResourceIdentityType.SYSTEM_ASSIGNED_USER_ASSIGNED);
-    const supportsSystemAssignedIdentity =
-      equals(identity.type, ResourceIdentityType.SYSTEM_ASSIGNED) ||
-      equals(identity.type, ResourceIdentityType.SYSTEM_ASSIGNED_USER_ASSIGNED);
+    const supportedIdentityTypes = identity.type.split(',').map((identity) => identity.trim());
+    // determines which identities to support based on the identity type
+    const supportsUserAssignedIdentity = supportedIdentityTypes.some((type) => equals(type, ResourceIdentityType.USER_ASSIGNED));
+    const supportsSystemAssignedIdentity = supportedIdentityTypes.some((type) => equals(type, ResourceIdentityType.SYSTEM_ASSIGNED));
+
+    // add the user assigned identities to the dropdown options
     if (supportsUserAssignedIdentity && userAssignedIdentities) {
       identityOptions.push(...userAssignedIdentities);
     }
 
+    // add the system assigned identity to the dropdown options
     if (supportsSystemAssignedIdentity) {
       identityOptions.push({ key: ResourceIdentityType.SYSTEM_ASSIGNED, text: systemAssignedManagedIdentity });
     }
 
+    // Logic for if the user manually enters an identity in the codeview or collapsed view
+    // User tries to enter a system assigned identity when system assigned identity is not supported
     if (isSystemAssignedIdentity(selectedManagedIdentityKey) && !supportsSystemAssignedIdentity) {
-      errorMessage = userIdentityNotSupported;
+      errorMessage = systemIdentityNotSupported;
     }
-
-    if (
+    // User tries to enter a user assigned identity that is not in the list of user assigned identities
+    else if (
       selectedManagedIdentityKey &&
       !isSystemAssignedIdentity(selectedManagedIdentityKey) &&
       !userAssignedIdentities?.find((userIdentity) => userIdentity.key === selectedManagedIdentityKey)
     ) {
       identityOptions.push({ key: selectedManagedIdentityKey, text: getIdentityDisplayName(selectedManagedIdentityKey) });
-      errorMessage = invalidUserAssignedManagedIdentity;
+      if (!isTemplateExpression(selectedManagedIdentityKey)) {
+        errorMessage = invalidUserAssignedManagedIdentity;
+      }
     }
   }
 
@@ -154,5 +172,5 @@ const getIdentityDisplayName = (msiIdentity: string): string => {
 };
 
 const isSystemAssignedIdentity = (key: string | undefined): boolean => {
-  return !key || key === ResourceIdentityType.SYSTEM_ASSIGNED;
+  return key === ResourceIdentityType.SYSTEM_ASSIGNED;
 };

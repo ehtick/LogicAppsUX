@@ -13,31 +13,42 @@ import type {
 import { getOperationSettings } from '../../actions/bjsworkflow/settings';
 import { getConnectorWithSwagger } from '../../queries/connections';
 import type { DependencyInfo, NodeInputs, NodeOperation, OutputInfo } from '../../state/operation/operationMetadataSlice';
-import { ErrorLevel, updateErrorDetails, DynamicLoadStatus, initializeOperationInfo } from '../../state/operation/operationMetadataSlice';
+import { DynamicLoadStatus, ErrorLevel, initializeOperationInfo, updateErrorDetails } from '../../state/operation/operationMetadataSlice';
 import { addResultSchema } from '../../state/staticresultschema/staticresultsSlice';
-import { getBrandColorFromConnector, getIconUriFromConnector } from '../card';
+import type { WorkflowKind } from '../../state/workflow/workflowInterfaces';
 import { toOutputInfo, updateOutputsForBatchingTrigger } from '../outputs';
 import {
+  ParameterGroupKeys,
   addRecurrenceParametersInGroup,
   getDependentParameters,
   getParametersSortedByVisibility,
   loadParameterValuesFromDefault,
-  ParameterGroupKeys,
   toParameterInfoMap,
   updateParameterWithValues,
 } from '../parameters/helper';
 import { loadInputValuesFromDefinition } from './inputsbuilder';
-import { LogEntryLevel, LoggerService, StaticResultService } from '@microsoft/designer-client-services-logic-apps';
-import type { Operation, OutputParameter, SwaggerParser } from '@microsoft/parsers-logic-apps';
 import {
-  create,
-  isDynamicSchemaExtension,
+  LogEntryLevel,
+  LoggerService,
+  StaticResultService,
   ParameterLocations,
-  removeConnectionPrefix,
+  RecurrenceType,
+  copyArray,
+  create,
+  equals,
+  getBrandColorFromConnector,
+  getIconUriFromConnector,
+  isDynamicSchemaExtension,
   isTemplateExpression,
-} from '@microsoft/parsers-logic-apps';
-import type { LogicAppsV2, OperationInfo } from '@microsoft/utils-logic-apps';
-import { copyArray, map, RecurrenceType, equals, parsePathnameAndQueryKeyFromUri, startsWith, unmap } from '@microsoft/utils-logic-apps';
+  map,
+  parseErrorMessage,
+  parsePathnameAndQueryKeyFromUri,
+  removeConnectionPrefix,
+  startsWith,
+  unmap,
+  cleanResourceId,
+} from '@microsoft/logic-apps-shared';
+import type { LAOperation, LogicAppsV2, OperationInfo, OutputParameter, SwaggerParser } from '@microsoft/logic-apps-shared';
 import type { Dispatch } from '@reduxjs/toolkit';
 
 interface OperationInputInfo {
@@ -54,19 +65,18 @@ export const initializeOperationDetailsForSwagger = async (
   operation: LogicAppsV2.ActionDefinition | LogicAppsV2.TriggerDefinition,
   references: ConnectionReferences,
   isTrigger: boolean,
+  workflowKind: WorkflowKind,
   dispatch: Dispatch
 ): Promise<NodeDataWithOperationMetadata[] | undefined> => {
   try {
     const staticResultService = StaticResultService();
     const operationInfo = await getOperationInfo(nodeId, operation as LogicAppsV2.ApiConnectionAction, references);
-
     if (operationInfo) {
       const { connectorId, operationId } = operationInfo;
 
       const nodeOperationInfo = { ...operationInfo, type: operation.type, kind: operation.kind };
       dispatch(initializeOperationInfo({ id: nodeId, ...nodeOperationInfo }));
       const { connector, parsedSwagger } = await getConnectorWithSwagger(operationInfo.connectorId);
-
       const schemaService = staticResultService.getOperationResultSchema(connectorId, operationId, parsedSwagger);
       schemaService.then((schema) => {
         if (schema) {
@@ -89,7 +99,7 @@ export const initializeOperationDetailsForSwagger = async (
         isTrigger ? (operation as LogicAppsV2.TriggerDefinition).splitOn : undefined
       );
       const nodeDependencies = { inputs: inputDependencies, outputs: outputDependencies };
-      const settings = getOperationSettings(isTrigger, nodeOperationInfo, nodeOutputs, /* manifest */ undefined, parsedSwagger, operation);
+      const settings = getOperationSettings(isTrigger, nodeOperationInfo, /* manifest */ undefined, parsedSwagger, operation, workflowKind);
 
       return [
         {
@@ -105,13 +115,14 @@ export const initializeOperationDetailsForSwagger = async (
     }
 
     throw new Error('Operation info could not be found for a swagger operation');
-  } catch (error) {
-    const message = `Unable to initialize operation details for swagger based operation - ${nodeId}. Error details - ${error}`;
+  } catch (error: any) {
+    const errorString = parseErrorMessage(error);
+    const message = `Unable to initialize operation details for swagger based operation - ${nodeId}. Error details - ${errorString}`;
     LoggerService().log({
       level: LogEntryLevel.Error,
       area: 'operation deserializer',
       message,
-      error: error instanceof Error ? error : undefined,
+      error,
     });
 
     dispatch(updateErrorDetails({ id: nodeId, errorInfo: { level: ErrorLevel.Critical, error, message } }));
@@ -120,7 +131,7 @@ export const initializeOperationDetailsForSwagger = async (
 };
 
 export const getInputParametersFromSwagger = (
-  nodeId: string,
+  _nodeId: string,
   isTrigger: boolean,
   swagger: SwaggerParser,
   operationInfo: NodeOperation,
@@ -173,7 +184,7 @@ export const getInputParametersFromSwagger = (
 
         inputParametersByKey = map(loadedInputParameters, 'key');
       } else {
-        const operationPath = removeConnectionPrefix(operation.path);
+        const operationPath = removeConnectionPrefix(operation?.path || '');
         const basePath = swagger.api.basePath;
         const loadedInputParameters = loadInputValuesFromDefinition(
           stepDefinition.inputs,
@@ -196,6 +207,7 @@ export const getInputParametersFromSwagger = (
     id: ParameterGroupKeys.DEFAULT,
     description: '',
     parameters: allParametersAsArray,
+    rawInputs: inputParametersAsArray.filter((rawInput) => !rawInput.dynamicSchema),
   };
   const parameterGroups = { [ParameterGroupKeys.DEFAULT]: defaultParameterGroup };
 
@@ -231,10 +243,8 @@ export const getOutputParametersFromSwagger = (
   let originalOutputs: Record<string, OutputInfo> | undefined;
   if (isTrigger) {
     originalOutputs = Object.values(operationOutputs).reduce((result: Record<string, OutputInfo>, output: OutputParameter) => {
-      return {
-        ...result,
-        [output.key]: toOutputInfo(output),
-      };
+      result[output.key] = toOutputInfo(output);
+      return result;
     }, {});
   }
   const updatedOutputs = updateOutputsForBatchingTrigger(operationOutputs, splitOnValue);
@@ -275,15 +285,19 @@ const getOperationInfo = async (
   switch (type.toLowerCase()) {
     case Constants.NODE.TYPE.API_CONNECTION:
     case Constants.NODE.TYPE.API_CONNECTION_NOTIFICATION:
-    case Constants.NODE.TYPE.API_CONNECTION_WEBHOOK:
+    case Constants.NODE.TYPE.API_CONNECTION_WEBHOOK: {
       const reference = references[getLegacyConnectionReferenceKey(operation) ?? ''];
       if (!reference || !reference.api || !reference.api.id) {
         throw new Error(`Incomplete information for operation '${nodeId}'`);
       }
-      const connectorId = reference.api.id;
-      const { parsedSwagger } = await getConnectorWithSwagger(connectorId);
-      const operationInputInfo = getOperationInputInfoFromDefinition(parsedSwagger, operation, type);
+      const connectorId = cleanResourceId(reference.api.id);
 
+      const { parsedSwagger } = await getConnectorWithSwagger(connectorId);
+      if (!parsedSwagger) {
+        throw new Error(`Could not fetch swagger for connector - ${connectorId}`);
+      }
+
+      const operationInputInfo = getOperationInputInfoFromDefinition(parsedSwagger, operation, type);
       if (!operationInputInfo) {
         throw new Error('Could not fetch operation input info from swagger and definition');
       }
@@ -295,6 +309,7 @@ const getOperationInfo = async (
       }
 
       return { connectorId, operationId };
+    }
 
     default:
       throw new Error(`Operation type '${type}' does not support swagger`);
@@ -312,8 +327,8 @@ export const getOperationIdFromDefinition = (operationInputInfo: OperationInputI
   return getOperationIdFromSwagger(operationInputInfo.method, path, operations);
 };
 
-function getOperationIdFromSwagger(operationMethod: string, operationPath: string, swaggerOperations: Operation[]): string | undefined {
-  const operations = copyArray(swaggerOperations) as Operation[];
+function getOperationIdFromSwagger(operationMethod: string, operationPath: string, swaggerOperations: LAOperation[]): string | undefined {
+  const operations = copyArray(swaggerOperations) as LAOperation[];
   let operationId: string | undefined;
 
   const filteredOperations: any = operations
@@ -438,10 +453,9 @@ function parsePathnameFromUri(uri: string): string {
   if (isTemplateExpression(uri)) {
     const { pathname } = parsePathnameAndQueryKeyFromUri(uri.replace(/\]\?\[/g, ']%3F[').replace(/\)\?\[/g, ')%3F['));
     return pathname.replace(/\]%3F\[/g, ']?[').replace(/\)%3F\[/g, ')?[');
-  } else {
-    const { pathname } = parsePathnameAndQueryKeyFromUri(uri);
-    return pathname;
   }
+  const { pathname } = parsePathnameAndQueryKeyFromUri(uri);
+  return pathname;
 }
 
 /**

@@ -1,18 +1,13 @@
 import type { SimpleArrayItem, ComplexArrayItems, ArrayItemSchema } from '..';
 import type { ValueSegment } from '../../editor';
-import { serializeEditorState } from '../../editor/base/utils/editorToSegement';
-import { showCollapsedValidation } from '../../editor/base/utils/helper';
+import { serializeEditorState } from '../../editor/base/utils/editorToSegment';
 import { serializeSimpleArray, serializeComplexArray } from '../util/serializecollapsedarray';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
 import type { EditorState } from 'lexical';
 
 export interface CollapsedArrayValidationProps {
-  className?: string;
-  defaultErrorMessage: string;
-  isValid: boolean;
-  collapsedValue?: ValueSegment[];
-  itemSchema?: ArrayItemSchema;
+  itemSchema: ArrayItemSchema;
   isComplex: boolean;
   setIsValid: (b: boolean) => void;
   setItems: ((simpleItems: SimpleArrayItem[]) => void) | ((complexItems: ComplexArrayItems[]) => void);
@@ -20,10 +15,6 @@ export interface CollapsedArrayValidationProps {
 }
 
 export const CollapsedArrayValidation = ({
-  className,
-  isValid,
-  defaultErrorMessage,
-  collapsedValue,
   itemSchema,
   isComplex,
   setIsValid,
@@ -37,16 +28,11 @@ export const CollapsedArrayValidation = ({
       if (isComplex && itemSchema) {
         serializeComplexArray(editor, itemSchema, setItems as (complexItems: ComplexArrayItems[]) => void, setIsValid);
       } else {
-        serializeSimpleArray(editor, setItems as (simpleItems: SimpleArrayItem[]) => void, setIsValid);
+        serializeSimpleArray(editor, itemSchema.type, setItems as (simpleItems: SimpleArrayItem[]) => void, setIsValid);
       }
       setCollapsedValue(serializeEditorState(editor.getEditorState()));
     });
   };
 
-  return (
-    <div className={className ?? 'msla-base-editor-validation'}>
-      <OnChangePlugin ignoreSelectionChange onChange={onChange} />
-      {isValid || (collapsedValue && showCollapsedValidation(collapsedValue)) ? null : defaultErrorMessage}
-    </div>
-  );
+  return <OnChangePlugin ignoreSelectionChange onChange={onChange} />;
 };

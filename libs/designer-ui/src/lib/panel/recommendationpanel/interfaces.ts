@@ -9,5 +9,7 @@ export interface OperationActionData {
   iconUri?: string;
   isTrigger: boolean;
   isBuiltIn?: boolean;
+  isPremium?: boolean;
   apiId?: string;
+  releaseStatus?: string;
 }

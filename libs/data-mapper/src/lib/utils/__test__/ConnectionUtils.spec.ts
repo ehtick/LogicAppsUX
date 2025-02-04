@@ -1,7 +1,5 @@
 import { concatFunction } from '../../__mocks__/FunctionMock';
 import type { DataMapOperationState } from '../../core/state/DataMapSlice';
-import type { SchemaNodeExtended } from '../../models';
-import { NormalizedDataType, SchemaNodeProperty } from '../../models';
 import type { Connection, ConnectionDictionary, ConnectionUnit } from '../../models/Connection';
 import type { FunctionData, FunctionInput } from '../../models/Function';
 import { FunctionCategory, functionMock } from '../../models/Function';
@@ -9,6 +7,7 @@ import {
   applyConnectionValue,
   bringInParentSourceNodesForRepeating,
   createConnectionEntryIfNeeded,
+  inputFromHandleId,
   isCustomValue,
   isFunctionInputSlotAvailable,
   isValidConnectionByType,
@@ -17,8 +16,12 @@ import {
   nodeHasSpecificInputEventually,
   nodeHasSpecificOutputEventually,
 } from '../Connection.Utils';
-import { isSchemaNodeExtended } from '../Schema.Utils';
+import { convertSchemaToSchemaExtended, flattenSchemaIntoDictionary, isSchemaNodeExtended } from '../Schema.Utils';
+import { sourceMockSchema, targetMockSchema } from '../../../__mocks__/schemas';
 import { fullConnectionDictionaryForOneToManyLoop, fullMapForSimplifiedLoop } from '../__mocks__';
+import type { DataMapSchema, SchemaExtended, SchemaNodeExtended } from '@microsoft/logic-apps-shared';
+import { NormalizedDataType, SchemaNodeProperty, SchemaType } from '@microsoft/logic-apps-shared';
+import { describe, vi, beforeEach, afterEach, beforeAll, afterAll, it, test, expect } from 'vitest';
 
 const mockBoundedFunctionInputs: FunctionInput[] = [
   {
@@ -38,7 +41,6 @@ const mockBoundedFunctionInputs: FunctionInput[] = [
     placeHolder: 'The scope',
   },
 ];
-
 describe('utils/Connections', () => {
   describe('createConnectionEntryIfNeeded', () => {
     const connections: ConnectionDictionary = {};
@@ -298,6 +300,47 @@ describe('utils/Connections', () => {
 
         expect(mockConnections[currentNodeReactFlowKey].inputs[0].length).toEqual(1);
       });
+
+      it('creates repeating connection', () => {
+        const newConnections: ConnectionDictionary = {};
+        const destination = 'target-/ns0:Root/Looping/Person';
+        const source = 'source-/ns0:Root/Looping/Employee';
+
+        const sourceSchema: DataMapSchema = sourceMockSchema as any as DataMapSchema;
+        const extendedSourceSchema: SchemaExtended = convertSchemaToSchemaExtended(sourceSchema);
+        const flattenedSchema = flattenSchemaIntoDictionary(extendedSourceSchema, SchemaType.Source);
+
+        const targetSchema: DataMapSchema = targetMockSchema as any as DataMapSchema;
+        const extendedTargetSchema: SchemaExtended = convertSchemaToSchemaExtended(targetSchema);
+        const flattenedTargetSchema = flattenSchemaIntoDictionary(extendedTargetSchema, SchemaType.Target);
+
+        const sourceNode = flattenedSchema[source];
+        const targetNode = flattenedTargetSchema[destination];
+        // get nodes from schema
+        applyConnectionValue(newConnections, {
+          targetNode: targetNode,
+          targetNodeReactFlowKey: destination,
+          inputIndex: 0,
+          input: {
+            reactFlowKey: source,
+            node: sourceNode,
+          },
+        });
+
+        expect(newConnections[destination].inputs[0].length).toEqual(1);
+      });
+    });
+  });
+
+  describe('isValidConnectionByType', () => {
+    it('returns true for direct type match', () => {
+      expect(isValidConnectionByType(NormalizedDataType.String, NormalizedDataType.String)).toBeTruthy();
+    });
+    it('returns true target type "any"', () => {
+      expect(isValidConnectionByType(NormalizedDataType.String, NormalizedDataType.Any)).toBeTruthy();
+    });
+    it('returns false for type mismatch', () => {
+      expect(isValidConnectionByType(NormalizedDataType.String, NormalizedDataType.Number)).toBeFalsy();
     });
   });
 
@@ -311,7 +354,6 @@ describe('utils/Connections', () => {
         inputs: {},
         outputs: [],
       };
-
       mockBoundedFunctionInputs.forEach((_input, idx) => {
         mockConnection.inputs[idx] = [''];
       });
@@ -320,11 +362,27 @@ describe('utils/Connections', () => {
     });
 
     it('Test bounded input with an available slot', () => {
-      expect(isFunctionInputSlotAvailable(undefined, mockBoundedFunctionInputs.length)).toEqual(true);
+      const mockConnection: Connection = {
+        self: {
+          reactFlowKey: 'Placeholder',
+          node: {} as SchemaNodeExtended,
+        },
+        inputs: {},
+        outputs: [],
+      };
+      expect(isFunctionInputSlotAvailable(mockConnection, 3)).toEqual(true);
     });
 
     it('Test unbounded input', () => {
-      expect(isFunctionInputSlotAvailable(undefined, -1)).toEqual(true);
+      const mockConnection: Connection = {
+        self: {
+          reactFlowKey: 'Placeholder',
+          node: {} as SchemaNodeExtended,
+        },
+        inputs: {},
+        outputs: [],
+      };
+      expect(isFunctionInputSlotAvailable(mockConnection, -1)).toEqual(true);
     });
   });
 
@@ -576,6 +634,21 @@ describe('utils/Connections', () => {
 
     it('Falsy when both are different non-Any datatypes', () => {
       expect(isValidConnectionByType(NormalizedDataType.Integer, NormalizedDataType.String)).toBeFalsy();
+    });
+  });
+
+  describe('inputFromHandleId', () => {
+    it('returns undefined for no inputs', () => {
+      const input = {
+        allowCustomInput: true,
+        allowedTypes: [NormalizedDataType.String],
+        isOptional: false,
+        name: 'Source value',
+        placeHolder: 'The string or array to check the length.',
+      };
+      const funcData: Partial<FunctionData> = { inputs: [input], maxNumberOfInputs: -1 };
+      const inputKey = inputFromHandleId('Source value', funcData as FunctionData);
+      expect(inputKey).toBeUndefined();
     });
   });
 });

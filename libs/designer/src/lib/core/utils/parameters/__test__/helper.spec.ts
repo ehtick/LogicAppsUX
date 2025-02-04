@@ -7,11 +7,21 @@ import {
   updateParameterWithValues,
   toArrayViewModelSchema,
   toHybridConditionViewModel,
+  getTokenExpressionMethodFromKey,
+  generateExpressionFromKey,
+  loadDynamicContentForInputsInNode,
+  loadParameterValue,
+  toSimpleQueryBuilderViewModel,
 } from '../helper';
+import * as Helper from '../helper';
+import * as VariableHelper from '../../variables';
+import * as GraphHelper from '../../graph';
 import type { DictionaryEditorItemProps, ParameterInfo, ValueSegment, OutputToken } from '@microsoft/designer-ui';
 import { GroupDropdownOptions, GroupType, TokenType, ValueSegmentType } from '@microsoft/designer-ui';
-import type { DynamicListExtension, LegacyDynamicValuesExtension, InputParameter } from '@microsoft/parsers-logic-apps';
-import { DynamicValuesType, ExpressionType } from '@microsoft/parsers-logic-apps';
+import type { DynamicListExtension, LegacyDynamicValuesExtension, InputParameter } from '@microsoft/logic-apps-shared';
+import { DynamicValuesType, ExpressionType, InitConnectorService, InitOperationManifestService } from '@microsoft/logic-apps-shared';
+import { describe, vi, beforeEach, afterEach, beforeAll, afterAll, it, test, expect } from 'vitest';
+import requestManifest from '../../../../../../../logic-apps-shared/src/designer-client-services/lib/base/manifests/request';
 
 describe('core/utils/parameters/helper', () => {
   describe('parameterValueToJSONString', () => {
@@ -401,7 +411,7 @@ describe('core/utils/parameters/helper', () => {
       ];
 
       expect(parameterValueToJSONString(parameterValue, /* applyCasting */ false, /* forValidation */ true)).toBe(
-        '{"newUnb3_1":"@xpath(xml(triggerBody()), \'string(/*[local-name()=\\"DynamicsSOCSV\\"])\')"}'
+        '{\n  "newUnb3_1": @{xpath(xml(triggerBody()), \'string(/*[local-name()="DynamicsSOCSV"])\')}\n}'
       );
     });
 
@@ -475,8 +485,191 @@ describe('core/utils/parameters/helper', () => {
       ];
 
       expect(parameterValueToJSONString(parameterValue, /* applyCasting */ false, /* forValidation */ true)).toBe(
-        '{"newUnb3_1":"@{xpath(xml(triggerBody()), \'string(/*[local-name()=\\"DynamicsSOCSV\\"])\')}"}'
+        '{\n  "newUnb3_1": "@{xpath(xml(triggerBody()), \'string(/*[local-name()="DynamicsSOCSV"])\')}"\n}'
       );
+    });
+
+    it('should return key value input from dictionary editor without wrapping single token in @{}', () => {
+      const parameterValue = [
+          {
+            id: '1',
+            type: ValueSegmentType.LITERAL,
+            value: '{\n ',
+          },
+          {
+            id: '2',
+            type: ValueSegmentType.LITERAL,
+            value: '"',
+          },
+          {
+            id: '3',
+            type: ValueSegmentType.LITERAL,
+            value: 'Key of the row',
+          },
+          {
+            id: '4',
+            type: ValueSegmentType.LITERAL,
+            value: '"',
+          },
+          {
+            id: '5',
+            type: ValueSegmentType.LITERAL,
+            value: ' : ',
+          },
+          {
+            id: '6',
+            type: ValueSegmentType.TOKEN,
+            value: "item()?['someItem']",
+            token: {
+              key: 'outputs.$',
+              tokenType: TokenType.OUTPUTS,
+              type: 'string',
+              title: 'someItem',
+            },
+          },
+          {
+            id: '7',
+            type: ValueSegmentType.LITERAL,
+            value: '\n}',
+          },
+        ],
+        parameterJson = parameterValueToJSONString(parameterValue);
+
+      expect(parameterJson).toEqual(`{"Key of the row":"@item()?['someItem']"}`);
+    });
+
+    it('should return key value input from dictionary editor with wrapping token in @{} to honor the included string and stringify as a whole', () => {
+      const parameterValue = [
+          {
+            id: '1',
+            type: ValueSegmentType.LITERAL,
+            value: '{\n ',
+          },
+          {
+            id: '2',
+            type: ValueSegmentType.LITERAL,
+            value: '"',
+          },
+          {
+            id: '3',
+            type: ValueSegmentType.LITERAL,
+            value: 'Key of the row',
+          },
+          {
+            id: '4',
+            type: ValueSegmentType.LITERAL,
+            value: '"',
+          },
+          {
+            id: '5',
+            type: ValueSegmentType.LITERAL,
+            value: ' : ',
+          },
+          {
+            id: '6',
+            type: ValueSegmentType.LITERAL,
+            value: '"',
+          },
+          {
+            id: '7',
+            type: ValueSegmentType.LITERAL,
+            value: 'Value of the row:',
+          },
+          {
+            id: '8',
+            type: ValueSegmentType.TOKEN,
+            value: "item()?['someItem']",
+            token: {
+              key: 'outputs.$',
+              tokenType: TokenType.OUTPUTS,
+              type: 'string',
+              title: 'someItem',
+            },
+          },
+          {
+            id: '9',
+            type: ValueSegmentType.LITERAL,
+            value: '"',
+          },
+          {
+            id: '10',
+            type: ValueSegmentType.LITERAL,
+            value: '\n}',
+          },
+        ],
+        parameterJson = parameterValueToJSONString(parameterValue);
+
+      expect(parameterJson).toEqual(`{"Key of the row":"Value of the row:@{item()?['someItem']}"}`);
+    });
+
+    it('should return key value input from dictionary editor with wrapping token in @{} to honor the other token input and stringify as a whole', () => {
+      const parameterValue = [
+          {
+            id: '1',
+            type: ValueSegmentType.LITERAL,
+            value: '{\n ',
+          },
+          {
+            id: '2',
+            type: ValueSegmentType.LITERAL,
+            value: '"',
+          },
+          {
+            id: '3',
+            type: ValueSegmentType.LITERAL,
+            value: 'Key of the row',
+          },
+          {
+            id: '4',
+            type: ValueSegmentType.LITERAL,
+            value: '"',
+          },
+          {
+            id: '5',
+            type: ValueSegmentType.LITERAL,
+            value: ' : ',
+          },
+          {
+            id: '6',
+            type: ValueSegmentType.LITERAL,
+            value: '"',
+          },
+          {
+            id: '7',
+            type: ValueSegmentType.TOKEN,
+            value: "item()?['someItem1']",
+            token: {
+              key: 'outputs.$',
+              tokenType: TokenType.OUTPUTS,
+              type: 'string',
+              title: 'someItem1',
+            },
+          },
+          {
+            id: '8',
+            type: ValueSegmentType.TOKEN,
+            value: "item()?['someItem2']",
+            token: {
+              key: 'outputs.$',
+              tokenType: TokenType.OUTPUTS,
+              type: 'string',
+              title: 'someItem2',
+            },
+          },
+          {
+            id: '9',
+            type: ValueSegmentType.LITERAL,
+            value: '"',
+          },
+          {
+            id: '10',
+            type: ValueSegmentType.LITERAL,
+            value: '\n}',
+          },
+        ],
+        parameterJson = parameterValueToJSONString(parameterValue);
+
+      expect(parameterJson).toEqual(`{"Key of the row":"@{item()?['someItem1']}@{item()?['someItem2']}"}`);
     });
   });
 
@@ -826,7 +1019,7 @@ describe('core/utils/parameters/helper', () => {
       parameter.info.format = 'byte';
 
       const expressionString = parameterValueToString(parameter, /* isDefinitionValue */ true);
-      expect(expressionString).toEqual('@{base64(triggerBody())}');
+      expect(expressionString).toEqual('@base64(triggerBody())');
     });
 
     it('should cast file to string/byte correctly.', () => {
@@ -847,7 +1040,7 @@ describe('core/utils/parameters/helper', () => {
       parameter.info.format = 'byte';
 
       const expressionString = parameterValueToString(parameter, /* isDefinitionValue */ true);
-      expect(expressionString).toEqual('@{base64(triggerBody())}');
+      expect(expressionString).toEqual('@base64(triggerBody())');
     });
 
     it('should cast string/binary to string/datauri correctly.', () => {
@@ -969,7 +1162,7 @@ describe('core/utils/parameters/helper', () => {
     });
 
     // TODO - Need to check if this scenario makes sense after token picker is integrated
-    xit('should be correct for a parameter with user entered template functions', () => {
+    test.skip('should be correct for a parameter with user entered template functions', () => {
       parameter.value = [
         {
           id: '1',
@@ -1027,7 +1220,7 @@ describe('core/utils/parameters/helper', () => {
       parameter.info.format = 'byte';
 
       const expressionString = parameterValueToString(parameter, /* isDefinitionValue */ true);
-      expect(expressionString).toEqual(`@{base64('user entered text')}`);
+      expect(expressionString).toEqual(`@base64('user entered text')`);
     });
 
     it('should not modify user entered text if field is binary', () => {
@@ -1111,7 +1304,7 @@ describe('core/utils/parameters/helper', () => {
       parameter.info.format = 'byte';
 
       const expressionString = parameterValueToString(parameter, /* isDefinitionValue */ true);
-      expect(expressionString).toEqual(`@{base64(body('action')['path'])}`);
+      expect(expressionString).toEqual(`@base64(body('action')['path'])`);
     });
 
     it('should be correct for a parameter with mix of text and tokens interpolated to string', () => {
@@ -1669,8 +1862,9 @@ describe('core/utils/parameters/helper', () => {
           title: 'Body',
           type: dataType,
         };
+        const parameterValue = loadParameterValue(inputParameter);
 
-        const result = getParameterEditorProps(inputParameter);
+        const result = getParameterEditorProps(inputParameter, parameterValue, false, {});
 
         expect(result).toMatchObject({
           editor: undefined,
@@ -1701,13 +1895,14 @@ describe('core/utils/parameters/helper', () => {
           title: 'From',
           type: dataType,
         };
+        const parameterValue = loadParameterValue(inputParameter);
 
-        const result = getParameterEditorProps(inputParameter);
+        const result = getParameterEditorProps(inputParameter, parameterValue, false, {});
 
         expect(result).toMatchObject({
           editor: dataType,
           editorOptions: undefined,
-          editorViewModel: toArrayViewModelSchema(inputParameter.itemSchema),
+          editorViewModel: { ...toArrayViewModelSchema(itemSchema), uncastedValue: parameterValue },
           schema: inputSchema,
         });
       });
@@ -1739,8 +1934,10 @@ describe('core/utils/parameters/helper', () => {
           title: 'Event Grid Events',
           type: dataType,
         };
+        const parameterValue = loadParameterValue(inputParameter);
 
-        const result = getParameterEditorProps(inputParameter);
+        const result = getParameterEditorProps(inputParameter, parameterValue, false, {});
+
         const { editorViewModel, ...otherValues } = result;
 
         expect(otherValues).toEqual({
@@ -1752,7 +1949,7 @@ describe('core/utils/parameters/helper', () => {
           },
         });
 
-        expect(editorViewModel).toMatchObject(toArrayViewModelSchema(inputParameter.itemSchema));
+        expect(editorViewModel).toMatchObject({ ...toArrayViewModelSchema(itemSchema), uncastedValue: parameterValue });
       });
     });
 
@@ -1773,8 +1970,9 @@ describe('core/utils/parameters/helper', () => {
           title: 'Overwrite destination file',
           type: dataType,
         };
+        const parameterValue = loadParameterValue(inputParameter);
 
-        const result = getParameterEditorProps(inputParameter);
+        const result = getParameterEditorProps(inputParameter, parameterValue, false, {});
 
         expect(result).toMatchObject({
           editor: undefined,
@@ -1793,8 +1991,26 @@ describe('core/utils/parameters/helper', () => {
         };
         const inputParameter: InputParameter = {
           default: true,
-          editor: undefined,
-          editorOptions: undefined,
+          editor: 'combobox',
+          editorOptions: {
+            options: [
+              {
+                displayName: '',
+                key: '',
+                value: '',
+              },
+              {
+                displayName: 'Yes',
+                key: 'Yes',
+                value: 'true',
+              },
+              {
+                displayName: 'No',
+                key: 'No',
+                value: 'false',
+              },
+            ],
+          },
           enum: [
             { displayName: '', value: '' },
             { displayName: 'Yes', value: true },
@@ -1808,8 +2024,9 @@ describe('core/utils/parameters/helper', () => {
           type: dataType,
           value: true,
         };
+        const parameterValue = loadParameterValue(inputParameter);
 
-        const result = getParameterEditorProps(inputParameter);
+        const result = getParameterEditorProps(inputParameter, parameterValue, false, {});
 
         expect(result).toMatchObject({
           editor: 'combobox',
@@ -1867,8 +2084,9 @@ describe('core/utils/parameters/helper', () => {
           type: dataType,
           value: defaultValue,
         };
+        const parameterValue = loadParameterValue(inputParameter);
 
-        const result = getParameterEditorProps(inputParameter);
+        const result = getParameterEditorProps(inputParameter, parameterValue, false, {});
 
         expect(result).toMatchObject({
           editor: editorType,
@@ -1906,8 +2124,9 @@ describe('core/utils/parameters/helper', () => {
           title: 'Queue name',
           type: dataType,
         };
+        const parameterValue = loadParameterValue(inputParameter);
 
-        const result = getParameterEditorProps(inputParameter);
+        const result = getParameterEditorProps(inputParameter, parameterValue, false, {});
 
         expect(result).toMatchObject({
           editor: editorType,
@@ -1927,6 +2146,7 @@ describe('core/utils/parameters/helper', () => {
             isFolder: true,
           },
           'value-path': 'Id',
+          operationId: 'opId',
         };
         const inputSchema = {
           type: dataType,
@@ -1954,8 +2174,9 @@ describe('core/utils/parameters/helper', () => {
           title: 'Queue name',
           type: dataType,
         };
+        const parameterValue = loadParameterValue(inputParameter);
 
-        const result = getParameterEditorProps(inputParameter);
+        const result = getParameterEditorProps(inputParameter, parameterValue, false, {});
 
         expect(result).toMatchObject({
           editor: editorType,
@@ -1989,8 +2210,9 @@ describe('core/utils/parameters/helper', () => {
           title: 'Loop until',
           type: dataType,
         };
+        const parameterValue = loadParameterValue(inputParameter);
 
-        const result = getParameterEditorProps(inputParameter);
+        const result = getParameterEditorProps(inputParameter, parameterValue, false, {});
 
         expect(result).toMatchObject({
           editor: editorType,
@@ -2026,8 +2248,10 @@ describe('core/utils/parameters/helper', () => {
           title: 'Headers',
           type: dataType,
         };
+        const parameterValue = loadParameterValue(inputParameter);
 
-        const result = getParameterEditorProps(inputParameter);
+        const result = getParameterEditorProps(inputParameter, parameterValue, false, {});
+
         const { editorViewModel, ...otherValues } = result;
 
         expect(otherValues).toMatchObject({
@@ -2074,8 +2298,9 @@ describe('core/utils/parameters/helper', () => {
           type: dataType,
           value: defaultValue,
         };
+        const parameterValue = loadParameterValue(inputParameter);
 
-        const result = getParameterEditorProps(inputParameter);
+        const result = getParameterEditorProps(inputParameter, parameterValue, false, {});
 
         expect(result).toMatchObject({
           editor: undefined,
@@ -2105,8 +2330,9 @@ describe('core/utils/parameters/helper', () => {
           title: 'Response Body JSON Schema',
           type: dataType,
         };
+        const parameterValue = loadParameterValue(inputParameter);
 
-        const result = getParameterEditorProps(inputParameter);
+        const result = getParameterEditorProps(inputParameter, parameterValue, false, {});
 
         expect(result).toMatchObject({
           editor: editorType,
@@ -2134,8 +2360,9 @@ describe('core/utils/parameters/helper', () => {
           title: 'Source file path',
           type: dataType,
         };
+        const parameterValue = loadParameterValue(inputParameter);
 
-        const result = getParameterEditorProps(inputParameter);
+        const result = getParameterEditorProps(inputParameter, parameterValue, false, {});
 
         expect(result).toMatchObject({
           editor: undefined,
@@ -2163,8 +2390,8 @@ describe('core/utils/parameters/helper', () => {
         };
         const inputParameter: InputParameter = {
           dynamicValues: undefined,
-          editor: undefined,
-          editorOptions: undefined,
+          editor: 'combobox',
+          editorOptions: { options },
           enum: options,
           in: 'body',
           key: 'body.$.linkType',
@@ -2176,17 +2403,15 @@ describe('core/utils/parameters/helper', () => {
           value: defaultValue,
           visibility: 'advanced',
         };
+        const parameterValue = loadParameterValue(inputParameter);
 
-        const result = getParameterEditorProps(inputParameter);
+        const result = getParameterEditorProps(inputParameter, parameterValue, false, {});
 
         expect(result).toMatchObject({
           editor: 'combobox',
           editorOptions: { options },
           editorViewModel: undefined,
-          schema: {
-            ...inputSchema,
-            'x-ms-editor': 'combobox',
-          },
+          schema: inputSchema,
         });
       });
 
@@ -2206,8 +2431,8 @@ describe('core/utils/parameters/helper', () => {
         };
         const inputParameter: InputParameter = {
           dynamicValues: undefined,
-          editor: undefined,
-          editorOptions: undefined,
+          editor: 'combobox',
+          editorOptions: { options },
           key: '', // Not defined in OpenAPI.
           name: '', // Not defined in OpenAPI.
           schema: inputSchema,
@@ -2215,17 +2440,15 @@ describe('core/utils/parameters/helper', () => {
           value: 'I',
           visibility: '',
         };
+        const parameterValue = loadParameterValue(inputParameter);
 
-        const result = getParameterEditorProps(inputParameter);
+        const result = getParameterEditorProps(inputParameter, parameterValue, false, {});
 
         expect(result).toMatchObject({
           editor: 'combobox',
           editorOptions: { options },
           editorViewModel: undefined,
-          schema: {
-            ...inputSchema,
-            'x-ms-editor': 'combobox',
-          },
+          schema: inputSchema,
         });
       });
     });
@@ -2285,6 +2508,41 @@ describe('core/utils/parameters/helper', () => {
       token.outputInfo.actionName = undefined;
 
       expect(getExpressionValueForOutputToken(token, nodeType)).toEqual(`triggerOutputs()['message']['id']`);
+    });
+  });
+
+  describe('getTokenExpressionMethodFromKey', () => {
+    it.each<[string, string | undefined, string]>([
+      // For `body.$` and its first-class properties, use BODY.
+      ['body.$', undefined, `triggerBody()`],
+      ['body.$.value', undefined, `triggerBody()`],
+      ['body.$', 'Create_item', `body('Create_item')`],
+      ['body.$.ID', 'Create_item', `body('Create_item')`],
+
+      // For `outputs.$` and its first-class properties, use OUTPUTS.
+      ['output', undefined, `triggerOutputs()`],
+      ['outputs.$', undefined, `triggerOutputs()`],
+      ['outputs.$.body', undefined, `triggerOutputs()`],
+      ['outputs.$.body/value', undefined, `triggerOutputs()`],
+      ['outputs.$.headers', undefined, `triggerOutputs()`],
+      ['outputs.$.relativePathParameters', undefined, `triggerOutputs()`],
+
+      // For values using `body/*` syntax, use OUTPUTS.
+      ['outputs.$.body/subject', 'Get_event_(V3)', `outputs('Get_event_(V3)')`],
+    ])('correctly gets the token expression for "%s"', (key, actionName, expected) => {
+      expect(getTokenExpressionMethodFromKey(key, actionName)).toBe(expected);
+    });
+  });
+
+  describe('generateExpressionFromKey', () => {
+    it.each<[string, string, string | undefined, string]>([
+      // For `body.$` and its first-class properties, use BODY.
+      ['triggerBody()', 'body.$', undefined, `triggerBody()`],
+      ['triggerBody()', 'body.$.Body', undefined, `triggerBody()['Body']`],
+      [`body('A1')`, 'body.$', 'A1', `body('A1')`],
+      [`body('A1')`, 'body.$.body.B1', 'A1', `body('A1')['body']['B1']`],
+    ])('correctly gets the token expression for nested body property for "%s"', (method, key, actionName, expected) => {
+      expect(generateExpressionFromKey(method, key, actionName, /* isInsideArray */ false, /* required */ true)).toBe(expected);
     });
   });
 
@@ -2625,6 +2883,631 @@ describe('core/utils/parameters/helper', () => {
       expect(result.items.condition).toEqual(GroupDropdownOptions.OR);
       expect(result.items.items.length).toEqual(1);
       expect(result.items.items[0].type).toEqual('row');
+    });
+  });
+
+  describe('loadDynamicContentForInputsInNode', () => {
+    const nodeId = 'nodeId';
+    const rootState: any = {
+      workflow: {},
+      operations: {
+        operationInfo: { [nodeId]: { operationId: 'opId', connectorId: 'connId', type: 'testType' } },
+        inputParameters: {
+          [nodeId]: {
+            dynamicLoadStatus: 'NotStarted',
+            parameterGroups: {
+              default: {
+                id: 'default',
+                parameters: [],
+              },
+            },
+          },
+        },
+        outputParameters: {},
+        dependencies: {
+          [nodeId]: { inputs: {}, outputs: {} },
+        },
+      },
+      panel: {},
+      connections: {},
+      settings: {},
+      designerOptions: {},
+      designerView: {},
+      tokens: {},
+      workflowParameters: {},
+      staticResults: {},
+      customCode: {},
+      dev: {},
+    };
+    const defaultParameters: any[] = [
+      {
+        id: 'hostworkflowid',
+        info: {
+          isDynamic: false,
+        },
+        parameterKey: 'inputs.$.host.workflow.id',
+        parameterName: 'host.workflow.id',
+        required: true,
+        schema: {
+          type: 'string',
+        },
+        type: 'string',
+        value: [
+          {
+            id: '69310D6E-FA52-4744-B55B-0C7802D1EE75',
+            type: 'literal',
+            value: 'childworkflow1',
+          },
+        ],
+        validationErrors: [],
+      },
+    ];
+    const defaultDependencies: any = {
+      'inputs.$.body': {
+        definition: {
+          type: 'DynamicProperties',
+          extension: {
+            dynamicState: {
+              extension: {
+                operationId: 'getWorkflowSwagger',
+                parameters: {
+                  name: {
+                    parameterReference: 'host.workflow.id',
+                    required: true,
+                  },
+                },
+              },
+              isInput: true,
+            },
+            parameters: {
+              name: {
+                parameterReference: 'host.workflow.id',
+                required: true,
+              },
+            },
+          },
+        },
+        dependencyType: 'ApiSchema',
+        dependentParameters: {
+          hostworkflowId: {
+            isValid: true,
+          },
+        },
+        parameter: {
+          dynamicSchema: {
+            type: 'DynamicProperties',
+            extension: {
+              dynamicState: {
+                extension: {
+                  operationId: 'getWorkflowSwagger',
+                  parameters: {
+                    name: {
+                      parameterReference: 'host.workflow.id',
+                      required: true,
+                    },
+                  },
+                },
+                isInput: true,
+              },
+              parameters: {
+                name: {
+                  parameterReference: 'host.workflow.id',
+                  required: true,
+                },
+              },
+            },
+          },
+          key: 'inputs.$.body',
+          name: 'body',
+          required: false,
+          type: 'any',
+        },
+      },
+    };
+    const allDynamicParams: any[] = [
+      {
+        id: 'firstP1',
+        info: {
+          isDynamic: true,
+          dynamicParameterReference: 'inputs.$.body',
+        },
+        parameterKey: 'inputs.$.body.objectType.p1',
+        parameterName: 'body.objectType.p1',
+        required: true,
+        schema: {
+          isDynamic: true,
+          isNested: true,
+          key: 'inputs.$.body.objectType.p1',
+          name: 'body.objectType.p1',
+          required: true,
+          schema: {
+            type: 'integer',
+          },
+          type: 'integer',
+          dynamicParameterReference: 'inputs.$.body',
+        },
+        type: 'integer',
+        value: [
+          {
+            id: 'AC2096BD-7746-4297-9C61-9A141167E4AD',
+            type: 'literal',
+            value: '1',
+          },
+        ],
+        validationErrors: [],
+      },
+      {
+        id: 'firstP2',
+        info: {
+          isDynamic: true,
+          dynamicParameterReference: 'inputs.$.body',
+        },
+        label: 'Body stringType',
+        parameterKey: 'inputs.$.body.stringType',
+        parameterName: 'body.stringType',
+        required: true,
+        schema: {
+          isDynamic: true,
+          isNested: true,
+          key: 'inputs.$.body.stringType',
+          name: 'body.stringType',
+          required: true,
+          schema: {
+            type: 'string',
+          },
+          type: 'string',
+          dynamicParameterReference: 'inputs.$.body',
+        },
+        type: 'string',
+        value: [
+          {
+            id: '0E9BB919-648A-4E15-A037-56285273EFA0',
+            type: 'literal',
+            value: 'a',
+          },
+        ],
+        validationErrors: [],
+      },
+      {
+        id: 'secondParamP1',
+        info: {
+          isDynamic: true,
+          dynamicParameterReference: 'inputs.$.body.dynamicObject',
+        },
+        parameterKey: 'inputs.$.body.dynamicObject.numberType',
+        parameterName: 'body.dynamicObject.numberType',
+        required: true,
+        schema: {
+          isDynamic: true,
+          isNested: true,
+          key: 'inputs.$.body.dynamicObject.numberType',
+          name: 'body.dynamicObject.numberType',
+          required: true,
+          schema: {
+            type: 'number',
+          },
+          type: 'number',
+          dynamicParameterReference: 'inputs.$.body.dynamicObject',
+        },
+        type: 'number',
+        value: [
+          {
+            id: '48C8F772-799B-4FB7-A8C5-88E8B5DDFAD9',
+            type: 'literal',
+            value: '2',
+          },
+        ],
+        validationErrors: [],
+      },
+      {
+        id: 'secondParamP2',
+        info: {
+          isDynamic: true,
+          dynamicParameterReference: 'inputs.$.body.dynamicObject',
+        },
+        parameterKey: 'inputs.$.body.dynamicObject.childworkflow1Type.o1',
+        parameterName: 'body.dynamicObject.childworkflow1Type.o1',
+        required: true,
+        schema: {
+          isDynamic: true,
+          isNested: true,
+          key: 'inputs.$.body.dynamicObject.childworkflow1Type.o1',
+          name: 'body.dynamicObject.childworkflow1Type.o1',
+          required: true,
+          schema: {
+            type: 'integer',
+          },
+          type: 'integer',
+          dynamicParameterReference: 'inputs.$.body.dynamicObject',
+        },
+        type: 'integer',
+        value: [
+          {
+            id: '0D731936-1B36-4DF1-B7F9-7AB7811865D0',
+            type: 'literal',
+            value: '33',
+          },
+        ],
+        validationErrors: [],
+      },
+      {
+        id: 'thirdParamP1',
+        info: {
+          isDynamic: true,
+          dynamicParameterReference: 'inputs.$.body.dynamicObject.childworkflow1Type.dynamicObject2',
+        },
+        parameterKey: 'inputs.$.body.dynamicObject.childworkflow1Type.dynamicObject2.childworkflow1-Type',
+        parameterName: 'body.dynamicObject.childworkflow1Type.dynamicObject2.childworkflow1-Type',
+        required: true,
+        schema: {
+          isDynamic: true,
+          isNested: true,
+          key: 'inputs.$.body.dynamicObject.childworkflow1Type.dynamicObject2.childworkflow1-Type',
+          name: 'body.dynamicObject.childworkflow1Type.dynamicObject2.childworkflow1-Type',
+          required: true,
+          schema: {
+            type: 'string',
+          },
+          type: 'string',
+          dynamicParameterReference: 'inputs.$.body.dynamicObject.childworkflow1Type.dynamicObject2',
+        },
+        type: 'string',
+        value: [
+          {
+            id: '1A93F4AF-CE46-4E99-8BD4-903E01A15D07',
+            type: 'literal',
+            value: 'ee',
+          },
+        ],
+        validationErrors: [],
+      },
+      {
+        id: 'thirdParam2',
+        info: {
+          isDynamic: true,
+          dynamicParameterReference: 'inputs.$.body.dynamicObject.childworkflow1Type.dynamicObject2',
+        },
+        parameterKey: 'inputs.$.body.dynamicObject.childworkflow1Type.dynamicObject2.1-Type',
+        parameterName: 'body.dynamicObject.childworkflow1Type.dynamicObject2.1-Type',
+        required: true,
+        schema: {
+          isDynamic: true,
+          isNested: true,
+          key: 'inputs.$.body.dynamicObject.childworkflow1Type.dynamicObject2.1-Type',
+          name: 'body.dynamicObject.childworkflow1Type.dynamicObject2.1-Type',
+          required: true,
+          schema: {
+            type: 'string',
+          },
+          type: 'string',
+          dynamicParameterReference: 'inputs.$.body.dynamicObject.childworkflow1Type.dynamicObject2',
+        },
+        type: 'string',
+        value: [
+          {
+            id: '4512A883-BB7A-4372-AB88-CF3A5A7C8510',
+            type: 'literal',
+            value: 'fff',
+          },
+        ],
+        validationErrors: [],
+      },
+      {
+        id: 'thirdParamP3',
+        info: {
+          isDynamic: true,
+          dynamicParameterReference: 'inputs.$.body.dynamicObject.childworkflow1Type.dynamicObject2',
+        },
+        parameterKey: 'inputs.$.body.dynamicObject.childworkflow1Type.dynamicObject2.33-Type',
+        parameterName: 'body.dynamicObject.childworkflow1Type.dynamicObject2.33-Type',
+        required: true,
+        schema: {
+          isDynamic: true,
+          isNested: true,
+          key: 'inputs.$.body.dynamicObject.childworkflow1Type.dynamicObject2.33-Type',
+          name: 'body.dynamicObject.childworkflow1Type.dynamicObject2.33-Type',
+          required: true,
+          schema: {
+            type: 'string',
+          },
+          type: 'string',
+          dynamicParameterReference: 'inputs.$.body.dynamicObject.childworkflow1Type.dynamicObject2',
+        },
+        type: 'string',
+        value: [
+          {
+            id: 'AD21CA10-EF2D-4CF2-B938-10E230C3E94D',
+            type: 'literal',
+            value: 'ggg',
+          },
+        ],
+        validationErrors: [],
+      },
+    ];
+    const allDynamicDependencies: any = {
+      'inputs.$.body.dynamicObject': {
+        definition: {
+          type: 'DynamicProperties',
+          extension: {
+            dynamicState: {
+              extension: {
+                operationId: 'getWorkflowSubSchema',
+              },
+              isInput: true,
+            },
+            parameters: {
+              param1: {
+                parameterReference: 'host.workflow.id',
+                required: true,
+              },
+              param2: {
+                parameterReference: 'body.objectType.p1',
+                required: true,
+              },
+              param3: {
+                parameterReference: 'body.stringType',
+                required: true,
+              },
+            },
+          },
+        },
+        dependencyType: 'ApiSchema',
+        dependentParameters: {
+          hostworkflowid: {
+            isValid: true,
+          },
+          firstParamP1: {
+            isValid: true,
+          },
+          firstParamP2: {
+            isValid: false,
+          },
+        },
+        parameter: {
+          dynamicSchema: {
+            type: 'DynamicProperties',
+            extension: {
+              dynamicState: {
+                extension: {
+                  operationId: 'getWorkflowSubSchema',
+                },
+                isInput: true,
+              },
+              parameters: {
+                param1: {
+                  parameterReference: 'host.workflow.id',
+                  required: true,
+                },
+                param2: {
+                  parameterReference: 'body.objectType.p1',
+                  required: true,
+                },
+                param3: {
+                  parameterReference: 'body.stringType',
+                  required: true,
+                },
+              },
+            },
+          },
+          isDynamic: true,
+          isNested: true,
+          key: 'inputs.$.body.dynamicObject',
+          name: 'body.dynamicObject',
+          required: false,
+          type: 'object',
+          dynamicParameterReference: 'inputs.$.body',
+        },
+      },
+      'inputs.$.body.dynamicObject.childworkflow1Type.dynamicObject2': {
+        definition: {
+          type: 'DynamicProperties',
+          extension: {
+            dynamicState: {
+              extension: {
+                operationId: 'getWorkflowSubSubSchema',
+              },
+              isInput: true,
+            },
+            parameters: {
+              param1: {
+                parameterReference: 'host.workflow.id',
+                required: true,
+              },
+              param2: {
+                parameterReference: 'body.objectType.p1',
+                required: true,
+              },
+              param3: {
+                parameterReference: 'body.dynamicObject.childworkflow1Type.o1',
+                required: true,
+              },
+            },
+          },
+        },
+        dependencyType: 'ApiSchema',
+        dependentParameters: {
+          hostworkflowid: {
+            isValid: true,
+          },
+          firstParamP1: {
+            isValid: true,
+          },
+          secondParamP1: {
+            isValid: true,
+          },
+        },
+        parameter: {
+          dynamicSchema: {
+            type: 'DynamicProperties',
+            extension: {
+              dynamicState: {
+                extension: {
+                  operationId: 'getWorkflowSubSubSchema',
+                },
+                isInput: true,
+              },
+              parameters: {
+                param1: {
+                  parameterReference: 'host.workflow.id',
+                  required: true,
+                },
+                param2: {
+                  parameterReference: 'body.objectType.p1',
+                  required: true,
+                },
+                param3: {
+                  parameterReference: 'body.dynamicObject.childworkflow1Type.o1',
+                  required: true,
+                },
+              },
+            },
+          },
+          isDynamic: true,
+          isNested: true,
+          key: 'inputs.$.body.dynamicObject.childworkflow1Type.dynamicObject2',
+          name: 'body.dynamicObject.childworkflow1Type.dynamicObject2',
+          required: false,
+          type: 'object',
+          dynamicParameterReference: 'inputs.$.body.dynamicObject',
+        },
+      },
+    };
+    const mockConnectorService: any = {
+      getDynamicSchema: () => Promise.resolve({ type: 'json', properties: { a: { type: 'string' } } }),
+    };
+    const mockManifestService: any = {
+      isSupported: () => true,
+      isAliasingSupported: () => false,
+      getOperationManifest: () => Promise.resolve(requestManifest),
+    };
+
+    beforeEach(() => {
+      rootState.operations.inputParameters[nodeId].parameterGroups.default.parameters = defaultParameters;
+      rootState.operations.dependencies[nodeId].inputs = defaultDependencies;
+    });
+
+    test('should clear dynamic inputs for specific dynamic parameter reference when dependent parameter is changed', async () => {
+      const getStateMockFn = vi.fn(() => {
+        rootState.operations.inputParameters[nodeId].parameterGroups.default.parameters = [...defaultParameters, ...allDynamicParams];
+        rootState.operations.dependencies[nodeId].inputs = { ...defaultDependencies, ...allDynamicDependencies };
+
+        return rootState;
+      });
+      const dispatchMockFn = vi.fn();
+
+      vi.spyOn(Helper, 'isDynamicDataReadyToLoad').mockReturnValue(false);
+      await loadDynamicContentForInputsInNode(
+        nodeId,
+        /* isTrigger */ false,
+        { 'inputs.$.body.dynamicObject': allDynamicDependencies['inputs.$.body.dynamicObject'] },
+        rootState.operations.operationInfo[nodeId],
+        undefined,
+        dispatchMockFn,
+        getStateMockFn
+      );
+      expect(dispatchMockFn).toHaveBeenCalledWith({
+        type: 'operationMetadata/clearDynamicIO',
+        payload: {
+          nodeId,
+          inputs: true,
+          outputs: false,
+          dynamicParameterKeys: ['inputs.$.body.dynamicObject', 'inputs.$.body.dynamicObject.childworkflow1Type.dynamicObject2'],
+        },
+      });
+    });
+
+    test('should load dynamic inputs schema only once when dynamic inputs are empty for dynamic parameter', async () => {
+      const stepDefinition = { inputs: { body: { a: 'b' } } };
+      const getStateMockFn = vi.fn(() => {
+        rootState.operations.inputParameters[nodeId].parameterGroups.default.parameters = [...defaultParameters];
+        rootState.operations.dependencies[nodeId].inputs = { ...defaultDependencies };
+        rootState.workflowParameters.definitions = {};
+        rootState.workflow.operations = { repetitionInfos: {} };
+
+        return rootState;
+      });
+      const dispatchMockFn = vi.fn();
+      InitOperationManifestService(mockManifestService);
+      InitConnectorService(mockConnectorService);
+
+      vi.spyOn(Helper, 'isDynamicDataReadyToLoad').mockReturnValue(true);
+      vi.spyOn(VariableHelper, 'getAllVariables').mockReturnValue([]);
+      vi.spyOn(GraphHelper, 'getTriggerNodeId').mockReturnValue('manual');
+      vi.spyOn(Helper, 'updateTokenMetadataInParameters').mockReturnValue();
+      const spied = vi.spyOn(Helper, 'updateDynamicDataInNode');
+
+      await loadDynamicContentForInputsInNode(
+        nodeId,
+        /* isTrigger */ false,
+        defaultDependencies,
+        rootState.operations.operationInfo[nodeId],
+        undefined,
+        dispatchMockFn,
+        getStateMockFn,
+        stepDefinition
+      );
+
+      expect(dispatchMockFn).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('toSimpleQueryBuilderViewModel', () => {
+    it('should handle simple query builder cases', () => {
+      const input = "@equals('test','test2')";
+      const { isOldFormat, isRowFormat, itemValue } = toSimpleQueryBuilderViewModel(input);
+      expect(isOldFormat).toEqual(true);
+      expect(isRowFormat).toEqual(true);
+      expect(itemValue?.length).toEqual(5);
+      expect(itemValue?.[0].type).toEqual('literal');
+      expect(itemValue?.[0].value).toEqual('@equals(');
+      expect(itemValue?.[1].value).toEqual('test');
+      expect(itemValue?.[2].value).toEqual(',');
+      expect(itemValue?.[3].value).toEqual('test2');
+      expect(itemValue?.[4].type).toEqual('literal');
+      expect(itemValue?.[4].value).toEqual(')');
+    });
+
+    it('should handle expression tokens', () => {
+      const input = "@greater(concat(1,2),'test')";
+      const { isOldFormat, isRowFormat, itemValue } = toSimpleQueryBuilderViewModel(input);
+      expect(isOldFormat).toEqual(true);
+      expect(isRowFormat).toEqual(true);
+      expect(itemValue?.length).toEqual(5);
+      expect(itemValue?.[0].type).toEqual('literal');
+      expect(itemValue?.[0].value).toEqual('@greater(');
+      expect(itemValue?.[1].token?.value).toEqual('concat(1,2)');
+      expect(itemValue?.[2].value).toEqual(',');
+      expect(itemValue?.[3].value).toEqual('test');
+      expect(itemValue?.[4].type).toEqual('literal');
+      expect(itemValue?.[4].value).toEqual(')');
+    });
+
+    it('should handle non-query builder values', () => {
+      const input = 'this is a string';
+      const result = toSimpleQueryBuilderViewModel(input);
+      expect(result).toEqual({ isOldFormat: true, isRowFormat: false, itemValue: undefined });
+    });
+
+    it('should expect single tokens to not be itemized', () => {
+      const input = '@parameters("test")';
+      const result = toSimpleQueryBuilderViewModel(input);
+      expect(result).toEqual({ isOldFormat: true, isRowFormat: false, itemValue: undefined });
+    });
+
+    it('should handle with not queries and expression tokens', () => {
+      const input = "@not(contains(length(split(item(), '|')?[0]),length(split(item(), '|')?[0])))";
+      const { isOldFormat, isRowFormat, itemValue } = toSimpleQueryBuilderViewModel(input);
+      expect(isOldFormat).toEqual(true);
+      expect(isRowFormat).toEqual(true);
+      expect(itemValue?.length).toEqual(5);
+      expect(itemValue?.[0].type).toEqual('literal');
+      expect(itemValue?.[0].value).toEqual('@notcontains(');
+      expect(itemValue?.[1].type).toEqual('token');
+      expect(itemValue?.[1].token?.value).toEqual("length(split(item(), '|')?[0])");
+      expect(itemValue?.[2].value).toEqual(',');
+      expect(itemValue?.[3].token?.value).toEqual("length(split(item(), '|')?[0])");
+      expect(itemValue?.[4].type).toEqual('literal');
+      expect(itemValue?.[4].value).toEqual(')');
     });
   });
 });

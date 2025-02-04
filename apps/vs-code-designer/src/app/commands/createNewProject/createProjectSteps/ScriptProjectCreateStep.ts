@@ -2,19 +2,31 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { gitignoreFileName, hostFileName, localSettingsFileName, logicAppKind, workerRuntimeKey } from '../../../../constants';
+import {
+  ProjectDirectoryPath,
+  appKindSetting,
+  azureWebJobsStorageKey,
+  funcIgnoreFileName,
+  gitignoreFileName,
+  hostFileName,
+  localEmulatorConnectionString,
+  localSettingsFileName,
+  logicAppKind,
+  vscodeFolderName,
+  workerRuntimeKey,
+} from '../../../../constants';
 import { addDefaultBundle } from '../../../utils/bundleFeed';
 import { confirmOverwriteFile, writeFormattedJson } from '../../../utils/fs';
-import { getFunctionsWorkerRuntime } from '../../../utils/vsCodeConfig/settings';
 import { ProjectCreateStepBase } from './ProjectCreateStepBase';
 import { nonNullProp } from '@microsoft/vscode-azext-utils';
 import type { IActionContext } from '@microsoft/vscode-azext-utils';
-import type { IHostJsonV1, IHostJsonV2, ILocalSettingsJson, IProjectWizardContext } from '@microsoft/vscode-extension';
-import { FuncVersion } from '@microsoft/vscode-extension';
+import type { IHostJsonV1, IHostJsonV2, ILocalSettingsJson, IProjectWizardContext } from '@microsoft/vscode-extension-logic-apps';
+import { FuncVersion } from '@microsoft/vscode-extension-logic-apps';
 import * as fse from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
 import type { Progress } from 'vscode';
+import { getGitIgnoreContent } from '../../../utils/git';
 
 export class ScriptProjectCreateStep extends ProjectCreateStepBase {
   protected funcignore: string[] = [
@@ -22,11 +34,19 @@ export class ScriptProjectCreateStep extends ProjectCreateStepBase {
     '__queuestorage__',
     '__azurite_db*__.json',
     '.git*',
-    '.vscode',
-    'local.settings.json',
+    vscodeFolderName,
+    localSettingsFileName,
     'test',
     '.debug',
   ];
+  protected localSettingsJson: ILocalSettingsJson = {
+    IsEncrypted: false,
+    Values: {
+      [azureWebJobsStorageKey]: localEmulatorConnectionString,
+      [workerRuntimeKey]: 'node',
+      [appKindSetting]: logicAppKind,
+    },
+  };
   protected gitignore = '';
   protected supportsManagedDependencies = false;
 
@@ -44,41 +64,16 @@ export class ScriptProjectCreateStep extends ProjectCreateStepBase {
 
     const localSettingsJsonPath: string = path.join(context.projectPath, localSettingsFileName);
     if (await confirmOverwriteFile(context, localSettingsJsonPath)) {
-      const localSettingsJson: ILocalSettingsJson = {
-        IsEncrypted: false,
-        Values: {
-          AzureWebJobsStorage: '',
-          APP_KIND: logicAppKind,
-          ProjectDirectoryPath: path.join(context.projectPath),
-        },
-      };
-
-      const functionsWorkerRuntime: string | undefined = getFunctionsWorkerRuntime(context.language);
-      if (functionsWorkerRuntime) {
-        // tslint:disable-next-line:no-non-null-assertion
-        localSettingsJson.Values[workerRuntimeKey] = functionsWorkerRuntime;
-      }
-
-      await writeFormattedJson(localSettingsJsonPath, localSettingsJson);
+      this.localSettingsJson.Values[ProjectDirectoryPath] = path.join(context.projectPath);
+      await writeFormattedJson(localSettingsJsonPath, this.localSettingsJson);
     }
 
-    const gitignorePath: string = path.join(context.projectPath, gitignoreFileName);
+    const gitignorePath = path.join(context.projectPath, gitignoreFileName);
     if (await confirmOverwriteFile(context, gitignorePath)) {
-      await fse.writeFile(
-        gitignorePath,
-        this.gitignore.concat(`
-# Azure Functions artifacts
-bin
-obj
-appsettings.json
-local.settings.json
-__blobstorage__
-__queuestorage__
-__azurite_db*__.json`)
-      );
+      await fse.writeFile(gitignorePath, this.gitignore.concat(getGitIgnoreContent()));
     }
 
-    const funcIgnorePath: string = path.join(context.projectPath, '.funcignore');
+    const funcIgnorePath: string = path.join(context.projectPath, funcIgnoreFileName);
     if (await confirmOverwriteFile(context, funcIgnorePath)) {
       await fse.writeFile(funcIgnorePath, this.funcignore.sort().join(os.EOL));
     }

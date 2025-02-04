@@ -1,6 +1,6 @@
 import constants from '../../../common/constants';
-import type { ConnectionReference } from '../../../common/models/workflow';
-import { getApiManagementSwagger, getConnection } from '../../queries/connections';
+import type { ConnectionReference, ConnectionReferences } from '../../../common/models/workflow';
+import { getConnection } from '../../queries/connections';
 import { getOperationManifest } from '../../queries/operation';
 import type { ConnectionsStoreState } from '../../state/connection/connectionSlice';
 import type { NodeOperation } from '../../state/operation/operationMetadataSlice';
@@ -10,9 +10,17 @@ import {
   OperationManifestService,
   WorkflowService,
   isServiceProviderOperation,
-} from '@microsoft/designer-client-services-logic-apps';
+  getIntl,
+  ConnectionParameterTypes,
+  ResourceIdentityType,
+  equals,
+  ConnectionType,
+  getResourceName,
+  getRecordEntry,
+  getPropertyValue,
+  deepCompareObjects,
+} from '@microsoft/logic-apps-shared';
 import type { AssistedConnectionProps } from '@microsoft/designer-ui';
-import { getIntl } from '@microsoft/intl-logic-apps';
 import type {
   Connection,
   ConnectionParameterSet,
@@ -20,18 +28,25 @@ import type {
   Connector,
   ManagedIdentity,
   OperationManifest,
-} from '@microsoft/utils-logic-apps';
-import { ConnectionParameterTypes, ResourceIdentityType, equals, ConnectionType } from '@microsoft/utils-logic-apps';
+} from '@microsoft/logic-apps-shared';
+import type { UpdateConnectionPayload } from '../../../core/actions/bjsworkflow/connections';
 
 export function getConnectionId(state: ConnectionsStoreState, nodeId: string): string {
-  const { connectionsMapping, connectionReferences } = state;
-  const reference = connectionReferences[connectionsMapping[nodeId] ?? ''];
-  return reference ? reference.connection.id : '';
+  return getConnectionReference(state, nodeId)?.connection?.id ?? '';
 }
 
 export function getConnectionReference(state: ConnectionsStoreState, nodeId: string): ConnectionReference {
   const { connectionsMapping, connectionReferences } = state;
-  return connectionReferences[connectionsMapping[nodeId] ?? ''];
+  return getRecordEntry(connectionReferences, getRecordEntry(connectionsMapping, nodeId) ?? '') ?? mockConnectionReference;
+}
+
+const mockConnectionReference: ConnectionReference = {
+  api: { id: 'apiId' },
+  connection: { id: 'connectionId' },
+};
+
+export function isConnectionValid(connection: Connection): boolean {
+  return !connection.properties?.statuses?.some((status) => equals(status.status, 'error'));
 }
 
 export async function isConnectionReferenceValid(
@@ -49,8 +64,25 @@ export async function isConnectionReferenceValid(
     return false;
   }
 
-  const connection = await getConnection(reference.connection.id, connectorId, /* fetchResourceIfNeeded */ true);
-  return !!connection && !connection.properties?.statuses?.some((status) => equals(status.status, 'error'));
+  try {
+    const connection = await getConnection(reference.connection.id, connectorId, /* fetchResourceIfNeeded */ true);
+    return !!connection && isConnectionValid(connection);
+  } catch (error: any) {
+    return false;
+  }
+}
+
+export function getExistingReferenceKey(allReferences: ConnectionReferences, connectionData: UpdateConnectionPayload): string | undefined {
+  const { connectionId, connectorId, connectionProperties, connectionRuntimeUrl } = connectionData;
+  return Object.keys(allReferences).find((referenceKey) => {
+    const reference = allReferences[referenceKey];
+    return (
+      equals(reference.api.id, connectorId) &&
+      equals(reference.connection.id, connectionId) &&
+      equals(reference.connectionRuntimeUrl ?? '', connectionRuntimeUrl ?? '') &&
+      deepCompareObjects(reference.connectionProperties, connectionProperties)
+    );
+  });
 }
 
 export function getAssistedConnectionProps(connector: Connector, manifest?: OperationManifest): AssistedConnectionProps | undefined {
@@ -62,24 +94,28 @@ export function getAssistedConnectionProps(connector: Connector, manifest?: Oper
 
   const intl = getIntl();
   const headers = [
-    intl.formatMessage({ defaultMessage: 'Name', description: 'Header for resource name' }),
-    intl.formatMessage({ defaultMessage: 'Resource Group', description: 'Header for resource group name' }),
-    intl.formatMessage({ defaultMessage: 'Location', description: 'Header for resource lcoation' }),
+    intl.formatMessage({ defaultMessage: 'Name', id: 'AGCm1p', description: 'Header for resource name' }),
+    intl.formatMessage({ defaultMessage: 'Resource group', id: 'ao6BlS', description: 'Header for resource group name' }),
+    intl.formatMessage({ defaultMessage: 'Location', id: 'aSnCCB', description: 'Header for resource lcoation' }),
   ];
   if (manifest?.properties.connection?.type === ConnectionType.Function) {
     const functionAppsCallback = () => FunctionService().fetchFunctionApps();
-    const functionsCallback = (functionApp?: any) => FunctionService().fetchFunctionAppsFunctions(functionApp.id ?? '');
+    const fetchSubResourcesCallback = (functionApp?: any) => FunctionService().fetchFunctionAppsFunctions(functionApp.id ?? '');
     const functionAppsLoadingText = intl.formatMessage({
-      defaultMessage: 'Loading Function Apps...',
+      defaultMessage: 'Loading function apps...',
+      id: 'YZl7FU',
       description: 'Text for loading function apps',
     });
 
     const functionAppsLabel = intl.formatMessage({
       defaultMessage: 'Select a function app function',
+      id: 'Xkt2vD',
       description: 'Label for function app selection',
     });
 
-    const getColumns = (functionApp: any) => [functionApp?.name, functionApp?.properties?.resourceGroup, functionApp?.location];
+    const getColumns = (functionApp: any) => [getResourceName(functionApp), functionApp?.properties?.resourceGroup, functionApp?.location];
+
+    const getSubResourceName = (azureFunction: any) => getResourceName(azureFunction).split('/')?.[1] ?? azureFunction?.id;
 
     return {
       resourceType: 'functionApps',
@@ -89,20 +125,23 @@ export function getAssistedConnectionProps(connector: Connector, manifest?: Oper
       getColumns,
       getResourcesCallback: functionAppsCallback,
       loadingText: functionAppsLoadingText,
-      getSubResourceName: (azureFunction: any) => azureFunction.name.split('/')[1],
-      fetchSubResourcesCallback: functionsCallback,
+      getSubResourceName,
+      fetchSubResourcesCallback,
     };
-  } else if (manifest?.properties.connection?.type === ConnectionType.ApiManagement) {
+  }
+  if (manifest?.properties.connection?.type === ConnectionType.ApiManagement) {
     const apiInstancesCallback = () => ApiManagementService().fetchApiManagementInstances();
     const apisCallback = (apim?: any) => ApiManagementService().fetchApisInApiM(apim.id ?? '');
     const apimInstancesLoadingText = intl.formatMessage({
-      defaultMessage: 'Loading Api Management service instances...',
+      defaultMessage: 'Loading API Management service instances...',
+      id: 'UNXQDI',
       description: 'Text for loading apim service instances',
     });
 
     const apisLabel = intl.formatMessage({
-      defaultMessage: 'Select an api from apim instance',
-      description: 'Label for api selection',
+      defaultMessage: 'Select an API from an API Management instance',
+      id: '27Nhhv',
+      description: 'Label for API selection',
     });
 
     const getColumns = (apimInstance: any) => [apimInstance?.name, apimInstance?.id.split('/')[4], apimInstance?.location];
@@ -123,41 +162,54 @@ export function getAssistedConnectionProps(connector: Connector, manifest?: Oper
   return undefined;
 }
 
-export async function getConnectionParametersForAzureConnection(connectionType?: ConnectionType, selectedSubResource?: any): Promise<any> {
+export async function getConnectionParametersForAzureConnection(
+  connectionType?: ConnectionType,
+  selectedSubResource?: any,
+  parameterValues?: Record<string, any>,
+  isMultiAuthConnection?: boolean // TODO - Should remove when backend bits are ready for multi-auth in resource picker connections
+): Promise<any> {
   if (connectionType === ConnectionType.Function) {
     const functionId = selectedSubResource?.id;
-    const authCodeValue = await FunctionService().fetchFunctionKey(functionId);
     const triggerUrl = selectedSubResource?.properties?.invoke_url_template;
+    const isQueryString = isMultiAuthConnection ? equals(getPropertyValue(parameterValues ?? {}, 'type'), 'querystring') : true;
+    let updatedParameterValues = { ...parameterValues };
+
+    if (isQueryString) {
+      const authCodeValue = await FunctionService().fetchFunctionKey(functionId);
+      updatedParameterValues = isMultiAuthConnection
+        ? { ...updatedParameterValues, value: authCodeValue }
+        : { ...updatedParameterValues, authentication: { type: 'QueryString', name: 'Code', value: authCodeValue } };
+    }
+
     return {
+      ...updatedParameterValues,
       function: { id: functionId },
       triggerUrl,
-      authentication: {
-        type: 'QueryString',
-        name: 'Code',
-        value: authCodeValue,
-      },
     };
+    // biome-ignore lint/style/noUselessElse: needed for future implementation
   } else if (connectionType === ConnectionType.ApiManagement) {
     // TODO - Need to find apps which have authentication set, check with Alex.
     const apimApiId = selectedSubResource?.id;
-    const { api } = await getApiManagementSwagger(apimApiId);
+    const { api } = await ApiManagementService().fetchApiMSwagger(apimApiId);
     const baseUrl = api.host ? (api.schemes?.length ? `${api.schemes.at(-1)}://${api.host}` : `http://${api.host}`) : 'NotFound';
     const fullUrl = api.basePath ? `${baseUrl}${api.basePath}` : baseUrl;
     const subscriptionKey = (api.securityDefinitions?.apiKeyHeader as any)?.name ?? 'NotFound';
 
     return {
+      ...parameterValues,
       apiId: apimApiId,
       baseUrl: fullUrl,
       subscriptionKey,
     };
   }
 
-  return {};
+  return parameterValues;
 }
 
 export function getSupportedParameterSets(
   parameterSets: ConnectionParameterSets | undefined,
-  operationType: string
+  operationType: string,
+  connectorCapabilities: string[] | undefined
 ): ConnectionParameterSets | undefined {
   if (!parameterSets) {
     return undefined;
@@ -167,27 +219,22 @@ export function getSupportedParameterSets(
   return {
     ...parameterSets,
     values: parameterSets.values.filter((parameterSet) => {
-      if (containsManagedIdentityParameter(parameterSet)) {
-        return (
-          !isServiceProviderOperation(operationType) ||
-          identity?.type?.toLowerCase()?.includes(ResourceIdentityType.SYSTEM_ASSIGNED.toLowerCase())
-        );
-      }
-
-      return true;
+      return containsManagedIdentityParameter(parameterSet)
+        ? isManagedIdentitySupported(operationType, connectorCapabilities, identity)
+        : true;
     }),
   };
 }
 
-export function isIdentityPresentInLogicApp(identity: string, managedIdentity: ManagedIdentity): boolean {
+export function isIdentityPresentInLogicApp(identity: string, managedIdentity: ManagedIdentity | undefined): boolean {
   const identitiesInLogicApp = [];
-  const type = managedIdentity.type;
+  const type = managedIdentity?.type;
   if (equals(type, ResourceIdentityType.SYSTEM_ASSIGNED) || equals(type, ResourceIdentityType.SYSTEM_ASSIGNED_USER_ASSIGNED)) {
     identitiesInLogicApp.push(constants.SYSTEM_ASSIGNED_MANAGED_IDENTITY);
   }
 
   if (equals(type, ResourceIdentityType.USER_ASSIGNED) || equals(type, ResourceIdentityType.SYSTEM_ASSIGNED_USER_ASSIGNED)) {
-    for (const identity of Object.keys(managedIdentity.userAssignedIdentities ?? {})) {
+    for (const identity of Object.keys(managedIdentity?.userAssignedIdentities ?? {})) {
       identitiesInLogicApp.push(identity);
     }
   }
@@ -196,7 +243,7 @@ export function isIdentityPresentInLogicApp(identity: string, managedIdentity: M
 }
 
 // NOTE: This method is specifically for Multi-Auth type connectors.
-export function isConnectionMultiAuthManagedIdentityType(connection: Connection | undefined, connector: Connector | undefined): boolean {
+export function isConnectionMultiAuthManagedIdentityType(connection?: Connection | null, connector?: Connector): boolean {
   const connectionParameterValueSet = (connection?.properties as any)?.parameterValueSet;
   const connectorConnectionParameterSets = connector?.properties?.connectionParameterSets;
 
@@ -208,7 +255,7 @@ export function isConnectionMultiAuthManagedIdentityType(connection: Connection 
     )[0];
     const parameters = parameterValueSetWithSameName?.parameters || {};
     for (const parameter of Object.keys(parameters)) {
-      if (parameters[parameter].type === ConnectionParameterTypes[ConnectionParameterTypes.managedIdentity]) {
+      if (parameters[parameter].type === ConnectionParameterTypes.managedIdentity) {
         return true;
       }
     }
@@ -222,6 +269,21 @@ export function isConnectionSingleAuthManagedIdentityType(connection: Connection
   return !!(connection?.properties?.parameterValueType === ALT_PARAMETER_VALUE_TYPE) && !isMultiAuthConnection(connection);
 }
 
+function isManagedIdentitySupported(operationType: string, connectorCapabilities: string[] = [], identity?: ManagedIdentity): boolean {
+  if (isServiceProviderOperation(operationType)) {
+    return (
+      isUserAssignedIdentitySupportedForInApp(connectorCapabilities) ||
+      !!identity?.type?.toLowerCase()?.includes(ResourceIdentityType.SYSTEM_ASSIGNED.toLowerCase())
+    );
+  }
+
+  return true;
+}
+
+function isUserAssignedIdentitySupportedForInApp(connectorCapabilities: string[] = []) {
+  return !!connectorCapabilities?.find((capability) => equals(capability, 'supportsUserAssignedIdentity'));
+}
+
 function isMultiAuthConnection(connection: Connection | undefined): boolean {
   return connection !== undefined && (connection.properties as any).parameterValueSet !== undefined;
 }
@@ -230,7 +292,7 @@ function containsManagedIdentityParameter(parameterSet: ConnectionParameterSet):
   const { parameters } = parameterSet;
   return Object.keys(parameters).some(
     (parameter) =>
-      parameters[parameter].type === ConnectionParameterTypes[ConnectionParameterTypes.managedIdentity] ||
+      parameters[parameter].type === ConnectionParameterTypes.managedIdentity ||
       equals(parameters[parameter].uiDefinition?.constraints?.default, 'managedserviceidentity')
   );
 }

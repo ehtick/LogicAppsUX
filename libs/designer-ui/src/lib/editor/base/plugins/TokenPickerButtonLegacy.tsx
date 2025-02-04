@@ -50,14 +50,17 @@ export default function TokenPickerButtonLegacy({
 
   const addContent = intl.formatMessage({
     defaultMessage: 'Add dynamic content',
+    id: '3BZnxY',
     description: 'Label for button to open token picker',
   });
   const addContentAltTextShow = intl.formatMessage({
-    defaultMessage: 'Button to add dynamic content if TokenPicker is shown',
+    defaultMessage: 'Button to add dynamic content if token picker is shown',
+    id: 'TZpm7X',
     description: 'Text for if image does not show up',
   });
   const addContentAltTextHide = intl.formatMessage({
-    defaultMessage: 'Button to add dynamic content if TokenPicker is hidden',
+    defaultMessage: 'Button to add dynamic content if token picker is hidden',
+    id: 'fNE/hg',
     description: 'Text for if image does not show up',
   });
 
@@ -72,7 +75,8 @@ export default function TokenPickerButtonLegacy({
   };
 
   const dynamicContentButtonText = intl.formatMessage({
-    defaultMessage: `Insert data from previous step (You can also add by typing Alt + / in the editor)`,
+    defaultMessage: 'Insert data from previous step (you can also add by typing Alt + / in the editor)',
+    id: 'wXLEcJ',
     description: 'Label for button to open dynamic content token picker',
   });
 
@@ -81,6 +85,7 @@ export default function TokenPickerButtonLegacy({
       <button
         id={labelId}
         className={`msla-tokenpicker-button ${buttonClassName}`}
+        data-automation-id="msla-tokenpicker-button"
         onClick={() => {
           handleClick();
         }}

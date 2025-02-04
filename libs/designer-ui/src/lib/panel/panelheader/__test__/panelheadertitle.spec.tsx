@@ -2,12 +2,12 @@ import type { PanelHeaderTitleProps } from '../panelheadertitle';
 import { PanelHeaderTitle } from '../panelheadertitle';
 import * as React from 'react';
 import * as ReactShallowRenderer from 'react-test-renderer/shallow';
-
+import { describe, vi, beforeEach, afterEach, beforeAll, afterAll, it, test, expect } from 'vitest';
 describe('ui/panel/panelheadertitle', () => {
   let minimal: PanelHeaderTitleProps, renderer: ReactShallowRenderer.ShallowRenderer;
 
   beforeEach(() => {
-    minimal = {};
+    minimal = { onChange: vi.fn(), handleTitleUpdate: vi.fn() };
     renderer = ReactShallowRenderer.createRenderer();
   });
 
@@ -28,7 +28,7 @@ describe('ui/panel/panelheadertitle', () => {
     expect(title.props.className).toBe('msla-card-title');
     expect(title.props.id).toBe(props.titleId);
     expect(title.props.readOnly).toBe(props.readOnlyMode);
-    expect(title.props.ariaLabel).toBe('Card Title');
+    expect(title.props.ariaLabel).toBe('Card title');
     expect(title.props.value).toBe(props.titleValue);
   });
 });

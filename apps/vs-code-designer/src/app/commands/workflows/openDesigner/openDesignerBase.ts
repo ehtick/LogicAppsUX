@@ -5,12 +5,20 @@
 import { tryGetWebviewPanel } from '../../../utils/codeless/common';
 import { getWebViewHTML } from '../../../utils/codeless/getWebViewHTML';
 import type { IAzureConnectorsContext } from '../azureConnectorWizard';
-import { ResolutionService } from '@microsoft/parsers-logic-apps';
+import { getRecordEntry, isEmptyString } from '@microsoft/logic-apps-shared';
 import type { IActionContext } from '@microsoft/vscode-azext-utils';
-import type { Artifacts, AzureConnectorDetails, ConnectionsData, FileDetails, Parameter } from '@microsoft/vscode-extension';
+import {
+  resolveConnectionsReferences,
+  type Artifacts,
+  type AzureConnectorDetails,
+  type ConnectionsData,
+  type FileDetails,
+  type Parameter,
+} from '@microsoft/vscode-extension-logic-apps';
+import { azurePublicBaseUrl, workflowManagementBaseURIKey } from '../../../../constants';
 import type { WebviewPanel, WebviewOptions, WebviewPanelOptions } from 'vscode';
 
-export interface IDesingerOptions {
+export interface IDesignerOptions {
   references?: any;
   connectionsData: string;
   parametersData: Record<string, Parameter>;
@@ -76,38 +84,28 @@ export abstract class OpenDesignerBase {
     this.panel.webview.postMessage(msg);
   }
 
-  protected async getWebviewContent(options: IDesingerOptions): Promise<string> {
+  protected async getWebviewContent(options: IDesignerOptions): Promise<string> {
     const { parametersData, localSettings, artifacts, azureDetails } = options;
     let { connectionsData } = options;
 
     const mapArtifacts = {};
-    const parameters = {};
     connectionsData = this.getInterpolateConnectionData(connectionsData);
-
-    Object.keys(parametersData).forEach((key) => {
-      parameters[key] = parametersData[key].value;
-    });
 
     for (const extension of Object.keys(artifacts.maps)) {
       const extensionName = extension.substr(1);
       mapArtifacts[extensionName] = artifacts.maps[extension];
     }
 
-    const parametersResolutionService = new ResolutionService(parameters, localSettings);
+    const resolvedConnections: ConnectionsData = isEmptyString(connectionsData)
+      ? {}
+      : resolveConnectionsReferences(connectionsData, parametersData, localSettings);
 
-    const resolvedConnections = parametersResolutionService.resolve(connectionsData);
-    let parsedConnections: ConnectionsData = {};
-    try {
-      parsedConnections = JSON.parse(resolvedConnections);
-    } catch (e) {
-      console.log(e);
-    }
-    this.connectionData = parsedConnections;
-    this.apiHubServiceDetails = this.getApiHubServiceDetails(azureDetails);
+    this.connectionData = resolvedConnections;
+    this.apiHubServiceDetails = this.getApiHubServiceDetails(azureDetails, localSettings);
     this.mapArtifacts = mapArtifacts;
     this.schemaArtifacts = artifacts.schemas;
 
-    return await getWebViewHTML('webview', this.panel);
+    return await getWebViewHTML('vs-code-react', this.panel);
   }
 
   private addCurlyBraces(root: string) {
@@ -119,12 +117,12 @@ export abstract class OpenDesignerBase {
       const canHavekeyWord = i + 12 <= stringLength;
 
       if (interpolationString[i] === '@' && canHavekeyWord && this.haveKeyWord(interpolationString.substring(i, i + 12))) {
-        resolvedString += interpolationString[i] + '{';
+        resolvedString += `${interpolationString[i]}{`;
         const closeTagIndex = interpolationString.indexOf(')', i);
-        interpolationString =
-          interpolationString.substring(0, closeTagIndex + 1) +
-          '}' +
-          interpolationString.substring(closeTagIndex + 1, interpolationString.length);
+        interpolationString = `${interpolationString.substring(0, closeTagIndex + 1)}}${interpolationString.substring(
+          closeTagIndex + 1,
+          interpolationString.length
+        )}`;
         stringLength = interpolationString.length;
       } else {
         resolvedString += interpolationString[i];
@@ -141,7 +139,7 @@ export abstract class OpenDesignerBase {
     if (!connectionsData) {
       return connectionsData;
     }
-    const parseConnectionsData = JSON.parse(connectionsData);
+    const parseConnectionsData: ConnectionsData = JSON.parse(connectionsData);
     const managedApiConnections = Object.keys(parseConnectionsData?.managedApiConnections ?? {});
 
     managedApiConnections?.forEach((apiConnection: any) => {
@@ -157,13 +155,14 @@ export abstract class OpenDesignerBase {
     return JSON.stringify(parseConnectionsData);
   }
 
-  protected getApiHubServiceDetails(azureDetails: AzureConnectorDetails) {
+  protected getApiHubServiceDetails(azureDetails: AzureConnectorDetails, localSettings: Record<string, any>) {
     const isApiHubEnabled = azureDetails.enabled;
+    const workflowManagementBaseUrl = getRecordEntry(localSettings, workflowManagementBaseURIKey) ?? azurePublicBaseUrl;
 
     return isApiHubEnabled
       ? {
           apiVersion: '2018-07-01-preview',
-          baseUrl: 'https://management.azure.com',
+          baseUrl: workflowManagementBaseUrl,
           subscriptionId: azureDetails.subscriptionId,
           location: azureDetails.location,
           resourceGroup: azureDetails.resourceGroupName,

@@ -1,7 +1,7 @@
 import type { GenerateXsltResponse, TestMapResponse } from '.';
 import { dataMapperApiVersions } from '.';
-import type { Schema } from '../../../models';
 import type { FunctionManifest } from '../../../models/Function';
+import type { DataMapSchema } from '@microsoft/logic-apps-shared';
 
 type DmErrorResponse = { code: string; message: string };
 
@@ -48,9 +48,10 @@ export class DataMapperApiService {
 
   private getBaseUri = () => `${this.options.baseUrl}:${this.options.port}`;
 
-  private getSchemaFileUri = (schemaFilename: string) =>
-    `${this.getBaseUri()}/runtime/webhooks/workflow/api/management/schemas/${schemaFilename}/contents/schemaTree`;
-
+  private getSchemaFileUri = (schemaFilename: string, schemaFilePath: string) => {
+    const queryParams = schemaFilePath.length === 0 ? '' : `?relativePath=${schemaFilePath}`;
+    return `${this.getBaseUri()}/runtime/webhooks/workflow/api/management/schemas/${schemaFilename}/contents/schemaTree${queryParams}`;
+  };
   private getFunctionsManifestUri = () =>
     `${this.getBaseUri()}/runtime/webhooks/workflow/api/management/mapTransformations?api-version=${dataMapperApiVersions.Oct2019Edge}`;
 
@@ -78,9 +79,10 @@ export class DataMapperApiService {
   }
 
   // NOTE: From BPM repo, looks like two schema files with the same name will prefer the JSON one
-  async getSchemaFile(schemaFilename: string): Promise<Schema> {
+  async getSchemaFile(schemaFilename: string, schemaFilePath: string): Promise<DataMapSchema> {
     const headers = this.getHeaders();
-    const schemaFileUri = this.getSchemaFileUri(schemaFilename.substring(0, schemaFilename.lastIndexOf('.')));
+    const schemaFileUri = this.getSchemaFileUri(schemaFilename.substring(0, schemaFilename.lastIndexOf('.')), schemaFilePath);
+    console.log(schemaFileUri);
     const response = await fetch(schemaFileUri, { headers, method: 'GET' });
 
     if (!response.ok) {
@@ -88,7 +90,7 @@ export class DataMapperApiService {
       throw new Error(`${response.status} - ${errorResponse.code}: ${errorResponse.message}`);
     }
 
-    const schemaFileResponse: Schema = await response.json();
+    const schemaFileResponse: DataMapSchema = await response.json();
 
     return schemaFileResponse;
   }
@@ -133,10 +135,7 @@ export class DataMapperApiService {
       statusText: response.statusText,
     };
 
-    if (!response.ok) {
-      const errorResponse: DmErrorResponse = (await response.json()).error;
-      testMapResponse.statusText = `${errorResponse.code}: ${errorResponse.message}`;
-    } else {
+    if (response.ok) {
       const respJson = await response.json();
       // Decode base64 response content
       respJson.outputInstance.$content = Buffer.from(respJson.outputInstance.$content, 'base64').toString('utf-8');
@@ -144,8 +143,11 @@ export class DataMapperApiService {
       testMapResponse.outputInstance = respJson.outputInstance;
 
       if (!testMapResponse?.outputInstance) {
-        throw new Error(`Test Map error: Schema output instance not properly set on successful response`);
+        throw new Error('Test Map error: Schema output instance not properly set on successful response');
       }
+    } else {
+      const errorResponse: DmErrorResponse = (await response.json()).error;
+      testMapResponse.statusText = `${errorResponse.code}: ${errorResponse.message}`;
     }
 
     return testMapResponse;

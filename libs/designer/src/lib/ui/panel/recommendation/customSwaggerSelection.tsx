@@ -1,8 +1,13 @@
 import type { AppDispatch } from '../../../core';
 import { addOperation } from '../../../core/actions/bjsworkflow/add';
-import { useRelationshipIds, useIsParallelBranch, useIsAddingTrigger } from '../../../core/state/panel/panelSelectors';
-import { PrimaryButton, Text, TextField } from '@fluentui/react';
-import type { DiscoveryOperation, DiscoveryResultTypes } from '@microsoft/utils-logic-apps';
+import {
+  useDiscoveryPanelIsAddingTrigger,
+  useDiscoveryPanelIsParallelBranch,
+  useDiscoveryPanelRelationshipIds,
+} from '../../../core/state/panel/panelSelectors';
+import { TextField } from '@fluentui/react';
+import { Text, Button } from '@fluentui/react-components';
+import type { DiscoveryOperation, DiscoveryResultTypes } from '@microsoft/logic-apps-shared';
 import { useCallback, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useDispatch } from 'react-redux';
@@ -18,14 +23,14 @@ export const CustomSwaggerSelection = (props: CustomSwaggerSelectionProps) => {
 
   const intl = useIntl();
 
-  const isTrigger = useIsAddingTrigger();
-  const relationshipIds = useRelationshipIds();
-  const isParallelBranch = useIsParallelBranch();
+  const isTrigger = useDiscoveryPanelIsAddingTrigger();
+  const relationshipIds = useDiscoveryPanelRelationshipIds();
+  const isParallelBranch = useDiscoveryPanelIsParallelBranch();
 
   const [swaggerUrl, setSwaggerUrl] = useState('');
 
   const submitCallback = useCallback(() => {
-    const newNodeId = operation.name.replaceAll(' ', '_');
+    const newNodeId = (operation?.properties?.summary ?? operation.name).replaceAll(' ', '_');
     dispatch(
       addOperation({
         operation,
@@ -33,22 +38,24 @@ export const CustomSwaggerSelection = (props: CustomSwaggerSelectionProps) => {
         nodeId: newNodeId,
         isParallelBranch,
         isTrigger,
-        actionMetadata: {
-          apiDefinitionUrl: swaggerUrl,
-          swaggerSource: 'custom',
+        presetParameterValues: {
+          'metadata.apiDefinitionUrl': swaggerUrl,
+          'metadata.swaggerSource': 'custom',
         },
       })
     );
   }, [dispatch, isParallelBranch, isTrigger, operation, relationshipIds, swaggerUrl]);
 
   const inputLabel = intl.formatMessage({
-    defaultMessage: 'Swagger Endpoint',
+    defaultMessage: 'Swagger endpoint',
+    id: '3Xf/4S',
     description: 'Swagger endpoint input label',
   });
 
   const inputPlaceholder = intl.formatMessage(
     {
       defaultMessage: 'Example: {url}',
+      id: 'IHMd3X',
       description: 'Swagger url input placeholder',
     },
     {
@@ -58,6 +65,7 @@ export const CustomSwaggerSelection = (props: CustomSwaggerSelectionProps) => {
 
   const urlErrorMessage = intl.formatMessage({
     defaultMessage: 'Please enter a valid URL',
+    id: 'eHgfpz',
     description: 'Swagger url input error message',
   });
 
@@ -95,15 +103,18 @@ export const CustomSwaggerSelection = (props: CustomSwaggerSelectionProps) => {
         validateOnFocusOut={true}
       />
 
-      <PrimaryButton
+      <Button
         disabled={!readyToSubmit}
         onClick={() => {
-          if (!readyToSubmit) return;
+          if (!readyToSubmit) {
+            return;
+          }
           submitCallback();
         }}
+        appearance="primary"
       >
-        {intl.formatMessage({ defaultMessage: 'Add Action', description: 'Add action button text' })}
-      </PrimaryButton>
+        {intl.formatMessage({ defaultMessage: 'Add action', id: '0/VGiF', description: 'Add action button text' })}
+      </Button>
     </div>
   );
 };

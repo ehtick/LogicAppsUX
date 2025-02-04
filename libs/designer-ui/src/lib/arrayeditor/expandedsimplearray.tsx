@@ -1,13 +1,14 @@
-import type { SimpleArrayItem, ValueSegment } from '..';
-import { StringEditor } from '..';
-import type { ChangeState, GetTokenPickerHandler } from '../editor/base';
+import type { ComboboxItem, SimpleArrayItem, TokenPickerButtonEditorProps, ValueSegment } from '..';
+import { Combobox, StringEditor } from '..';
+import type { ChangeState, GetTokenPickerHandler, loadParameterValueFromStringHandler } from '../editor/base';
 import { notEqual } from '../editor/base/utils/helper';
-import { Label } from '../label';
+import { Label, RequiredMarkerSide } from '../label';
 import type { LabelProps } from '../label';
 import type { IContextualMenuProps, IIconProps, IIconStyles } from '@fluentui/react';
 import { IconButton, TooltipHost, DefaultButton } from '@fluentui/react';
-import { guid } from '@microsoft/utils-logic-apps';
+import { guid } from '@microsoft/logic-apps-shared';
 import { useIntl } from 'react-intl';
+import { getComoboxEnumOptions } from './util/util';
 
 const addItemButtonIconProps: IIconProps = {
   iconName: 'Add',
@@ -29,27 +30,37 @@ export interface ExpandedSimpleArrayProps {
   labelProps: LabelProps;
   items: SimpleArrayItem[];
   canDeleteLastItem: boolean;
-  readOnly?: boolean;
   placeholder?: string;
   valueType?: string;
-  getTokenPicker: GetTokenPickerHandler;
+  itemEnum?: string[];
+  readonly?: boolean;
+  tokenPickerButtonProps?: TokenPickerButtonEditorProps;
   setItems: (newItems: SimpleArrayItem[]) => void;
+  options?: ComboboxItem[];
+  getTokenPicker: GetTokenPickerHandler;
+  tokenMapping?: Record<string, ValueSegment>;
+  loadParameterValueFromString?: loadParameterValueFromStringHandler;
+  isDynamic?: boolean;
 }
 
 export const ExpandedSimpleArray = ({
   labelProps,
   items,
   canDeleteLastItem,
-  readOnly,
   placeholder,
   valueType,
-  getTokenPicker,
+  itemEnum,
   setItems,
+  readonly,
+  options,
+  isDynamic,
+  ...props
 }: ExpandedSimpleArrayProps): JSX.Element => {
   const intl = useIntl();
 
   const addItemButtonLabel = intl.formatMessage({
     defaultMessage: 'Add new item',
+    id: 'JWl/LD',
     description: 'Label to add item to array editor',
   });
 
@@ -65,6 +76,8 @@ export const ExpandedSimpleArray = ({
     }
   };
 
+  const comboboxOptions = getComoboxEnumOptions(options, itemEnum);
+
   return (
     <div className="msla-array-container msla-array-item-container">
       {items.map((item, index) => {
@@ -74,26 +87,38 @@ export const ExpandedSimpleArray = ({
               {renderLabel(index, labelProps.text, true)}
               <div className="msla-array-item-commands">
                 <ItemMenuButton
-                  disabled={!!readOnly}
+                  disabled={!!readonly}
                   itemKey={index}
                   visible={canDeleteLastItem || items.length > 1}
                   onDeleteItem={(index) => deleteItem(index)}
                 />
               </div>
             </div>
-            <StringEditor
-              className="msla-array-editor-container-expanded"
-              valueType={valueType}
-              initialValue={item.value ?? []}
-              editorBlur={(newState) => handleArrayElementSaved(item.value ?? [], newState, index)}
-              placeholder={placeholder}
-              getTokenPicker={getTokenPicker}
-            />
+            {isDynamic || (comboboxOptions ?? [])?.length > 0 ? (
+              <Combobox
+                {...props}
+                valueType={valueType}
+                options={comboboxOptions ?? []}
+                initialValue={item.value ?? []}
+                placeholder={placeholder}
+                onChange={(newState) => handleArrayElementSaved(item.value ?? [], newState, index)}
+              />
+            ) : (
+              <StringEditor
+                {...props}
+                className="msla-array-editor-container-expanded"
+                valueType={valueType}
+                initialValue={item.value ?? []}
+                editorBlur={(newState) => handleArrayElementSaved(item.value ?? [], newState, index)}
+                placeholder={placeholder}
+              />
+            )}
           </div>
         );
       })}
       <div className="msla-array-toolbar">
         <DefaultButton
+          disabled={readonly}
           className="msla-array-add-item-button"
           iconProps={addItemButtonIconProps}
           text={addItemButtonLabel}
@@ -104,10 +129,10 @@ export const ExpandedSimpleArray = ({
   );
 };
 
-export const renderLabel = (index: number, labelName?: string, isRequired?: boolean): JSX.Element => {
+const renderLabel = (index: number, labelName?: string, isRequired?: boolean): JSX.Element => {
   return (
     <div className="msla-array-editor-label">
-      <Label text={labelName + ' - ' + (index + 1)} isRequiredField={isRequired ?? false} />
+      <Label text={`${labelName} - ${index + 1}`} isRequiredField={isRequired ?? false} requiredMarkerSide={RequiredMarkerSide.LEFT} />
     </div>
   );
 };
@@ -126,11 +151,13 @@ export const ItemMenuButton = ({ disabled, itemKey, visible, onDeleteItem }: Ite
   }
   const deleteButton = intl.formatMessage({
     defaultMessage: 'Delete',
+    id: 'JErLDT',
     description: 'Delete label',
   });
 
   const menuButton = intl.formatMessage({
     defaultMessage: 'Menu',
+    id: 'z3VuE+',
     description: 'Menu label',
   });
 

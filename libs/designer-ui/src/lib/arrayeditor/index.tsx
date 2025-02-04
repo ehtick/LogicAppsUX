@@ -1,6 +1,7 @@
+import type { ComboboxItem } from '../combobox';
 import type { ValueSegment } from '../editor';
 import { EditorCollapseToggle } from '../editor';
-import type { BaseEditorProps, CastHandler } from '../editor/base';
+import type { BaseEditorProps, CallbackHandler, CastHandler } from '../editor/base';
 import type { LabelProps } from '../label';
 import { CollapsedArray } from './collapsedarray';
 import { ExpandedComplexArray } from './expandedcomplexarray';
@@ -9,11 +10,18 @@ import { parseComplexItems, parseSimpleItems } from './util/serializecollapsedar
 import type { ItemSchemaItemProps } from './util/util';
 import { getOneDimensionalSchema, initializeComplexArrayItems, initializeSimpleArrayItems } from './util/util';
 import { useEffect, useMemo, useState } from 'react';
+import { useIntl } from 'react-intl';
 
-export enum ArrayType {
-  COMPLEX = 'complex',
-  SIMPLE = 'simple',
-}
+export const ArrayType = {
+  COMPLEX: 'complex',
+  SIMPLE: 'simple',
+} as const;
+export const InitialMode = {
+  Array: 'array',
+  Items: 'items',
+};
+
+export type ArrayType = (typeof ArrayType)[keyof typeof ArrayType];
 
 export interface ArrayItemSchema {
   type: string;
@@ -24,6 +32,9 @@ export interface ArrayItemSchema {
   required?: string[];
   description?: string;
   format?: string;
+  enum?: string[];
+  readOnly?: boolean;
+  [index: string]: any;
 }
 
 export interface ComplexArrayItem {
@@ -52,6 +63,15 @@ export interface ArrayEditorProps extends BaseEditorProps {
   itemSchema: ArrayItemSchema;
   arrayType: ArrayType;
   castParameter: CastHandler;
+  initialMode?: string;
+  // Props for dynamic options
+  isDynamic?: boolean;
+  isLoading?: boolean;
+  options?: ComboboxItem[];
+  errorDetails?: { message: string };
+  onMenuOpen?: CallbackHandler;
+  suppressCastingForSerialize?: boolean;
+  isRequired?: boolean;
 }
 
 export const ArrayEditor: React.FC<ArrayEditorProps> = ({
@@ -59,37 +79,44 @@ export const ArrayEditor: React.FC<ArrayEditorProps> = ({
   disableToggle = false,
   initialValue,
   arrayType,
+  initialMode,
   labelProps,
   itemSchema,
   placeholder,
-  getTokenPicker,
   onChange,
   castParameter,
+  dataAutomationId,
+  suppressCastingForSerialize,
+  isRequired = false,
   ...baseEditorProps
 }): JSX.Element => {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState<boolean>(initialMode === InitialMode.Array);
   const [collapsedValue, setCollapsedValue] = useState<ValueSegment[]>(initialValue);
   const [items, setItems] = useState<ComplexArrayItems[] | SimpleArrayItem[]>([]);
   const [isValid, setIsValid] = useState<boolean>(false);
+  const intl = useIntl();
 
   const isComplex = useMemo(() => arrayType === ArrayType.COMPLEX, [arrayType]);
 
   const dimensionalSchema: ItemSchemaItemProps[] = useMemo(() => {
-    if (!isComplex) return [];
-    return getOneDimensionalSchema(itemSchema);
-  }, [isComplex, itemSchema]);
+    if (!isComplex) {
+      return [];
+    }
+    return getOneDimensionalSchema(itemSchema, isRequired);
+  }, [isComplex, isRequired, itemSchema]);
 
   useEffect(() => {
     arrayType === ArrayType.COMPLEX
       ? initializeComplexArrayItems(initialValue, itemSchema, setItems, setIsValid, setCollapsed)
-      : initializeSimpleArrayItems(initialValue, setItems, setIsValid, setCollapsed);
+      : initializeSimpleArrayItems(initialValue, itemSchema.type, setItems, setIsValid, setCollapsed);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dimensionalSchema]);
+  }, []);
 
   const toggleCollapsed = () => {
     setCollapsed(!collapsed);
   };
 
+  // serialize simple expanded array
   const updateSimpleItems = (newItems: SimpleArrayItem[]) => {
     setItems(newItems);
     const objectValue = parseSimpleItems(newItems, itemSchema, castParameter);
@@ -103,72 +130,84 @@ export const ArrayEditor: React.FC<ArrayEditorProps> = ({
     }
   };
 
+  // serialize complex expanded array
   const updateComplexItems = (newItems: ComplexArrayItems[]) => {
     setItems(newItems);
     // we want to supress casting for when switching between expanded and collapsed array, but cast when serializing
-    const objectValue = parseComplexItems(newItems, itemSchema, castParameter);
+    const objectValue = parseComplexItems(newItems, itemSchema, isRequired, castParameter, suppressCastingForSerialize);
     const { castedValue, uncastedValue } = objectValue;
     setCollapsedValue(uncastedValue);
     if (!collapsed) {
       onChange?.({
-        value: castedValue,
+        value: suppressCastingForSerialize ? uncastedValue : castedValue,
         viewModel: { arrayType, itemSchema, uncastedValue },
       });
     }
   };
 
+  // serialize collapsed array
   const handleBlur = (): void => {
     onChange?.({
       value: collapsedValue,
-      viewModel: { arrayType, itemSchema },
+      viewModel: { arrayType, itemSchema, uncastedValue: collapsedValue },
     });
   };
 
+  const expandedLabel: string = intl.formatMessage({
+    defaultMessage: 'Switch to input entire array',
+    id: 'EdeHLs',
+    description: 'Label for editor toggle button when in expanded mode',
+  });
+
+  const collapsedLabel: string = intl.formatMessage({
+    defaultMessage: 'Switch to detail inputs for array item',
+    id: 'HfinO2',
+    description: 'Label for editor toggle button when in collapsed mode',
+  });
+
   return (
-    <div className="msla-array-editor-container">
+    <div className="msla-array-editor-container" data-automation-id={dataAutomationId}>
       {collapsed ? (
         <CollapsedArray
-          labelProps={labelProps}
+          {...baseEditorProps}
           isValid={isValid}
           collapsedValue={collapsedValue}
-          readOnly={baseEditorProps.readonly}
           itemSchema={itemSchema}
           isComplex={isComplex}
           setItems={isComplex ? updateComplexItems : updateSimpleItems}
           setIsValid={setIsValid}
-          getTokenPicker={getTokenPicker}
           onBlur={handleBlur}
           setCollapsedValue={setCollapsedValue}
         />
       ) : isComplex ? (
         <ExpandedComplexArray
+          {...baseEditorProps}
           dimensionalSchema={dimensionalSchema}
           allItems={items as ComplexArrayItems[]}
-          readOnly={baseEditorProps.readonly}
           canDeleteLastItem={canDeleteLastItem}
           setItems={updateComplexItems}
-          getTokenPicker={getTokenPicker}
         />
       ) : (
         <ExpandedSimpleArray
+          {...baseEditorProps}
           placeholder={placeholder}
           valueType={itemSchema.type}
+          itemEnum={itemSchema.enum}
           items={items as SimpleArrayItem[]}
           labelProps={labelProps}
-          readOnly={baseEditorProps.readonly}
           canDeleteLastItem={canDeleteLastItem}
           setItems={updateSimpleItems}
-          getTokenPicker={getTokenPicker}
         />
       )}
       <div className="msla-array-commands">
-        {!disableToggle ? (
+        {disableToggle ? null : (
           <EditorCollapseToggle
+            label={collapsed ? collapsedLabel : expandedLabel}
             collapsed={collapsed}
-            disabled={(!isValid || baseEditorProps.readonly) && collapsed}
+            disabled={!isValid && collapsed}
             toggleCollapsed={toggleCollapsed}
           />
-        ) : null}
+        )}
       </div>
     </div>
   );

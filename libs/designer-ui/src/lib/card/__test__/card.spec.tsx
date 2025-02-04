@@ -1,8 +1,8 @@
 import type { CardProps } from '../index';
 import { Card } from '../index';
-import type { MenuItemOption } from '../types';
-import { MenuItemType } from '../types';
+import React from 'react';
 import renderer from 'react-test-renderer';
+import { describe, vi, beforeEach, afterEach, beforeAll, afterAll, it, test, expect } from 'vitest';
 
 describe('lib/card', () => {
   let minimal: CardProps;
@@ -15,6 +15,8 @@ describe('lib/card', () => {
       draggable: false,
       id: 'id',
       title: 'title',
+      isSecureInputsOutputs: false,
+      runData: undefined,
     };
   });
 
@@ -39,28 +41,29 @@ describe('lib/card', () => {
   });
 
   it('should render as selected', () => {
-    const tree = renderer.create(<Card {...minimal} selected={true} />).toJSON();
+    const tree = renderer.create(<Card {...minimal} selectionMode="selected" />).toJSON();
     expect(tree).toMatchSnapshot();
   });
 
-  it('should render with a context menu', () => {
-    const contextMenuOptions: MenuItemOption[] = [
-      {
-        disabled: false,
-        iconName: 'Delete',
-        key: 'Delete',
-        title: 'Delete',
-        type: MenuItemType.Normal,
-        onClick: jest.fn(),
-      },
-    ];
-    const tree = renderer.create(<Card {...minimal} contextMenuOptions={contextMenuOptions} />).toJSON();
+  it('should render as pinned', () => {
+    const tree = renderer.create(<Card {...minimal} selectionMode="pinned" />).toJSON();
     expect(tree).toMatchSnapshot();
   });
 
-  it('should render with an icon', () => {
+  it.each<[string, string | undefined, string | undefined]>([
+    ['a connector name', 'SharePoint', undefined],
+    ['an operation name', undefined, 'Get an item'],
+    ['an operation name and connector name', 'SharePoint', 'Get an item'],
+  ])('should render with an icon and %s (%#)', (_caseName, connectorName, operationName) => {
     const tree = renderer
-      .create(<Card {...minimal} icon="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" />)
+      .create(
+        <Card
+          {...minimal}
+          connectorName={connectorName}
+          icon="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+          operationName={operationName}
+        />
+      )
       .toJSON();
     expect(tree).toMatchSnapshot();
   });

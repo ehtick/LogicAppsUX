@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { localize } from '../../../../localize';
-import { tryGetFunctionProjectRoot } from '../../../utils/verifyIsProject';
+import { tryGetLogicAppProjectRoot } from '../../../utils/verifyIsProject';
 import { selectWorkspaceFile } from '../../../utils/workspace';
 import { StatelessWorkflowsListStep } from './StatelessWorkflowsListStep';
 import { UpdateDebugModeStep } from './UpdateDebugModeStep';
@@ -13,7 +13,7 @@ import * as vscode from 'vscode';
 
 export async function switchDebugMode(context: IActionContext): Promise<void> {
   const workspacePath = await getWorkspaceFolderPath(context);
-  const projectPath: string | undefined = await tryGetFunctionProjectRoot(context, workspacePath, true /* suppressPrompt */);
+  const projectPath: string | undefined = await tryGetLogicAppProjectRoot(context, workspacePath, true /* suppressPrompt */);
 
   if (projectPath) {
     const wizardContext = { ...context, projectPath, workflowName: '' };
@@ -37,7 +37,7 @@ export async function switchDebugMode(context: IActionContext): Promise<void> {
  * @param {IActionContext} context - Command context
  * @returns {Promise<string>} Workspace path.
  */
-async function getWorkspaceFolderPath(context: IActionContext): Promise<string> {
+export async function getWorkspaceFolderPath(context: IActionContext): Promise<string> {
   const folders = vscode.workspace.workspaceFolders || [];
   if (folders.length === 1) {
     return folders[0].uri.fsPath;

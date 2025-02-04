@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-import type { HttpRequestOptions, IHttpClient } from '@microsoft/designer-client-services-logic-apps';
-import { HTTP_METHODS } from '@microsoft/utils-logic-apps';
+import type { HttpRequestOptions, IHttpClient } from '@microsoft/logic-apps-shared';
+import { HTTP_METHODS } from '@microsoft/logic-apps-shared';
 import axios from 'axios';
 
 export interface HttpOptions {
@@ -52,7 +51,7 @@ export class HttpClient implements IHttpClient {
       headers: {
         ...this._extraHeaders,
         ...options.headers,
-        Authorization: `${isArmId ? this._accessToken : ''} `,
+        Authorization: `${isArmId ? this._accessToken : ''}`,
         'Content-Type': 'application/json',
       },
       data: options.content,
@@ -61,9 +60,8 @@ export class HttpClient implements IHttpClient {
     const responseData = await axios({
       method: HTTP_METHODS.POST,
       ...request,
-    }).catch((error) => {
-      return { status: error.response.status, data: error.response.data };
     });
+
     if (!isSuccessResponse(responseData.status)) {
       return Promise.reject(responseData);
     }
@@ -82,7 +80,7 @@ export class HttpClient implements IHttpClient {
       headers: {
         ...this._extraHeaders,
         ...options.headers,
-        Authorization: `${isArmId ? this._accessToken : ''} `,
+        Authorization: `${isArmId ? this._accessToken : ''}`,
         'Content-Type': 'application/json',
       },
       data: options.content,
@@ -92,7 +90,7 @@ export class HttpClient implements IHttpClient {
       ...request,
       method: HTTP_METHODS.PUT,
     }).catch((error) => {
-      return { status: error.response.status, data: error.response.data };
+      return { status: error.response.status, ...error.response.data };
     });
     if (!isSuccessResponse(responseData.status)) {
       return Promise.reject(responseData);
@@ -110,7 +108,7 @@ export class HttpClient implements IHttpClient {
       headers: {
         ...this._extraHeaders,
         ...options.headers,
-        Authorization: `${this._accessToken} `,
+        Authorization: `${this._accessToken}`,
       },
     };
     const responseData = await axios({
@@ -134,8 +132,8 @@ export class HttpClient implements IHttpClient {
     return isUrl(updatedUri)
       ? updatedUri
       : isArmResourceId(updatedUri)
-      ? `${this._apihubBaseUrl}${updatedUri}`
-      : `${this._baseUrl}${updatedUri}`;
+        ? `${this._apihubBaseUrl}${updatedUri}`
+        : `${this._baseUrl}${updatedUri}`;
   }
 }
 
@@ -153,6 +151,6 @@ function isUrl(uri: string): boolean {
   return uri.startsWith('http://') || uri.startsWith('https://');
 }
 
-function isSuccessResponse(statusCode: number): boolean {
+export function isSuccessResponse(statusCode: number): boolean {
   return statusCode >= 200 && statusCode <= 299;
 }

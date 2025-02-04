@@ -2,10 +2,11 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+import { Platform } from '../../../constants';
 import { localize } from '../../../localize';
-import { isString } from '@microsoft/utils-logic-apps';
+import { isString } from '@microsoft/logic-apps-shared';
 import type { IAzExtOutputChannel } from '@microsoft/vscode-azext-utils';
-import type { ICommandResult } from '@microsoft/vscode-extension';
+import type { ICommandResult } from '@microsoft/vscode-extension-logic-apps';
 import * as cp from 'child_process';
 import * as os from 'os';
 
@@ -15,31 +16,52 @@ export async function executeCommand(
   command: string,
   ...args: string[]
 ): Promise<string> {
+  return executeCommandInternal(outputChannel, workingDirectory, undefined, command, ...args);
+}
+
+export async function executeCommandWithSanityLogging(
+  outputChannel: IAzExtOutputChannel | undefined,
+  workingDirectory: string | undefined,
+  sanitizedCommandForLogging: string,
+  command: string,
+  ...args: string[]
+): Promise<string> {
+  return executeCommandInternal(outputChannel, workingDirectory, sanitizedCommandForLogging, command, ...args);
+}
+
+async function executeCommandInternal(
+  outputChannel: IAzExtOutputChannel | undefined,
+  workingDirectory: string | undefined,
+  sanitizedCommandForLogging: string | undefined,
+  command: string,
+  ...args: string[]
+): Promise<string> {
   const result: ICommandResult = await tryExecuteCommand(outputChannel, workingDirectory, command, ...args);
+
+  const commandForLogging = sanitizedCommandForLogging ?? `${command} ${result.formattedArgs}`;
   if (result.code !== 0) {
     // We want to make sure the full error message is displayed to the user, not just the error code.
     // If outputChannel is defined, then we simply call 'outputChannel.show()' and throw a generic error telling the user to check the output window
     // If outputChannel is _not_ defined, then we include the command's output in the error itself and rely on AzureActionHandler to display it properly
     if (outputChannel) {
       outputChannel.show();
-      throw new Error(localize('commandErrorWithOutput', 'Failed to run "{0}" command. Check output window for more details.', command));
-    } else {
       throw new Error(
-        localize(
-          'commandError',
-          'Command "{0} {1}" failed with exit code "{2}":{3}{4}',
-          command,
-          result.formattedArgs,
-          result.code,
-          os.EOL,
-          result.cmdOutputIncludingStderr
-        )
+        localize('commandErrorWithOutput', 'Failed to run "{0}" command. Check output window for more details.', commandForLogging)
       );
     }
-  } else {
-    if (outputChannel) {
-      outputChannel.appendLog(localize('finishedRunningCommand', 'Finished running command: "{0} {1}".', command, result.formattedArgs));
-    }
+    throw new Error(
+      localize(
+        'commandError',
+        'Command "{0}" failed with exit code "{1}":{2}{3}',
+        commandForLogging,
+        result.code,
+        os.EOL,
+        result.cmdOutputIncludingStderr
+      )
+    );
+  }
+  if (outputChannel && command !== 'echo') {
+    outputChannel.appendLog(localize('finishedRunningCommand', 'Finished running command: "{0}".', commandForLogging));
   }
   return result.cmdOutput;
 }
@@ -62,7 +84,7 @@ export async function tryExecuteCommand(
     };
     const childProc: cp.ChildProcess = cp.spawn(command, args, options);
 
-    if (outputChannel) {
+    if (outputChannel && command !== 'echo') {
       outputChannel.appendLog(localize('runningCommand', 'Running command: "{0} {1}"...', command, formattedArgs));
     }
 
@@ -101,7 +123,7 @@ export async function tryExecuteCommand(
  * @returns {string} Argument wrapped in quotation marks.
  */
 export function wrapArgInQuotes(arg?: string | boolean | number): string {
-  const quotationMark: string = process.platform === 'win32' ? '"' : "'";
+  const quotationMark: string = process.platform === Platform.windows ? '"' : "'";
   arg ??= '';
   return isString(arg) ? quotationMark + arg + quotationMark : String(arg);
 }
